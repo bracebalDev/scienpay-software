@@ -1,0 +1,75 @@
+services:
+  # Base de Datos Relacional PostgreSQL 16
+  db:
+    image: postgres:16-alpine
+    container_name: scienpay_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-scienpay_db}
+      POSTGRES_USER: ${DATABASE_USER:-scienpay_app}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-scienpay_dev_password_change_me}
+    ports:
+      - "${DATABASE_PORT:-5432}:5432"
+    volumes:
+      - scienpay_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-scienpay_app} -d ${DATABASE_NAME:-scienpay_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend API (NestJS + Drizzle)
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: scienpay_api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${DATABASE_NAME:-scienpay_db}
+      DATABASE_USER: ${DATABASE_USER:-scienpay_app}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-scienpay_dev_password_change_me}
+      DATABASE_URL: postgresql://${DATABASE_USER:-scienpay_app}:${DATABASE_PASSWORD:-scienpay_dev_password_change_me}@db:5432/${DATABASE_NAME:-scienpay_db}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev_jwt_access_secret_scienpay_minimum_64_characters_super_secure_key_12345}
+      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-15m}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev_jwt_refresh_secret_scienpay_minimum_64_characters_super_secure_key_67890}
+      COOKIE_SECRET: ${COOKIE_SECRET:-dev_cookie_secret_scienpay_super_secure_key_abcdef_987654321}
+      CORS_ORIGIN: http://localhost:8080
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+
+  # Frontend Web SPA (React + Vite)
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: scienpay_web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "5173:80"
+
+  # Proxy Inverso (Nginx)
+  proxy:
+    image: nginx:alpine
+    container_name: scienpay_proxy
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+      - web
+
+volumes:
+  scienpay_postgres_data:
+    driver: local

@@ -1,0 +1,13 @@
+# Sobrescritura para desarrollo local: mapeo de puertos y volúmenes de desarrollo si se requiere
+services:
+  db:
+    ports:
+      - "5432:5432"
+
+  api:
+    environment:
+      NODE_ENV: development
+
+  web:
+    environment:
+      NODE_ENV: development
