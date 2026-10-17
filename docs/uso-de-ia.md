@@ -23,6 +23,13 @@ Este documento registra los prompts utilizados, las decisiones aceptadas y recha
 - **Objetivo del Prompt:** Levantar y verificar los servicios en Docker Desktop, crear el flujo de ramas git (`chore/setup-monorepo`, `chore/devops-docker-ci`, `develop`), proteger las credenciales en documentos privados excluidos por `.gitignore`, e implementar la interfaz de Login multifuncional con soporte para los 3 roles y segregación visual de funciones.
 - **Herramientas de IA utilizadas:** Asistente de codificación y arquitectura avanzada.
 
+### Sesión 3: Diseño Notion Workspace, Login Anti-Fuerza Bruta y Segregación Visual
+- **Fecha:** Octubre 2026
+- **Prompt de Entrada:**
+  > "Vamos a proceder con la mejora de la interfaz, vamos a crear una vista similar a Notion, y un login. La tarjeta del login debe ir centrada, con los campos 'Usuario' y 'Contraseña', debes añadir un timer para evitar intentos fallidos de ingreso, una vez se equivoqué en el usuario o contraseña 3 veces debe esperar 5 minutos, un cuarto error bloquea el usuario y solo el administrador del sistema tiene acceso a él. Dependiendo del rol del usuario este tiene unas vistas específicas: Usuarios y Roles: El sistema debe manejar 3 roles con permisos específicos y segregación de funciones: a. Administrador del Sistema [...], b. Generador de Nómina [...], c. Receptor de Nómina [...]. Nota: Los beneficiarios (el personal que cobra) NO tendrán usuario en el sistema."
+- **Objetivo del Prompt:** Crear una interfaz de usuario minimalista y elegante inspirada en Notion (Sidebar colapsable, estructura de espacio de trabajo, tablas de base de datos Notion), implementar tarjeta de Login centrada con campos explícitos "Usuario" y "Contraseña", temporizador de bloqueo de 5 minutos al 3er intento fallido con cronómetro reactivo y bloqueo permanente de cuenta al 4to error (con botón de desbloqueo exclusivo para el Administrador), y vistas operativas completas y segregadas para ADMIN, GENERADOR y RECEPTOR.
+- **Herramientas de IA utilizadas:** Asistente de codificación y diseño de interfaces.
+
 ---
 
 ## 2. Decisiones Aceptadas vs. Rechazadas
