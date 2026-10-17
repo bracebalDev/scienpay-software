@@ -59,3 +59,8 @@ postgres-data/
 scratch/
 tmp/
 temp/
+
+# Documentos privados de credenciales para pruebas locales (NUNCA SUBIR)
+*credenciales*
+*privado*
+docs/privado-credenciales-pruebas.md
