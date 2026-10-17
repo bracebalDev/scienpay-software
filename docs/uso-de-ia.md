@@ -30,6 +30,14 @@ Este documento registra los prompts utilizados, las decisiones aceptadas y recha
 - **Objetivo del Prompt:** Crear una interfaz de usuario minimalista y elegante inspirada en Notion (Sidebar colapsable, estructura de espacio de trabajo, tablas de base de datos Notion), implementar tarjeta de Login centrada con campos explícitos "Usuario" y "Contraseña", temporizador de bloqueo de 5 minutos al 3er intento fallido con cronómetro reactivo y bloqueo permanente de cuenta al 4to error (con botón de desbloqueo exclusivo para el Administrador), y vistas operativas completas y segregadas para ADMIN, GENERADOR y RECEPTOR.
 - **Herramientas de IA utilizadas:** Asistente de codificación y diseño de interfaces.
 
+### Sesión 4: Identidad Visual Oficial (Favicon/Logo) y Bitácora de Avances para el Equipo
+- **Fecha:** 17 de Octubre de 2026
+- **Prompt de Entrada:**
+  > "vamos a reemplazar el ícono de la web, con la imagen 'logo web.jpg' para así crear uniformidad en el sistema"
+  > "Dame un resumen de todo lo que se ha hecho en el sistema. Lleva un archivo con los avances realizados con la fecha para que los compañeros puedan ir viendo los avances. Recuerda mantener bien la estructuras de las ramas del GitHub para un manejo profesional"
+- **Objetivo del Prompt:** Incorporar el archivo de imagen oficial `logo web.jpg` en la aplicación web como favicon e imagotipo en componentes UI; documentar detalladamente el progreso del proyecto en un archivo fechado `docs/avances.md` para facilitar la trazabilidad y consulta por parte de los compañeros de equipo; y mantener la convención estricta de ramas en GitHub con Conventional Commits.
+- **Herramientas de IA utilizadas:** Asistente de codificación, documentación y gestión de repositorios Git.
+
 ---
 
 ## 2. Decisiones Aceptadas vs. Rechazadas
