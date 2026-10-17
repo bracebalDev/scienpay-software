@@ -1,0 +1,61 @@
+# Dependencias
+node_modules/
+.pnp
+.pnp.js
+
+# Entornos y Secretos (REGLA NO NEGOCIABLE: NUNCA SUBIR SECRETOS)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+*.cert
+*.crt
+id_rsa
+id_rsa.pub
+
+# Compilación y Salidas
+dist/
+build/
+out/
+.next/
+*.tsbuildinfo
+
+# Logs y Debug
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Cobertura y Pruebas
+coverage/
+.nyc_output/
+test-results/
+
+# Editor e IDE
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Sistema Operativo
+.DS_Store
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+
+# Docker local data y temporales
+.docker/
+docker-data/
+postgres-data/
+scratch/
+tmp/
+temp/

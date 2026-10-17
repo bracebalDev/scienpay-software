@@ -1,0 +1,9 @@
+export enum PaymentRequestStatus {
+  BORRADOR = 'BORRADOR',
+  ENVIADA = 'ENVIADA',
+  APROBADA = 'APROBADA',
+  RECHAZADA = 'RECHAZADA',
+  ENTREGADA = 'ENTREGADA',
+  CERRADA = 'CERRADA',
+  ANULADA = 'ANULADA',
+}
