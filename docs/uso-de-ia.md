@@ -14,6 +14,15 @@ Este documento registra los prompts utilizados, las decisiones aceptadas y recha
 - **Objetivo del Prompt:** Generar el diseño global del sistema sin saltar a la implementación, estableciendo bases formales de arquitectura limpia, reglas financieras inmutables, modelo entidad-relación en PostgreSQL y matriz de control de acceso basada en roles (RBAC).
 - **Herramientas de IA utilizadas:** Asistente de codificación y arquitectura avanzada.
 
+### Sesión 2: Fase 1 - Setup, Despliegue Local Docker y Módulo de Autenticación
+- **Fecha:** Octubre 2026
+- **Prompts de Entrada:**
+  > "Vamos a desplegar para verla en local"
+  > "No se ha construido ningún contenedor, verifica que se esté haciendo y sube todos los cambios al repositorio en sus ramas respectivas"
+  > "Verifica que el sistema posea un login que cumpla con los usuarios y sus diferentes modalidades de ingreso al mismo. Crea un documento privado con las credenciales (usuario y contraseña) de los siguientes roles de usuario para poder hacer las pruebas del sistema"
+- **Objetivo del Prompt:** Levantar y verificar los servicios en Docker Desktop, crear el flujo de ramas git (`chore/setup-monorepo`, `chore/devops-docker-ci`, `develop`), proteger las credenciales en documentos privados excluidos por `.gitignore`, e implementar la interfaz de Login multifuncional con soporte para los 3 roles y segregación visual de funciones.
+- **Herramientas de IA utilizadas:** Asistente de codificación y arquitectura avanzada.
+
 ---
 
 ## 2. Decisiones Aceptadas vs. Rechazadas
