@@ -10,6 +10,9 @@ import {
   causationItems,
   receipts,
   receiptAllocations,
+  persons,
+  projects,
+  users,
 } from '../../infrastructure/database/schema.js';
 import {
   RegisterDisbursementInput,
@@ -19,6 +22,7 @@ import {
 import { FIFOAllocationEngine } from '../../domain/payments/fifo-allocation.engine.js';
 import { FinancialImmutabilityEngine } from '../../domain/financial/financial-immutability.engine.js';
 import { PaymentRequestStateMachine } from '../../domain/payment-requests/payment-request-state-machine.js';
+import { PdfReceiptGenerator } from '../../infrastructure/pdf/pdf-receipt.generator.js';
 import { eq, and, sql } from 'drizzle-orm';
 import { Decimal } from 'decimal.js';
 
@@ -65,6 +69,70 @@ export class DisbursementsService {
       .where(eq(receiptAllocations.receiptId, receiptId));
 
     return { ...receipt, allocations };
+  }
+
+  async generateReceiptPdfBuffer(receiptId: string): Promise<{ buffer: Buffer; filename: string }> {
+    const details = await this.getReceiptDetails(receiptId);
+
+    const [person] = await this.databaseService.db
+      .select()
+      .from(persons)
+      .where(eq(persons.id, details.personId))
+      .limit(1);
+
+    const [project] = await this.databaseService.db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, details.projectId))
+      .limit(1);
+
+    const [disbursement] = await this.databaseService.db
+      .select()
+      .from(disbursements)
+      .where(eq(disbursements.id, details.disbursementId))
+      .limit(1);
+
+    const [issuer] = await this.databaseService.db
+      .select()
+      .from(users)
+      .where(eq(users.id, details.issuedByUserId))
+      .limit(1);
+
+    const allocationPdfs = [];
+    for (const alloc of details.allocations) {
+      const [item] = await this.databaseService.db
+        .select()
+        .from(causationItems)
+        .where(eq(causationItems.id, alloc.causationItemId))
+        .limit(1);
+
+      allocationPdfs.push({
+        period: item ? `${item.periodStartDate} al ${item.periodEndDate}` : 'Período',
+        allocatedAmountUSD: alloc.allocatedAmountUSD,
+        debtBeforeUSD: alloc.debtBeforeAllocationUSD,
+        debtAfterUSD: alloc.debtAfterAllocationUSD,
+        status: alloc.debtAfterAllocationUSD === '0.00' ? 'PAGADO_TOTAL' : 'PAGADO_PARCIAL',
+      });
+    }
+
+    const buffer = await PdfReceiptGenerator.generateReceiptPdf({
+      receiptNumber: details.receiptNumber,
+      issuedDate: new Date(details.issuedAt).toISOString().split('T')[0],
+      projectName: project ? `${project.name} (${project.code})` : 'Proyecto Científico',
+      beneficiaryName: person ? `${person.firstName} ${person.lastName}` : 'Investigador',
+      beneficiaryDocument: person ? `${person.documentType}-${person.documentNumber}` : 'N/A',
+      totalAmountUSD: details.totalAmountUSD,
+      remainingDebtAfterUSD: details.remainingDebtAfterUSD,
+      paymentMethod: disbursement?.paymentMethod || 'TRANSFERENCIA',
+      referenceNumber: disbursement?.referenceNumber || '',
+      issuerName: issuer ? `${issuer.fullName} (${issuer.role})` : 'Administración Scienpay',
+      allocations: allocationPdfs,
+    });
+
+    return {
+      buffer,
+      filename: `${details.receiptNumber}.pdf`,
+    };
   }
 
   async registerDisbursement(input: RegisterDisbursementInput, userId: string) {

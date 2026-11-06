@@ -6,6 +6,7 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { UserRole, registerDisbursementSchema } from '@scienpay/shared';
@@ -35,6 +36,21 @@ export class DisbursementsController {
   @Roles(UserRole.ADMIN, UserRole.GENERADOR, UserRole.RECEPTOR)
   async getReceiptDetails(@Param('id') id: string) {
     return this.disbursementsService.getReceiptDetails(id);
+  }
+
+  @Get('receipts/:id/pdf')
+  @Roles(UserRole.ADMIN, UserRole.GENERADOR, UserRole.RECEPTOR)
+  async downloadReceiptPdf(
+    @Param('id') id: string,
+    @Res() res: any,
+  ) {
+    const { buffer, filename } = await this.disbursementsService.generateReceiptPdfBuffer(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
   }
 
   @Post()

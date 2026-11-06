@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { HealthController } from './health/health.controller.js';
 import { DatabaseModule } from './infrastructure/database/database.module.js';
 import { AuthModule } from './infrastructure/auth/auth.module.js';
+import { AuditModule } from './modules/audit/audit.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { ProjectsModule } from './modules/projects/projects.module.js';
 import { PersonsModule } from './modules/persons/persons.module.js';
@@ -16,6 +17,7 @@ import { PettyCashModule } from './modules/petty-cash/petty-cash.module.js';
   imports: [
     DatabaseModule,
     AuthModule,
+    AuditModule,
     UsersModule,
     ProjectsModule,
     PersonsModule,

@@ -110,15 +110,48 @@ scienpay-software/
    docker compose up db -d
    ```
 
-4. Ejecutar el backend en modo desarrollo:
+4. Aplicar migraciones y triggers de inmutabilidad:
+   ```bash
+   npm run db:migrate --workspace=@scienpay/api
+   ```
+
+5. Cargar datos ficticios de prueba (seeds con los 6 escenarios requeridos):
+   ```bash
+   npm run db:seed --workspace=@scienpay/api
+   ```
+
+6. Ejecutar el backend en modo desarrollo:
    ```bash
    npm run dev:api
    ```
 
-5. En otra terminal, ejecutar el frontend:
+7. En otra terminal, ejecutar el frontend:
    ```bash
    npm run dev:web
    ```
+
+---
+
+## 5.1. Respaldo y Restauración de la Base de Datos
+
+Se disponen de scripts automatizados para contingencias y auditoría contable:
+
+- **Crear Respaldo:**
+  ```bash
+  # En Linux/macOS
+  ./scripts/backup.sh
+
+  # En Windows (PowerShell)
+  .\scripts\backup.ps1
+  ```
+- **Restaurar Respaldo:**
+  ```bash
+  # En Linux/macOS
+  ./scripts/restore.sh ./backups/scienpay_backup_YYYYMMDD_HHMMSS.sql
+
+  # En Windows (PowerShell)
+  .\scripts\restore.ps1 -BackupFile ./backups/scienpay_backup_YYYYMMDD_HHMMSS.sql
+  ```
 
 ---
 
@@ -152,4 +185,4 @@ Todas las decisiones clave del proyecto se encuentran documentadas en `docs/deci
 
 ## 8. Bitácora de Inteligencia Artificial
 
-El registro detallado de prompts, validaciones humanas y decisiones asistidas por IA se mantiene rigurosamente actualizado en [docs/uso-de-ia.md](docs/uso-de-ia.md).
+El registro detallado de prompts, validaciones humanas y decisiones asistidas por IA se mantiene rigurosamente actualizado en [docs/bitacora_ia.md](docs/bitacora_ia.md) (y [docs/uso-de-ia.md](docs/uso-de-ia.md)).
