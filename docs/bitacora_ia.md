@@ -29,3 +29,14 @@
   - Integración de `Decimal.js` para almacenamiento estricto de `amountPerPeriod` en formato de 2 decimales sin tipos flotantes binarios.
 - **Cambios Manuales Realizados y Motivo:**
   - Se utilizó la importación nombrada `import { Decimal } from 'decimal.js'` para satisfacer los requerimientos de tipado estricto en TypeScript sin necesidad de `esModuleInterop` ambiguo.
+
+#### Sesión 7: Módulo 3 - Motor de Causación y Prorrateo Puro
+- **Fecha:** 6 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / Antigravity Agentic Senior Software Engineer
+- **Objetivo del Prompt:** Implementar la función pura de dominio `CausationCalculator` sin acceso a BD ni efectos secundarios. Probar período completo, período parcial, semanas/quincenas con diferentes duraciones de días (15 y 16 días), días inclusivos, suma de tramos no solapados por cambio a mitad de período y redondeo HALF_UP estricto a 2 decimales con `Decimal.js`. Implementar la generación de lotes con verificación de idempotencia.
+- **Resultado Obtenido:**
+  - 7 pruebas unitarias de prorrateo cubriendo todos los casos de borde (.XX5 redondeado hacia arriba, períodos vacíos, tramos múltiples, períodos de 31, 30, 16 y 15 días).
+  - Total de la suite incrementado a 38 pruebas pasando al 100%.
+  - `CausationModule` con endpoints de simulación/previsualización (`POST /api/v1/causation/preview`) y generación de lotes inmutables (`POST /api/v1/causation/generate`).
+- **Cambios Manuales Realizados y Motivo:**
+  - Se configuró el modo de redondeo `Decimal.ROUND_HALF_UP` en todos los cálculos monetarios para honrar estrictamente la especificación rectora del proyecto ("Redondeo HALF_UP a 2 decimales").
