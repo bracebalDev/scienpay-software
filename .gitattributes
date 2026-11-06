@@ -1,0 +1,18 @@
+# Normalizar finales de línea (LF para entornos Linux/Docker)
+* text=auto eol=lf
+
+# Scripts de shell y Dockerfiles siempre LF
+*.sh text eol=lf
+Dockerfile* text eol=lf
+docker-compose*.yml text eol=lf
+
+# Migraciones y sentencias SQL siempre LF
+*.sql text eol=lf
+
+# Archivos binarios
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.ico binary
+*.pdf binary
+*.gz binary
