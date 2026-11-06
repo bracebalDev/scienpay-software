@@ -87,3 +87,15 @@
   - Verificación exitosa de la suite completa: 56 pruebas pasando, 0 errores de typecheck, 100% build exitoso.
 - **Cambios Manuales Realizados y Motivo:**
   - Se añadió fallback dinámico de resolución de rutas en `migrate.ts` para permitir la ejecución tanto directa desde TypeScript (`tsx src/...`) como desde JavaScript empaquetado (`node dist/...`).
+
+#### Sesión 12: Orquestación de Compilación de Contratos Compartidos en CI
+- **Fecha:** 6 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / Antigravity Agentic Senior Software Engineer
+- **Objetivo del Prompt:** Diagnosticar y resolver el error de verificación de tipos (`TS2307: Cannot find module '@scienpay/shared'`) en el pipeline de GitHub Actions durante entornos de ejecución efímeros limpios.
+- **Resultado Obtenido:**
+  - Identificación de la causa raíz: en entornos efímeros sin compilación previa, `packages/shared/dist/index.d.ts` no existía al invocar `tsc --noEmit` en `apps/api`.
+  - Actualización de los scripts raíz en `package.json` (`build:shared`, `typecheck`, `test`) para garantizar la compilación previa de `@scienpay/shared`.
+  - Incorporación del paso explícito `Compilar contratos compartidos (@scienpay/shared)` en el pipeline `.github/workflows/ci.yml` inmediatamente posterior a `npm ci`.
+  - Validación local simulando runner limpio: eliminación de `dist` y ejecución exitosa de `typecheck` y `test` en verde.
+- **Cambios Manuales Realizados y Motivo:**
+  - No se modificó ningún algoritmo financiero ni regla de negocio; el cambio se limitó estrictamente a la orquestación del proceso de compilación TypeScript en el monorepo.

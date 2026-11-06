@@ -26,6 +26,9 @@ jobs:
       - name: Instalación limpia con lockfile (npm ci)
         run: npm ci
 
+      - name: Compilar contratos compartidos (@scienpay/shared)
+        run: npm run build --workspace=@scienpay/shared
+
       - name: Verificación de tipos TypeScript
         run: npm run typecheck
 
