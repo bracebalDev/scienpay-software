@@ -10,6 +10,7 @@ import { AssignmentsModule } from './modules/assignments/assignments.module.js';
 import { CausationModule } from './modules/causation/causation.module.js';
 import { PaymentRequestsModule } from './modules/payment-requests/payment-requests.module.js';
 import { DisbursementsModule } from './modules/disbursements/disbursements.module.js';
+import { PettyCashModule } from './modules/petty-cash/petty-cash.module.js';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { DisbursementsModule } from './modules/disbursements/disbursements.modul
     CausationModule,
     PaymentRequestsModule,
     DisbursementsModule,
+    PettyCashModule,
   ],
   controllers: [HealthController],
   providers: [],
