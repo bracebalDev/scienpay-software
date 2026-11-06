@@ -60,6 +60,10 @@ scratch/
 tmp/
 temp/
 
+# Respaldos de base de datos
+backups/
+*.sql.gz
+
 # Documentos privados de credenciales para pruebas locales (NUNCA SUBIR)
 *credenciales*
 *privado*
