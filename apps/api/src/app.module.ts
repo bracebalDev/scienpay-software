@@ -7,6 +7,7 @@ import { ProjectsModule } from './modules/projects/projects.module.js';
 import { PersonsModule } from './modules/persons/persons.module.js';
 import { PaymentGroupsModule } from './modules/payment-groups/payment-groups.module.js';
 import { AssignmentsModule } from './modules/assignments/assignments.module.js';
+import { CausationModule } from './modules/causation/causation.module.js';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { AssignmentsModule } from './modules/assignments/assignments.module.js';
     PersonsModule,
     PaymentGroupsModule,
     AssignmentsModule,
+    CausationModule,
   ],
   controllers: [HealthController],
   providers: [],
