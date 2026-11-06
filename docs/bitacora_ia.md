@@ -52,3 +52,14 @@
   - Generación de numeración secuencial de recibos correlativos con `receipt_number_seq`.
 - **Cambios Manuales Realizados y Motivo:**
   - Se añadieron campos opcionales `periodDescription` en `createPaymentRequestSchema` y `paymentRequestId` en `registerDisbursementSchema` para soporte unificado tanto por cuerpo JSON como por parámetro REST.
+
+#### Sesión 9: Módulo 5 - Cajas Chicas y Arrastre de Saldos
+- **Fecha:** 6 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / Antigravity Agentic Senior Software Engineer
+- **Objetivo del Prompt:** Implementar el módulo de cajas chicas multi-proyecto: apertura mensual con arrastre automático de saldo de cierre previo, emisión y aprobación de vales, desembolsos con control de fondos suficientes, rendición con comprobante/factura validando cuadratura exacta (`rendido + vuelto = desembolsado`), movimientos inmutables (`petty_cash_movements`) y cierre mensual.
+- **Resultado Obtenido:**
+  - 5 pruebas unitarias de dominio para el motor contable `PettyCashLedgerEngine`.
+  - Total de la suite incrementado a 55 pruebas pasando al 100%.
+  - Módulo `PettyCashModule` en NestJS con RBAC estricto para Receptor y Generador.
+- **Cambios Manuales Realizados y Motivo:**
+  - Se modeló la relación muchos-a-muchos entre cajas chicas y proyectos en la tabla `petty_cash_projects` para permitir que una misma caja respalde múltiples líneas de investigación.
