@@ -53,13 +53,13 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Banner de Segregación de Funciones RECEPTOR */}
-      <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/80 text-emerald-950 text-xs flex items-start space-x-3">
-        <AlertCircle className="w-5 h-5 text-emerald-700 flex-shrink-0 mt-0.5" />
+      <div className="p-4 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-900/50 text-emerald-950 dark:text-emerald-200 text-xs flex items-start space-x-3">
+        <AlertCircle className="w-5 h-5 text-emerald-700 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
         <div>
           <span className="font-bold">Segregación de Funciones: Perfil Receptor (Gerente de Administración)</span>
-          <p className="text-[11px] text-emerald-900 mt-0.5">
-            Recibe, evalúa, aprueba o rechaza solicitudes de pago, registra entregas de fondos por FIFO, emite recibos y administra cajas chicas.
-            <strong> Restricción:</strong> No puede crear proyectos, personas ni originar causaciones.
+          <p className="text-[11px] text-emerald-900 dark:text-emerald-300 mt-0.5">
+            Recibe, evalúa, aprueba o rechaza solicitudes de pago, registra entregas de fondos por FIFO, emite recibos y administra cajas chicas.{' '}
+            <strong>Restricción:</strong> No puede crear proyectos, personas ni originar causaciones.
           </p>
         </div>
       </div>
@@ -67,24 +67,24 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({
       {/* PESTAÑA: BANDEJA DE APROBACIÓN */}
       {activeTab === 'solicitudes_bandeja' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[#EDEDEB]">
+          <div className="flex items-center justify-between pb-2 border-b border-[#EDEDEB] dark:border-[#2F2F2F]">
             <div>
-              <h2 className="text-xl font-bold text-[#37352F] flex items-center space-x-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-700" />
+              <h2 className="text-xl font-bold text-[#37352F] dark:text-white flex items-center space-x-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-700 dark:text-emerald-400" />
                 <span>Bandeja de Fiscalización y Aprobación de Solicitudes</span>
               </h2>
-              <p className="text-xs text-[#787774] mt-0.5">
+              <p className="text-xs text-[#787774] dark:text-[#9B9A97] mt-0.5">
                 Evaluación con regla de cuatro ojos estricta: ningún usuario puede autorizar sus propias solicitudes.
               </p>
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800">
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
               {requests.filter((r) => r.status === PaymentRequestStatus.ENVIADA).length} Pendientes de Revisión
             </span>
           </div>
 
-          <div className="bg-white rounded-xl border border-[#E9E9E7] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
+          <div className="bg-white dark:bg-[#202020] rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#F7F6F3] text-[#787774] font-semibold border-b border-[#E9E9E7]">
+              <thead className="bg-[#F7F6F3] dark:bg-[#262626] text-[#787774] dark:text-[#9B9A97] font-semibold border-b border-[#E9E9E7] dark:border-[#2F2F2F]">
                 <tr>
                   <th className="py-2.5 px-4">Código</th>
                   <th className="py-2.5 px-4">Proyecto</th>
@@ -95,31 +95,30 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({
                   <th className="py-2.5 px-4 text-right">Decisión Gerencial</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#EDEDEB]">
+              <tbody className="divide-y divide-[#EDEDEB] dark:divide-[#2F2F2F]">
                 {requests.map((r) => {
-                  // Regla de Cuatro Ojos: Verificada en backend
                   const isCreatedBySelf = r.createdBy === currentUserFullName;
                   const canAct = r.status === PaymentRequestStatus.ENVIADA;
 
                   return (
-                    <tr key={r.id} className="hover:bg-[#FBFBFA] transition">
-                      <td className="py-3 px-4 font-mono font-bold text-[#37352F]">{r.requestCode}</td>
-                      <td className="py-3 px-4 font-mono text-primary font-medium">{r.projectCode}</td>
-                      <td className="py-3 px-4 text-[#787774]">{r.period}</td>
-                      <td className="py-3 px-4 text-[#37352F] font-medium">{r.createdBy}</td>
-                      <td className="py-3 px-4 font-mono font-bold text-[#37352F]">
+                    <tr key={r.id} className="hover:bg-[#FBFBFA] dark:hover:bg-[#252525] transition">
+                      <td className="py-3 px-4 font-mono font-bold text-[#37352F] dark:text-white">{r.requestCode}</td>
+                      <td className="py-3 px-4 font-mono text-primary dark:text-primary-light font-medium">{r.projectCode}</td>
+                      <td className="py-3 px-4 text-[#787774] dark:text-[#9B9A97]">{r.period}</td>
+                      <td className="py-3 px-4 text-[#37352F] dark:text-white font-medium">{r.createdBy}</td>
+                      <td className="py-3 px-4 font-mono font-bold text-[#37352F] dark:text-white">
                         ${r.totalAmountUSD.toFixed(2)} USD
                       </td>
                       <td className="py-3 px-4">
                         <span
                           className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                             r.status === PaymentRequestStatus.ENVIADA
-                              ? 'bg-amber-100 text-amber-800'
+                              ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300'
                               : r.status === PaymentRequestStatus.APROBADA
-                              ? 'bg-emerald-100 text-emerald-800'
+                              ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
                               : r.status === PaymentRequestStatus.RECHAZADA
-                              ? 'bg-rose-100 text-rose-800'
-                              : 'bg-slate-100 text-slate-700'
+                              ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300'
+                              : 'bg-slate-100 dark:bg-[#2C2C2C] text-slate-700 dark:text-slate-300'
                           }`}
                         >
                           {r.status}
@@ -128,7 +127,7 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({
                       <td className="py-3 px-4 text-right">
                         {canAct ? (
                           isCreatedBySelf ? (
-                            <span className="text-[10px] text-rose-600 font-semibold inline-flex items-center space-x-1">
+                            <span className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold inline-flex items-center space-x-1">
                               <Shield className="w-3 h-3" />
                               <span>Regla Cuatro Ojos: Creada por usted</span>
                             </span>
@@ -139,7 +138,7 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({
                                 placeholder="Motivo de rechazo..."
                                 value={rejectionReason}
                                 onChange={(e) => setRejectionReason(e.target.value)}
-                                className="text-xs p-1 border rounded w-36"
+                                className="text-xs p-1 border border-[#E9E9E7] dark:border-[#383838] bg-[#F7F6F3] dark:bg-[#2A2A2A] text-[#37352F] dark:text-white rounded w-36 focus:outline-none"
                               />
                               <button
                                 onClick={() => submitRejection(r.id)}
@@ -149,7 +148,7 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({
                               </button>
                               <button
                                 onClick={() => setRejectingId(null)}
-                                className="text-slate-400 text-xs"
+                                className="text-slate-400 text-xs hover:text-[#37352F] dark:hover:text-white"
                               >
                                 Cancelar
                               </button>
@@ -165,7 +164,7 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({
                               </button>
                               <button
                                 onClick={() => setRejectingId(r.id)}
-                                className="inline-flex items-center space-x-1 px-2.5 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-[11px] transition"
+                                className="inline-flex items-center space-x-1 px-2.5 py-1 rounded bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 font-semibold text-[11px] transition"
                               >
                                 <XCircle className="w-3 h-3" />
                                 <span>Rechazar</span>
@@ -173,7 +172,7 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({
                             </div>
                           )
                         ) : (
-                          <span className="text-[11px] text-[#9B9A97]">Procesada</span>
+                          <span className="text-[11px] text-[#9B9A97] dark:text-[#787774]">Procesada</span>
                         )}
                       </td>
                     </tr>
@@ -188,35 +187,39 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({
       {/* PESTAÑA: ENTREGAS DE FONDOS FIFO */}
       {activeTab === 'pagos_fifo' && (
         <div className="space-y-4">
-          <div className="pb-2 border-b border-[#EDEDEB]">
-            <h2 className="text-xl font-bold text-[#37352F] flex items-center space-x-2">
-              <DollarSign className="w-5 h-5 text-primary" />
+          <div className="pb-2 border-b border-[#EDEDEB] dark:border-[#2F2F2F]">
+            <h2 className="text-xl font-bold text-[#37352F] dark:text-white flex items-center space-x-2">
+              <DollarSign className="w-5 h-5 text-primary dark:text-primary-light" />
               <span>Entregas de Fondos con Imputación FIFO</span>
             </h2>
-            <p className="text-xs text-[#787774] mt-0.5">
+            <p className="text-xs text-[#787774] dark:text-[#9B9A97] mt-0.5">
               Los pagos parciales se aplican estrictamente sobre la causación pendiente más antigua del investigador.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            <div className="md:col-span-6 bg-white p-5 rounded-xl border border-[#E9E9E7] shadow-[0_1px_2px_rgba(0,0,0,0.02)] space-y-4">
-              <h3 className="font-bold text-sm text-[#37352F] flex items-center space-x-2">
+            <div className="md:col-span-6 bg-white dark:bg-[#202020] p-5 rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_2px_rgba(0,0,0,0.02)] space-y-4">
+              <h3 className="font-bold text-sm text-[#37352F] dark:text-white flex items-center space-x-2">
                 <span>Registrar Desembolso de Fondos</span>
               </h3>
 
               <div>
-                <label className="block text-[11px] font-semibold text-[#787774] mb-1">Monto a Entregar (USD)</label>
+                <label className="block text-[11px] font-semibold text-[#787774] dark:text-[#9B9A97] mb-1">
+                  Monto a Entregar (USD)
+                </label>
                 <input
                   type="number"
                   value={fifoAmount}
                   onChange={(e) => setFifoAmount(parseFloat(e.target.value) || 0)}
-                  className="w-full text-xs p-2 rounded-lg border border-[#E9E9E7] font-mono"
+                  className="w-full text-xs p-2 rounded-lg border border-[#E9E9E7] dark:border-[#383838] bg-[#F7F6F3] dark:bg-[#2A2A2A] text-[#37352F] dark:text-white font-mono focus:outline-none focus:border-primary"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-[#787774] mb-1">Método de Pago</label>
-                <select className="w-full text-xs p-2 rounded-lg border border-[#E9E9E7] bg-[#F7F6F3]">
+                <label className="block text-[11px] font-semibold text-[#787774] dark:text-[#9B9A97] mb-1">
+                  Método de Pago
+                </label>
+                <select className="w-full text-xs p-2 rounded-lg border border-[#E9E9E7] dark:border-[#383838] bg-[#F7F6F3] dark:bg-[#2A2A2A] text-[#37352F] dark:text-white focus:outline-none focus:border-primary">
                   <option>TRANSFERENCIA BANCARIA INTERNACIONAL</option>
                   <option>ZELLE</option>
                   <option>EFECTIVO EN CUSTODIA</option>
@@ -231,25 +234,33 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({
               </button>
 
               {fifoResult && (
-                <div className="p-3.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-mono whitespace-pre-line leading-relaxed">
+                <div className="p-3.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 text-emerald-900 dark:text-emerald-200 text-xs font-mono whitespace-pre-line leading-relaxed">
                   {fifoResult}
                 </div>
               )}
             </div>
 
-            <div className="md:col-span-6 bg-white p-5 rounded-xl border border-[#E9E9E7] shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-              <h3 className="font-bold text-sm text-[#37352F] mb-3">Algoritmo FIFO en Servidor</h3>
-              <div className="space-y-3 text-xs text-[#5A5A58]">
-                <div className="p-3 rounded-lg bg-[#F7F6F3] border border-[#E9E9E7]">
-                  <span className="font-bold text-[#37352F] block mb-1">1. Cola de Deudas:</span>
-                  <span>Las causaciones se ordenan por <code className="bg-white px-1 rounded">period_start_date ASC, created_at ASC</code>.</span>
+            <div className="md:col-span-6 bg-white dark:bg-[#202020] p-5 rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+              <h3 className="font-bold text-sm text-[#37352F] dark:text-white mb-3">Algoritmo FIFO en Servidor</h3>
+              <div className="space-y-3 text-xs text-[#5A5A58] dark:text-[#A4A4A2]">
+                <div className="p-3 rounded-lg bg-[#F7F6F3] dark:bg-[#262626] border border-[#E9E9E7] dark:border-[#333333]">
+                  <span className="font-bold text-[#37352F] dark:text-white block mb-1">1. Cola de Deudas:</span>
+                  <span>
+                    Las causaciones se ordenan por{' '}
+                    <code className="bg-white dark:bg-[#1E1E1E] px-1 rounded text-primary">
+                      period_start_date ASC, created_at ASC
+                    </code>.
+                  </span>
                 </div>
-                <div className="p-3 rounded-lg bg-[#F7F6F3] border border-[#E9E9E7]">
-                  <span className="font-bold text-[#37352F] block mb-1">2. Amortización Progresiva:</span>
-                  <span>Se salda cada cuota hasta agotar el monto entregado. Se generan registros inmutables en <code className="bg-white px-1 rounded">receipt_allocations</code>.</span>
+                <div className="p-3 rounded-lg bg-[#F7F6F3] dark:bg-[#262626] border border-[#E9E9E7] dark:border-[#333333]">
+                  <span className="font-bold text-[#37352F] dark:text-white block mb-1">2. Amortización Progresiva:</span>
+                  <span>
+                    Se salda cada cuota hasta agotar el monto entregado. Se generan registros inmutables en{' '}
+                    <code className="bg-white dark:bg-[#1E1E1E] px-1 rounded text-primary">receipt_allocations</code>.
+                  </span>
                 </div>
-                <div className="p-3 rounded-lg bg-[#F7F6F3] border border-[#E9E9E7]">
-                  <span className="font-bold text-[#37352F] block mb-1">3. Secuencia sin Huecos:</span>
+                <div className="p-3 rounded-lg bg-[#F7F6F3] dark:bg-[#262626] border border-[#E9E9E7] dark:border-[#333333]">
+                  <span className="font-bold text-[#37352F] dark:text-white block mb-1">3. Secuencia sin Huecos:</span>
                   <span>El recibo consume el siguiente número de la secuencia PostgreSQL atómica.</span>
                 </div>
               </div>
@@ -261,24 +272,24 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({
       {/* PESTAÑA: RECIBOS INMUTABLES */}
       {activeTab === 'recibos' && (
         <div className="space-y-4">
-          <div className="pb-2 border-b border-[#EDEDEB] flex items-center justify-between">
+          <div className="pb-2 border-b border-[#EDEDEB] dark:border-[#2F2F2F] flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-[#37352F] flex items-center space-x-2">
-                <Receipt className="w-5 h-5 text-violet" />
+              <h2 className="text-xl font-bold text-[#37352F] dark:text-white flex items-center space-x-2">
+                <Receipt className="w-5 h-5 text-violet dark:text-violet-light" />
                 <span>Recibos Individuales Inmutables</span>
               </h2>
-              <p className="text-xs text-[#787774] mt-0.5">
+              <p className="text-xs text-[#787774] dark:text-[#9B9A97] mt-0.5">
                 Documentos de entrega legal con secuencia transaccional estricta sin saltos ni huecos.
               </p>
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded bg-violet-100 text-violet">
+            <span className="text-xs font-semibold px-2.5 py-1 rounded bg-violet-100 dark:bg-violet-950/60 text-violet dark:text-violet-300">
               Numeración Correlativa Activa
             </span>
           </div>
 
-          <div className="bg-white rounded-xl border border-[#E9E9E7] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
+          <div className="bg-white dark:bg-[#202020] rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#F7F6F3] text-[#787774] font-semibold border-b border-[#E9E9E7]">
+              <thead className="bg-[#F7F6F3] dark:bg-[#262626] text-[#787774] dark:text-[#9B9A97] font-semibold border-b border-[#E9E9E7] dark:border-[#2F2F2F]">
                 <tr>
                   <th className="py-2.5 px-4">Número de Recibo</th>
                   <th className="py-2.5 px-4">Fecha Emisión</th>
@@ -289,37 +300,37 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({
                   <th className="py-2.5 px-4 text-right">PDF</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#EDEDEB]">
-                <tr className="hover:bg-[#FBFBFA]">
-                  <td className="py-3 px-4 font-mono font-bold text-[#37352F]">REC-2026-000041</td>
-                  <td className="py-3 px-4 text-[#787774]">2026-10-16 11:30</td>
-                  <td className="py-3 px-4 font-semibold text-[#37352F]">Ing. Sofía Valderrama</td>
-                  <td className="py-3 px-4 font-mono text-primary">QUI-02</td>
-                  <td className="py-3 px-4 font-mono font-bold text-emerald-700">$ 420.00 USD</td>
+              <tbody className="divide-y divide-[#EDEDEB] dark:divide-[#2F2F2F]">
+                <tr className="hover:bg-[#FBFBFA] dark:hover:bg-[#252525] transition">
+                  <td className="py-3 px-4 font-mono font-bold text-[#37352F] dark:text-white">REC-2026-000041</td>
+                  <td className="py-3 px-4 text-[#787774] dark:text-[#9B9A97]">2026-10-16 11:30</td>
+                  <td className="py-3 px-4 font-semibold text-[#37352F] dark:text-white">Ing. Sofía Valderrama</td>
+                  <td className="py-3 px-4 font-mono text-primary dark:text-primary-light">QUI-02</td>
+                  <td className="py-3 px-4 font-mono font-bold text-emerald-700 dark:text-emerald-400">$ 420.00 USD</td>
                   <td className="py-3 px-4">
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-semibold">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-semibold">
                       Trigger Protegido
                     </span>
                   </td>
                   <td className="py-3 px-4 text-right">
-                    <button className="text-primary hover:underline font-semibold text-[11px]">
+                    <button className="text-primary dark:text-primary-light hover:underline font-semibold text-[11px]">
                       Descargar PDF
                     </button>
                   </td>
                 </tr>
-                <tr className="hover:bg-[#FBFBFA]">
-                  <td className="py-3 px-4 font-mono font-bold text-[#37352F]">REC-2026-000040</td>
-                  <td className="py-3 px-4 text-[#787774]">2026-10-15 16:45</td>
-                  <td className="py-3 px-4 font-semibold text-[#37352F]">Dr. Alejandro Morales</td>
-                  <td className="py-3 px-4 font-mono text-primary">FIS-01</td>
-                  <td className="py-3 px-4 font-mono font-bold text-emerald-700">$ 850.00 USD</td>
+                <tr className="hover:bg-[#FBFBFA] dark:hover:bg-[#252525] transition">
+                  <td className="py-3 px-4 font-mono font-bold text-[#37352F] dark:text-white">REC-2026-000040</td>
+                  <td className="py-3 px-4 text-[#787774] dark:text-[#9B9A97]">2026-10-15 16:45</td>
+                  <td className="py-3 px-4 font-semibold text-[#37352F] dark:text-white">Dr. Alejandro Morales</td>
+                  <td className="py-3 px-4 font-mono text-primary dark:text-primary-light">FIS-01</td>
+                  <td className="py-3 px-4 font-mono font-bold text-emerald-700 dark:text-emerald-400">$ 850.00 USD</td>
                   <td className="py-3 px-4">
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-semibold">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-semibold">
                       Trigger Protegido
                     </span>
                   </td>
                   <td className="py-3 px-4 text-right">
-                    <button className="text-primary hover:underline font-semibold text-[11px]">
+                    <button className="text-primary dark:text-primary-light hover:underline font-semibold text-[11px]">
                       Descargar PDF
                     </button>
                   </td>
@@ -333,13 +344,13 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({
       {/* PESTAÑA: CAJAS CHICAS */}
       {activeTab === 'caja_chica' && (
         <div className="space-y-4">
-          <div className="pb-2 border-b border-[#EDEDEB] flex items-center justify-between">
+          <div className="pb-2 border-b border-[#EDEDEB] dark:border-[#2F2F2F] flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-[#37352F] flex items-center space-x-2">
-                <PiggyBank className="w-5 h-5 text-amber-700" />
+              <h2 className="text-xl font-bold text-[#37352F] dark:text-white flex items-center space-x-2">
+                <PiggyBank className="w-5 h-5 text-amber-700 dark:text-amber-400" />
                 <span>Control Mensual de Cajas Chicas</span>
               </h2>
-              <p className="text-xs text-[#787774] mt-0.5">
+              <p className="text-xs text-[#787774] dark:text-[#9B9A97] mt-0.5">
                 Flujo: Apertura del mes → Vales autorizados → Rendición con comprobantes → Arrastre de saldo.
               </p>
             </div>
@@ -349,35 +360,48 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="bg-white p-5 rounded-xl border border-[#E9E9E7] shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+            <div className="bg-white dark:bg-[#202020] p-5 rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
                 Período Octubre 2026: ABIERTO
               </span>
-              <h3 className="font-bold text-sm text-[#37352F] mt-2 mb-1">Caja Chica Laboratorio Central</h3>
-              <div className="text-xs text-[#787774] space-y-1">
-                <div>Saldo Inicial Apertura: <strong>$ 500.00 USD</strong></div>
-                <div>Vales Desembolsados: <strong>$ 180.00 USD</strong></div>
-                <div>Saldo en Efectivo: <strong className="text-emerald-700 font-mono text-sm">$ 320.00 USD</strong></div>
+              <h3 className="font-bold text-sm text-[#37352F] dark:text-white mt-2 mb-1">Caja Chica Laboratorio Central</h3>
+              <div className="text-xs text-[#787774] dark:text-[#9B9A97] space-y-1">
+                <div>
+                  Saldo Inicial Apertura: <strong className="text-[#37352F] dark:text-white">$ 500.00 USD</strong>
+                </div>
+                <div>
+                  Vales Desembolsados: <strong className="text-[#37352F] dark:text-white">$ 180.00 USD</strong>
+                </div>
+                <div>
+                  Saldo en Efectivo: <strong className="text-emerald-700 dark:text-emerald-400 font-mono text-sm">$ 320.00 USD</strong>
+                </div>
               </div>
-              <div className="mt-4 pt-3 border-t border-[#EDEDEB]">
-                <button className="w-full py-1.5 rounded bg-slate-100 hover:bg-slate-200 text-[#37352F] text-xs font-medium transition">
+              <div className="mt-4 pt-3 border-t border-[#EDEDEB] dark:border-[#2F2F2F]">
+                <button className="w-full py-1.5 rounded bg-slate-100 dark:bg-[#2C2C2C] hover:bg-slate-200 dark:hover:bg-[#383838] text-[#37352F] dark:text-white text-xs font-medium transition">
                   Ver Vales del Mes
                 </button>
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-xl border border-[#E9E9E7] shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+            <div className="bg-white dark:bg-[#202020] p-5 rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-[#2C2C2C] text-slate-700 dark:text-slate-300">
                 Período Septiembre 2026: CERRADO
               </span>
-              <h3 className="font-bold text-sm text-[#37352F] mt-2 mb-1">Caja Chica Reactivos y Materiales</h3>
-              <div className="text-xs text-[#787774] space-y-1">
-                <div>Saldo de Cierre: <strong>$ 125.50 USD</strong></div>
-                <div>Arrastre al Mes Siguiente: <strong className="text-primary font-mono">$ 125.50 USD</strong></div>
-                <div>Estado de Rendición: <strong className="text-emerald-700">100% Rendido</strong></div>
+              <h3 className="font-bold text-sm text-[#37352F] dark:text-white mt-2 mb-1">Caja Chica Reactivos y Materiales</h3>
+              <div className="text-xs text-[#787774] dark:text-[#9B9A97] space-y-1">
+                <div>
+                  Saldo de Cierre: <strong className="text-[#37352F] dark:text-white">$ 125.50 USD</strong>
+                </div>
+                <div>
+                  Arrastre al Mes Siguiente:{' '}
+                  <strong className="text-primary dark:text-primary-light font-mono">$ 125.50 USD</strong>
+                </div>
+                <div>
+                  Estado de Rendición: <strong className="text-emerald-700 dark:text-emerald-400">100% Rendido</strong>
+                </div>
               </div>
-              <div className="mt-4 pt-3 border-t border-[#EDEDEB]">
-                <span className="text-[11px] text-[#9B9A97] block text-center">Mes Conciliado y Cerrado</span>
+              <div className="mt-4 pt-3 border-t border-[#EDEDEB] dark:border-[#2F2F2F]">
+                <span className="text-[11px] text-[#9B9A97] dark:text-[#787774] block text-center">Mes Conciliado y Cerrado</span>
               </div>
             </div>
           </div>

@@ -99,3 +99,17 @@
   - Validación local simulando runner limpio: eliminación de `dist` y ejecución exitosa de `typecheck` y `test` en verde.
 - **Cambios Manuales Realizados y Motivo:**
   - No se modificó ningún algoritmo financiero ni regla de negocio; el cambio se limitó estrictamente a la orquestación del proceso de compilación TypeScript en el monorepo.
+
+#### Sesión 13: Navegación por Historial del Navegador, Modal de Salida, Tarjetas Clickeables y Modo Oscuro/Sistema
+- **Fecha:** 6 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / Antigravity Agentic Senior Software Engineer
+- **Objetivo del Prompt:** Reestructurar la navegación de la SPA para admitir historial nativo del navegador (adelante/atrás mediante evento `popstate`), interceptar el retroceso hacia la pantalla de acceso con un cuadro de diálogo de confirmación ("¿Está seguro de cerrar sesión?"), hacer las tarjetas del modo Generador interactivas con modal de detalles expandidos, e implementar un selector de tema (Claro / Oscuro / Sistema) con colorimetría y persistencia.
+- **Resultado Obtenido:**
+  - `ThemeContext` y `ThemeToggle` con soporte para `'light'`, `'dark'` y `'system'` (`prefers-color-scheme`), persistencia en `localStorage` y configuración `darkMode: 'class'` en Tailwind.
+  - Sincronización del historial del navegador en `App.tsx` con `window.history.pushState` y escucha de `popstate`.
+  - Cuadro de diálogo modal institucional de confirmación ante retroceso hacia el login o al pulsar "Cerrar Sesión".
+  - `ItemDetailModal` integrado en `GeneratorView` para desplegar detalles completos de proyectos, asignaciones y solicitudes al hacer clic en las tarjetas.
+  - Adaptación completa de todas las vistas (`NotionLogin`, `NotionSidebar`, `AdminView`, `GeneratorView`, `ReceptorView`) a la paleta Notion Dark (`#191919`, `#202020`, `#2F2F2F`, `#FFFFFF`).
+  - Suite completa validada: 56 tests pasando al 100%, 0 errores de typecheck en monorepo y build de producción exitoso.
+- **Cambios Manuales Realizados y Motivo:**
+  - Se configuró la intercepción de `popstate` reponiendo el estado en el historial antes de desplegar el modal de confirmación, evitando que el navegador abandone la aplicación sin la debida confirmación del usuario.

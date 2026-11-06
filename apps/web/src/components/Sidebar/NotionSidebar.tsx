@@ -1,6 +1,7 @@
 import React from 'react';
 import { UserRole } from '@scienpay/shared';
 import { UserAccount } from '../../types/app.types.js';
+import { ThemeToggle } from '../../context/ThemeContext.js';
 import {
   Users,
   Sliders,
@@ -69,15 +70,15 @@ export const NotionSidebar: React.FC<NotionSidebarProps> = ({
 
   return (
     <aside
-      className={`bg-[#F7F6F3] border-r border-[#E9E9E7] flex flex-col transition-all duration-200 select-none ${
+      className={`bg-[#F7F6F3] dark:bg-[#1C1C1C] border-r border-[#E9E9E7] dark:border-[#2B2B2B] flex flex-col transition-all duration-200 select-none ${
         collapsed ? 'w-16' : 'w-64'
       }`}
     >
       {/* Encabezado del Workspace Notion */}
-      <div className="p-3 border-b border-[#EDEDEB] flex items-center justify-between">
+      <div className="p-3 border-b border-[#EDEDEB] dark:border-[#2B2B2B] flex items-center justify-between">
         {!collapsed ? (
           <div className="flex items-center space-x-2.5 overflow-hidden">
-            <div className="w-7 h-7 rounded bg-white border border-[#E9E9E7] flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm p-0.5">
+            <div className="w-7 h-7 rounded bg-white dark:bg-[#252525] border border-[#E9E9E7] dark:border-[#333333] flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm p-0.5">
               <img
                 src="/logo.jpg"
                 alt="Logo"
@@ -89,12 +90,12 @@ export const NotionSidebar: React.FC<NotionSidebarProps> = ({
               />
             </div>
             <div className="truncate">
-              <div className="text-xs font-bold text-[#37352F] truncate">Scienpay Workspace</div>
-              <div className="text-[10px] text-[#9B9A97] truncate">Física • Química • Biología</div>
+              <div className="text-xs font-bold text-[#37352F] dark:text-white truncate">Scienpay Workspace</div>
+              <div className="text-[10px] text-[#9B9A97] dark:text-[#888886] truncate">Física • Química • Biología</div>
             </div>
           </div>
         ) : (
-          <div className="w-7 h-7 mx-auto rounded bg-white border border-[#E9E9E7] flex items-center justify-center overflow-hidden shadow-sm p-0.5">
+          <div className="w-7 h-7 mx-auto rounded bg-white dark:bg-[#252525] border border-[#E9E9E7] dark:border-[#333333] flex items-center justify-center overflow-hidden shadow-sm p-0.5">
             <img
               src="/logo.jpg"
               alt="Logo"
@@ -109,7 +110,7 @@ export const NotionSidebar: React.FC<NotionSidebarProps> = ({
 
         <button
           onClick={onToggleCollapse}
-          className="p-1 rounded text-[#9B9A97] hover:text-[#37352F] hover:bg-[#EAE9E5] transition"
+          className="p-1 rounded text-[#9B9A97] hover:text-[#37352F] dark:hover:text-white hover:bg-[#EAE9E5] dark:hover:bg-[#2B2B2B] transition"
           title={collapsed ? 'Expandir barra lateral' : 'Colapsar barra lateral'}
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -117,37 +118,37 @@ export const NotionSidebar: React.FC<NotionSidebarProps> = ({
       </div>
 
       {/* Perfil del usuario activo */}
-      <div className="p-3 border-b border-[#EDEDEB]">
+      <div className="p-3 border-b border-[#EDEDEB] dark:border-[#2B2B2B]">
         {!collapsed ? (
-          <div className="bg-white p-2.5 rounded-lg border border-[#E9E9E7] shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+          <div className="bg-white dark:bg-[#242424] p-2.5 rounded-lg border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
             <div className="flex items-center space-x-2.5">
-              <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs flex-shrink-0">
+              <div className="w-7 h-7 rounded-full bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light flex items-center justify-center font-bold text-xs flex-shrink-0">
                 {currentUser.fullName.charAt(0)}
               </div>
               <div className="truncate flex-1">
-                <div className="text-xs font-semibold text-[#37352F] truncate">{currentUser.fullName}</div>
-                <div className="text-[10px] text-[#787774] truncate">{currentUser.title}</div>
+                <div className="text-xs font-semibold text-[#37352F] dark:text-white truncate">{currentUser.fullName}</div>
+                <div className="text-[10px] text-[#787774] dark:text-[#9B9A97] truncate">{currentUser.title}</div>
               </div>
             </div>
-            <div className="mt-2 pt-2 border-t border-[#EDEDEB] flex items-center justify-between">
+            <div className="mt-2 pt-2 border-t border-[#EDEDEB] dark:border-[#2F2F2F] flex items-center justify-between">
               <span
                 className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
                   currentUser.role === UserRole.ADMIN
-                    ? 'bg-violet-100 text-violet'
+                    ? 'bg-violet-100 dark:bg-violet-950/60 text-violet dark:text-violet-300'
                     : currentUser.role === UserRole.GENERADOR
-                    ? 'bg-blue-100 text-primary'
-                    : 'bg-emerald-100 text-emerald-800'
+                    ? 'bg-blue-100 dark:bg-blue-950/60 text-primary dark:text-blue-300'
+                    : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
                 }`}
               >
                 {currentUser.role}
               </span>
-              <span className="text-[10px] text-emerald-600 font-medium flex items-center">
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1" /> En línea
               </span>
             </div>
           </div>
         ) : (
-          <div className="w-8 h-8 mx-auto rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
+          <div className="w-8 h-8 mx-auto rounded-full bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light flex items-center justify-center font-bold text-xs">
             {currentUser.fullName.charAt(0)}
           </div>
         )}
@@ -156,7 +157,7 @@ export const NotionSidebar: React.FC<NotionSidebarProps> = ({
       {/* Lista de navegación de módulos */}
       <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
         {!collapsed && (
-          <div className="px-2 py-1 text-[10px] font-bold text-[#9B9A97] uppercase tracking-wider">
+          <div className="px-2 py-1 text-[10px] font-bold text-[#9B9A97] dark:text-[#787774] uppercase tracking-wider">
             Vistas del Rol
           </div>
         )}
@@ -170,17 +171,17 @@ export const NotionSidebar: React.FC<NotionSidebarProps> = ({
               onClick={() => onSelectTab(item.id)}
               className={`w-full flex items-center space-x-2.5 px-2.5 py-1.5 rounded text-xs transition ${
                 isActive
-                  ? 'bg-[#EAE9E5] text-[#37352F] font-semibold'
-                  : 'text-[#5A5A58] hover:bg-[#EDEDEB] hover:text-[#37352F]'
+                  ? 'bg-[#EAE9E5] dark:bg-[#2C2C2C] text-[#37352F] dark:text-white font-semibold'
+                  : 'text-[#5A5A58] dark:text-[#A4A4A2] hover:bg-[#EDEDEB] dark:hover:bg-[#272727] hover:text-[#37352F] dark:hover:text-white'
               }`}
               title={collapsed ? item.label : undefined}
             >
-              <Icon className="w-4 h-4 flex-shrink-0 text-[#787774]" />
+              <Icon className="w-4 h-4 flex-shrink-0 text-[#787774] dark:text-[#9B9A97]" />
               {!collapsed && (
                 <div className="flex-1 flex items-center justify-between truncate">
                   <span className="truncate">{item.label}</span>
                   {item.badge && (
-                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-200/80 text-slate-700 font-normal">
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-200/80 dark:bg-[#2F2F2F] text-slate-700 dark:text-slate-300 font-normal">
                       {item.badge}
                     </span>
                   )}
@@ -191,10 +192,21 @@ export const NotionSidebar: React.FC<NotionSidebarProps> = ({
         })}
       </nav>
 
-      {/* Pie de barra lateral con aviso de segregación y botón de logout */}
-      <div className="p-3 border-t border-[#EDEDEB] space-y-2">
+      {/* Pie de barra lateral con selector de tema, aviso de segregación y botón de logout */}
+      <div className="p-3 border-t border-[#EDEDEB] dark:border-[#2B2B2B] space-y-2">
+        {!collapsed ? (
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] text-[#787774] dark:text-[#888886] font-medium">Tema visual</span>
+            <ThemeToggle compact />
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <ThemeToggle compact />
+          </div>
+        )}
+
         {!collapsed && (
-          <div className="p-2 rounded bg-slate-100/70 border border-[#E9E9E7] text-[10px] text-[#787774] flex items-center space-x-1.5">
+          <div className="p-2 rounded bg-slate-100/70 dark:bg-[#222222] border border-[#E9E9E7] dark:border-[#2B2B2B] text-[10px] text-[#787774] dark:text-[#9B9A97] flex items-center space-x-1.5">
             <Shield className="w-3.5 h-3.5 text-primary flex-shrink-0" />
             <span className="truncate">Segregación estricta de funciones</span>
           </div>
@@ -202,7 +214,7 @@ export const NotionSidebar: React.FC<NotionSidebarProps> = ({
 
         <button
           onClick={onLogout}
-          className="w-full flex items-center justify-center space-x-2 px-2.5 py-1.5 rounded text-xs text-[#787774] hover:text-rose-600 hover:bg-rose-50 transition"
+          className="w-full flex items-center justify-center space-x-2 px-2.5 py-1.5 rounded text-xs text-[#787774] dark:text-[#9B9A97] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
           title="Cerrar sesión"
         >
           <LogOut className="w-4 h-4" />

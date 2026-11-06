@@ -3,6 +3,7 @@ import { UserRole } from '@scienpay/shared';
 import { UserAccount } from '../../types/app.types.js';
 import { PASSWORDS } from '../../data/mockData.js';
 import { Lock, Eye, EyeOff, AlertTriangle, ShieldAlert, Check, Clock, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { ThemeToggle } from '../../context/ThemeContext.js';
 
 interface NotionLoginProps {
   users: UserAccount[];
@@ -135,12 +136,17 @@ export const NotionLogin: React.FC<NotionLoginProps> = ({
   const isTemporarilyLocked = remainingSeconds > 0;
 
   return (
-    <div className="min-h-screen bg-[#FBFBFA] flex flex-col items-center justify-center p-4 selection:bg-primary/20">
+    <div className="relative min-h-screen bg-[#FBFBFA] dark:bg-[#191919] flex flex-col items-center justify-center p-4 selection:bg-primary/20 transition-colors duration-200">
+      {/* Selector de tema en esquina superior derecha */}
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
+
       {/* Contenedor centrado estilo Notion */}
       <div className="w-full max-w-[420px]">
         {/* Cabecera / Identidad Notion */}
         <div className="text-center mb-7">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white border border-[#E9E9E7] shadow-sm mb-3 overflow-hidden p-1.5">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white dark:bg-[#202020] border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-sm mb-3 overflow-hidden p-1.5">
             <img
               src="/logo.jpg"
               alt="Scienpay Logo"
@@ -151,45 +157,45 @@ export const NotionLogin: React.FC<NotionLoginProps> = ({
               }}
             />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#37352F] font-sans">
+          <h1 className="text-2xl font-bold tracking-tight text-[#37352F] dark:text-white font-sans">
             Iniciar Sesión en Scienpay
           </h1>
-          <p className="text-xs text-[#787774] mt-1.5">
+          <p className="text-xs text-[#787774] dark:text-[#9B9A97] mt-1.5">
             Sistema de Control de Pagos y Asignaciones Científicas
           </p>
         </div>
 
         {/* Tarjeta de Login Centrada */}
-        <div className="bg-white rounded-xl border border-[#E9E9E7] shadow-[0_1px_3px_rgba(0,0,0,0.05)] p-7 transition-all">
+        <div className="bg-white dark:bg-[#202020] rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_3px_rgba(0,0,0,0.05)] p-7 transition-all">
           {/* Mensajes de Estado / Alertas */}
           {isPermanentlyLocked ? (
-            <div className="mb-5 p-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+            <div className="mb-5 p-4 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-800 dark:text-rose-300 text-xs">
               <div className="flex items-center space-x-2 font-semibold mb-1">
-                <ShieldAlert className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400 flex-shrink-0" />
                 <span>Cuenta Bloqueada por Seguridad</span>
               </div>
-              <p className="text-[11px] leading-relaxed text-rose-700">
+              <p className="text-[11px] leading-relaxed text-rose-700 dark:text-rose-400">
                 Ha superado los 4 intentos fallidos. Conforme a las reglas de ciberseguridad, esta cuenta está bloqueada. <strong>Solo el Administrador del Sistema tiene acceso a ella para restaurarla.</strong>
               </p>
             </div>
           ) : isTemporarilyLocked ? (
-            <div className="mb-5 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+            <div className="mb-5 p-4 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-amber-900 dark:text-amber-200 text-xs">
               <div className="flex items-center justify-between font-semibold mb-1">
                 <span className="flex items-center space-x-1.5">
-                  <Clock className="w-4 h-4 text-amber-600" />
+                  <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                   <span>Espera de Seguridad Activa</span>
                 </span>
-                <span className="font-mono text-sm font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">
+                <span className="font-mono text-sm font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/60 px-2 py-0.5 rounded">
                   {formatTime(remainingSeconds)}
                 </span>
               </div>
-              <p className="text-[11px] text-amber-800 mt-1">
+              <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-1">
                 Se han registrado 3 errores consecutivos. Debe aguardar el tiempo indicado para volver a intentar. Un 4to error bloqueará la cuenta definitivamente.
               </p>
             </div>
           ) : errorMessage ? (
-            <div className="mb-5 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start space-x-2">
-              <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-600" />
+            <div className="mb-5 p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-xs flex items-start space-x-2">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
               <span>{errorMessage}</span>
             </div>
           ) : null}
@@ -198,7 +204,7 @@ export const NotionLogin: React.FC<NotionLoginProps> = ({
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Campo Usuario */}
             <div>
-              <label className="block text-[11px] font-semibold text-[#787774] uppercase tracking-wider mb-1.5">
+              <label className="block text-[11px] font-semibold text-[#787774] dark:text-[#9B9A97] uppercase tracking-wider mb-1.5">
                 Usuario
               </label>
               <div className="relative">
@@ -212,7 +218,7 @@ export const NotionLogin: React.FC<NotionLoginProps> = ({
                   placeholder="admin / generador / receptor"
                   disabled={isPermanentlyLocked || isTemporarilyLocked}
                   required
-                  className="w-full pl-9 pr-3 py-2 text-sm text-[#37352F] bg-[#F7F6F3]/50 border border-[#E9E9E7] rounded-lg focus:outline-none focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full pl-9 pr-3 py-2 text-sm text-[#37352F] dark:text-white bg-[#F7F6F3]/50 dark:bg-[#2A2A2A] border border-[#E9E9E7] dark:border-[#383838] rounded-lg focus:outline-none focus:bg-white dark:focus:bg-[#2F2F2F] focus:border-primary focus:ring-1 focus:ring-primary transition disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -220,7 +226,7 @@ export const NotionLogin: React.FC<NotionLoginProps> = ({
             {/* Campo Contraseña */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-[11px] font-semibold text-[#787774] uppercase tracking-wider">
+                <label className="block text-[11px] font-semibold text-[#787774] dark:text-[#9B9A97] uppercase tracking-wider">
                   Contraseña
                 </label>
                 <span className="text-[10px] text-[#9B9A97]">Mínimo 12 car.</span>
@@ -236,12 +242,12 @@ export const NotionLogin: React.FC<NotionLoginProps> = ({
                   placeholder="••••••••••••"
                   disabled={isPermanentlyLocked || isTemporarilyLocked}
                   required
-                  className="w-full pl-9 pr-10 py-2 text-sm text-[#37352F] bg-[#F7F6F3]/50 border border-[#E9E9E7] rounded-lg focus:outline-none focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full pl-9 pr-10 py-2 text-sm text-[#37352F] dark:text-white bg-[#F7F6F3]/50 dark:bg-[#2A2A2A] border border-[#E9E9E7] dark:border-[#383838] rounded-lg focus:outline-none focus:bg-white dark:focus:bg-[#2F2F2F] focus:border-primary focus:ring-1 focus:ring-primary transition disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#9B9A97] hover:text-[#37352F] transition"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#9B9A97] hover:text-[#37352F] dark:hover:text-white transition"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -261,9 +267,9 @@ export const NotionLogin: React.FC<NotionLoginProps> = ({
 
           {/* Información de intentos del usuario si existe */}
           {matchedUser && !matchedUser.permanentLock && matchedUser.failedAttempts > 0 && (
-            <div className="mt-4 pt-3 border-t border-[#EDEDEB] flex items-center justify-between text-[11px] text-[#787774]">
+            <div className="mt-4 pt-3 border-t border-[#EDEDEB] dark:border-[#2F2F2F] flex items-center justify-between text-[11px] text-[#787774] dark:text-[#9B9A97]">
               <span>Intentos fallidos registrados:</span>
-              <span className="font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+              <span className="font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-[#2A2A2A] text-slate-700 dark:text-slate-300">
                 {matchedUser.failedAttempts} de 4
               </span>
             </div>
@@ -271,18 +277,18 @@ export const NotionLogin: React.FC<NotionLoginProps> = ({
         </div>
 
         {/* Acordeón de Acceso Rápido para Pruebas y Docente */}
-        <div className="mt-5 bg-white rounded-xl border border-[#E9E9E7] shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+        <div className="mt-5 bg-white dark:bg-[#202020] rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
           <button
             onClick={() => setShowQuickHelp(!showQuickHelp)}
-            className="w-full px-4 py-3 text-left flex items-center justify-between text-xs font-medium text-[#787774] hover:bg-[#F7F6F3] transition"
+            className="w-full px-4 py-3 text-left flex items-center justify-between text-xs font-medium text-[#787774] dark:text-[#9B9A97] hover:bg-[#F7F6F3] dark:hover:bg-[#262626] transition"
           >
             <span>Credenciales de prueba por Rol (Evaluar sistema)</span>
             {showQuickHelp ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
 
           {showQuickHelp && (
-            <div className="px-4 pb-4 pt-1 space-y-2 border-t border-[#EDEDEB] bg-[#FBFBFA]/50">
-              <p className="text-[11px] text-[#787774] mb-2">
+            <div className="px-4 pb-4 pt-1 space-y-2 border-t border-[#EDEDEB] dark:border-[#2F2F2F] bg-[#FBFBFA]/50 dark:bg-[#1C1C1C]">
+              <p className="text-[11px] text-[#787774] dark:text-[#9B9A97] mb-2">
                 Haz clic en cualquier rol para autocompletar usuario y contraseña autorizada:
               </p>
 
@@ -290,29 +296,29 @@ export const NotionLogin: React.FC<NotionLoginProps> = ({
                 <div
                   key={u.id}
                   onClick={() => fillCredentials(u)}
-                  className="p-2.5 rounded-lg border border-[#E9E9E7] bg-white hover:border-primary/50 cursor-pointer transition flex items-center justify-between text-xs"
+                  className="p-2.5 rounded-lg border border-[#E9E9E7] dark:border-[#2F2F2F] bg-white dark:bg-[#252525] hover:border-primary/50 cursor-pointer transition flex items-center justify-between text-xs"
                 >
                   <div>
                     <div className="flex items-center space-x-2">
                       <span
                         className={`font-semibold px-1.5 py-0.5 rounded text-[10px] ${
                           u.role === UserRole.ADMIN
-                            ? 'bg-violet-100 text-violet'
+                            ? 'bg-violet-100 text-violet dark:bg-violet-950/60 dark:text-violet-300'
                             : u.role === UserRole.GENERADOR
-                            ? 'bg-blue-100 text-primary'
-                            : 'bg-emerald-100 text-emerald-800'
+                            ? 'bg-blue-100 text-primary dark:bg-blue-950/60 dark:text-blue-300'
+                            : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
                         }`}
                       >
                         {u.role}
                       </span>
-                      <span className="font-medium text-[#37352F]">{u.username}</span>
+                      <span className="font-medium text-[#37352F] dark:text-white">{u.username}</span>
                       {u.permanentLock && (
-                        <span className="text-[10px] px-1 rounded bg-rose-100 text-rose-700 font-bold">
+                        <span className="text-[10px] px-1 rounded bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300 font-bold">
                           Bloqueado
                         </span>
                       )}
                     </div>
-                    <div className="text-[10px] text-[#787774] mt-0.5">{u.fullName}</div>
+                    <div className="text-[10px] text-[#787774] dark:text-[#9B9A97] mt-0.5">{u.fullName}</div>
                   </div>
                   <Check className="w-3.5 h-3.5 text-slate-400 opacity-60" />
                 </div>
