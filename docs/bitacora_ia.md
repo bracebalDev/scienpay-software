@@ -40,3 +40,15 @@
   - `CausationModule` con endpoints de simulación/previsualización (`POST /api/v1/causation/preview`) y generación de lotes inmutables (`POST /api/v1/causation/generate`).
 - **Cambios Manuales Realizados y Motivo:**
   - Se configuró el modo de redondeo `Decimal.ROUND_HALF_UP` en todos los cálculos monetarios para honrar estrictamente la especificación rectora del proyecto ("Redondeo HALF_UP a 2 decimales").
+
+#### Sesión 8: Módulo 4 - Solicitudes de Pago, Máquina de Estados, Cuatro Ojos y Amortización FIFO
+- **Fecha:** 6 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / Antigravity Agentic Senior Software Engineer
+- **Objetivo del Prompt:** Implementar el ciclo completo de solicitudes de pago con su máquina de estados finita (`BORRADOR` -> `ENVIADA` -> `APROBADA`/`RECHAZADA` -> `ENTREGADA` -> `CERRADA`), la regla obligatoria de cuatro ojos (`creador !== revisor`), el algoritmo puro de imputación FIFO (`FIFOAllocationEngine`), emisión de recibos correlativos inmutables y la regla estricta: "Ningún pago aplicado supera la deuda pendiente" y "causado - pagado = saldo".
+- **Resultado Obtenido:**
+  - 12 pruebas unitarias de dominio para la máquina de estados y el motor FIFO.
+  - Total de la suite incrementado a 50 pruebas pasando al 100%.
+  - Módulos `PaymentRequestsModule` y `DisbursementsModule` completamente integrados en NestJS.
+  - Generación de numeración secuencial de recibos correlativos con `receipt_number_seq`.
+- **Cambios Manuales Realizados y Motivo:**
+  - Se añadieron campos opcionales `periodDescription` en `createPaymentRequestSchema` y `paymentRequestId` en `registerDisbursementSchema` para soporte unificado tanto por cuerpo JSON como por parámetro REST.
