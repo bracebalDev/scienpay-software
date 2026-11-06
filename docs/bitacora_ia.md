@@ -75,3 +75,15 @@
   - Generador de PDF institucional con desglose de imputaciones FIFO y firmas legales.
 - **Cambios Manuales Realizados y Motivo:**
   - Se instaló la librería `pdfkit` y `@types/pdfkit` en `@scienpay/api` para generar documentos PDF en backend como stream binario inmutable sin requerir dependencias pesadas de navegadores headless.
+
+#### Sesión 11: Normalización de Entorno, Compatibilidad Multiplataforma y Preparación para Carga a GitHub
+- **Fecha:** 6 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / Antigravity Agentic Senior Software Engineer
+- **Objetivo del Prompt:** Realizar la verificación de compatibilidad e higiene del repositorio antes de la publicación a las ramas remotas de GitHub (`feature/frontend-responsive`, `develop`, etc.), eliminando assets redundantes con espacios en raíz, normalizando saltos de línea LF y asegurando la disponibilidad de esquemas SQL en la etapa de empaquetado de producción y contenedores Docker.
+- **Resultado Obtenido:**
+  - Creación de `.gitattributes` para forzar terminaciones LF en scripts `.sh`, esquemas SQL y archivos Docker en entornos Windows/Linux/macOS.
+  - Eliminación del archivo binario redundante con espacios en la raíz (`logo web.jpg`), conservando el imagotipo optimizado dentro de `apps/web/public/logo.jpg`.
+  - Actualización del script `build` en `apps/api/package.json` y del `Dockerfile` para asegurar que las migraciones SQL se sincronicen automáticamente en `dist/infrastructure/database/migrations` en cualquier entorno de ejecución compilado.
+  - Verificación exitosa de la suite completa: 56 pruebas pasando, 0 errores de typecheck, 100% build exitoso.
+- **Cambios Manuales Realizados y Motivo:**
+  - Se añadió fallback dinámico de resolución de rutas en `migrate.ts` para permitir la ejecución tanto directa desde TypeScript (`tsx src/...`) como desde JavaScript empaquetado (`node dist/...`).
