@@ -11,7 +11,13 @@ export async function runMigrations() {
   console.log('[Scienpay Migration] Aplicando migraciones de base de datos y triggers...');
 
   try {
-    const migrationFile = path.join(__dirname, 'migrations', '0001_initial_schema_and_triggers.sql');
+    let migrationFile = path.join(__dirname, 'migrations', '0001_initial_schema_and_triggers.sql');
+    if (!fs.existsSync(migrationFile)) {
+      const fallbackSrc = path.join(__dirname, '../../src/infrastructure/database/migrations', '0001_initial_schema_and_triggers.sql');
+      if (fs.existsSync(fallbackSrc)) {
+        migrationFile = fallbackSrc;
+      }
+    }
     const sqlContent = fs.readFileSync(migrationFile, 'utf8');
 
     await client.unsafe(sqlContent);
