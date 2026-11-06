@@ -113,3 +113,17 @@
   - Suite completa validada: 56 tests pasando al 100%, 0 errores de typecheck en monorepo y build de producción exitoso.
 - **Cambios Manuales Realizados y Motivo:**
   - Se configuró la intercepción de `popstate` reponiendo el estado en el historial antes de desplegar el modal de confirmación, evitando que el navegador abandone la aplicación sin la debida confirmación del usuario.
+
+#### Sesión 14: Despliegue en la Nube (Fly.io), Clúster PostgreSQL y Contenedorización Fullstack
+- **Fecha:** 6 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / Antigravity Agentic Senior Software Engineer
+- **Objetivo del Prompt:** Configurar y ejecutar el despliegue del sistema Scienpay en la infraestructura cloud de Fly.io dentro del plan gratuito (sin tarjeta bancaria requerida), integrando la base de datos PostgreSQL gestionada, secretos de producción, contenedorización multi-etapa y disponibilidad pública para la presentación y demostración del proyecto.
+- **Resultado Obtenido:**
+  - `Dockerfile` multi-stage optimizado que compila los 3 paquetes (`@scienpay/shared`, `@scienpay/api`, `@scienpay/web`) y genera un runner ligero en `node:20-slim` (imagen de 102 MB).
+  - Configuración de hosting estático unificado en `apps/api/src/main.ts` para servir la SPA de React desde la raíz `/` y la API en `/api/v1` en una única máquina eficiente.
+  - Creación y vinculación del clúster PostgreSQL en Fly.io (`scienpay-db`) a la aplicación (`scienpay-app`), inyectando de forma segura `DATABASE_URL` y variables de entorno (`JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `COOKIE_SECRET`).
+  - Control de idempotencia en `apps/api/src/infrastructure/database/seed.ts` para evitar fallos por inserción duplicada en reinicios del contenedor.
+  - Ejecución automática de migraciones y seeds en el arranque del contenedor mediante `apps/api/package.json`.
+  - Despliegue exitoso verificado en vivo en `https://scienpay-app.fly.dev` con endpoint de salud `https://scienpay-app.fly.dev/api/v1/health` retornando estado `ok`.
+- **Cambios Manuales Realizados y Motivo:**
+  - Se unificó el servicio de la SPA dentro de NestJS para no requerir un segundo servicio o máquina virtual separada en la nube, optimizando recursos y garantizando latencia cero entre cliente y servidor.

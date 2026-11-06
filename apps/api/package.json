@@ -7,7 +7,7 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc && node -e \"const fs = require('fs'); fs.mkdirSync('dist/infrastructure/database/migrations', { recursive: true }); fs.copyFileSync('src/infrastructure/database/migrations/0001_initial_schema_and_triggers.sql', 'dist/infrastructure/database/migrations/0001_initial_schema_and_triggers.sql');\"",
-    "start": "node dist/main.js",
+    "start": "node dist/infrastructure/database/migrate.js && node dist/infrastructure/database/seed.js && node dist/main.js",
     "dev": "tsx watch src/main.ts",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test test/**/*.test.ts",

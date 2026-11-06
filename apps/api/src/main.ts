@@ -1,8 +1,15 @@
 import 'reflect-metadata';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import express from 'express';
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -37,6 +44,27 @@ async function bootstrap() {
 
   // Prefijo global de API
   app.setGlobalPrefix('api/v1');
+
+  // Servir frontend SPA si existe en disco (despliegues de producción y nube)
+  const candidatePaths = [
+    path.join(__dirname, '../../web/dist'),
+    path.join(__dirname, '../web/dist'),
+    path.join(process.cwd(), 'apps/web/dist'),
+    path.join(process.cwd(), 'web/dist'),
+  ];
+  const staticPath = candidatePaths.find((p) => fs.existsSync(p));
+
+  if (staticPath) {
+    app.use(express.static(staticPath));
+    const server = app.getHttpAdapter().getInstance();
+    server.get('*', (req: any, res: any, next: any) => {
+      if (req.url.startsWith('/api')) {
+        return next();
+      }
+      res.sendFile(path.join(staticPath, 'index.html'));
+    });
+    console.log(`[Scienpay API] Frontend SPA servido desde ${staticPath}`);
+  }
 
   const port = process.env.PORT || 4000;
   await app.listen(port);

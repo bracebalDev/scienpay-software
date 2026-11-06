@@ -30,6 +30,6 @@ export async function runMigrations() {
   }
 }
 
-if (process.argv[1]?.endsWith('migrate.ts')) {
+if (process.argv[1]?.includes('migrate')) {
   runMigrations().catch(() => process.exit(1));
 }

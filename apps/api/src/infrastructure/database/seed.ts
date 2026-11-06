@@ -43,6 +43,12 @@ export async function runSeed() {
   console.log('[Scienpay Seed] Iniciando siembra de datos ficticios de prueba...');
 
   try {
+    const existingUsers = await db.select({ id: users.id }).from(users).limit(1);
+    if (existingUsers.length > 0) {
+      console.log('[Scienpay Seed] La base de datos ya cuenta con registros sembrados. Omitiendo.');
+      return;
+    }
+
     // 1. Usuarios Oficiales con Hashing Argon2id
     console.log('-> Sembrando usuarios institucionales con hash Argon2id...');
     const adminHash = await passwordService.hash('Admin#Scienpay2026!');
@@ -472,7 +478,7 @@ export async function runSeed() {
 }
 
 // Ejecutar directamente si se llama como script
-if (process.argv[1]?.endsWith('seed.ts')) {
+if (process.argv[1]?.includes('seed')) {
   runSeed().catch((err) => {
     console.error('[Scienpay Seed] Error fatal durante la siembra:', err);
     process.exit(1);
