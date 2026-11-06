@@ -17,3 +17,15 @@
 - **Cambios Manuales Realizados y Motivo:**
   - Se configuró `"type": "module"` en `packages/shared/package.json` y `apps/api/package.json` para permitir interoperabilidad nativa ESM en Node.js 26.
   - Se ajustó el mapeo de `paths` en `tsconfig.base.json` hacia `packages/shared/dist/index.d.ts` para evitar errores `TS6059 (rootDir)` en la verificación de tipos de TypeScript.
+
+#### Sesión 6: Módulo 2 - Personas, Proyectos, Asignaciones y Prevención de Solapamiento
+- **Fecha:** 6 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / Antigravity Agentic Senior Software Engineer
+- **Objetivo del Prompt:** Implementar catálogo de Proyectos (Física, Química, Biología; interno/externo), Personas (beneficiarios sin cuenta de usuario), Grupos de Pago (semanal, quincenal, mensual) y Asignaciones. Implementar y probar la regla obligatoria de negocio: "Solapamiento de asignaciones de una misma persona en el mismo proyecto es rechazado".
+- **Resultado Obtenido:**
+  - 6 pruebas unitarias de dominio para la política `AssignmentOverlapPolicy` verificando detección de solapamiento en rangos cerrados, abiertos, tramos consecutivos y mismo día exacto (inclusivo).
+  - Total de pruebas en la suite incrementado a 31 tests pasando al 100%.
+  - Módulos NestJS completos: `ProjectsModule`, `PersonsModule`, `PaymentGroupsModule`, `AssignmentsModule`.
+  - Integración de `Decimal.js` para almacenamiento estricto de `amountPerPeriod` en formato de 2 decimales sin tipos flotantes binarios.
+- **Cambios Manuales Realizados y Motivo:**
+  - Se utilizó la importación nombrada `import { Decimal } from 'decimal.js'` para satisfacer los requerimientos de tipado estricto en TypeScript sin necesidad de `esModuleInterop` ambiguo.
