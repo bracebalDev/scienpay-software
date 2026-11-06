@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "description": "Backend API para Scienpay - NestJS y Drizzle ORM",
   "private": true,
+  "type": "module",
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/main.js",
     "dev": "tsx watch src/main.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --test test/**/*.test.ts"
+    "test": "tsx --test test/**/*.test.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.4",

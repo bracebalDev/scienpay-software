@@ -14,8 +14,8 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "@scienpay/shared": ["packages/shared/src/index.ts"],
-      "@scienpay/shared/*": ["packages/shared/src/*"]
+      "@scienpay/shared": ["packages/shared/dist/index.d.ts"],
+      "@scienpay/shared/*": ["packages/shared/dist/*"]
     }
   }
 }
