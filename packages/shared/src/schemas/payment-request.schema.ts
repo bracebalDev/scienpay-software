@@ -5,6 +5,7 @@ import { FINANCIAL_RULES } from '../constants/currency.constants.js';
 export const createPaymentRequestSchema = z.object({
   projectId: z.string().uuid('ID de proyecto inválido'),
   causationBatchId: z.string().uuid('ID de lote de causación inválido'),
+  periodDescription: z.string().trim().max(150).optional().default(''),
   requestedAmount: z
     .number()
     .min(FINANCIAL_RULES.MIN_AMOUNT, `El monto mínimo es ${FINANCIAL_RULES.MIN_AMOUNT}`)
@@ -25,7 +26,8 @@ export const rejectPaymentRequestSchema = z.object({
 export type RejectPaymentRequestInput = z.infer<typeof rejectPaymentRequestSchema>;
 
 export const registerDisbursementSchema = z.object({
-  disbursementDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)'),
+  paymentRequestId: z.string().uuid('ID de solicitud de pago inválido').optional(),
+  disbursementDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)').optional(),
   totalDeliveredAmount: z
     .number()
     .min(FINANCIAL_RULES.MIN_AMOUNT, `El monto mínimo es ${FINANCIAL_RULES.MIN_AMOUNT}`)
