@@ -7,11 +7,12 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { UserRole, createUserSchema } from '@scienpay/shared';
+import { UserRole, createUserSchema, type CreateUserInput } from '@scienpay/shared';
 import { UsersService } from './users.service.js';
 import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard.js';
 import { RolesGuard } from '../../infrastructure/auth/roles.guard.js';
 import { Roles } from '../../infrastructure/auth/roles.decorator.js';
+import { ZodValidationPipe } from '../../infrastructure/validation/zod-validation.pipe.js';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -25,9 +26,10 @@ export class UsersController {
   }
 
   @Post()
-  async createUser(@Body() body: any) {
-    createUserSchema.parse(body);
-    const username = body.username || body.email.split('@')[0];
+  async createUser(
+    @Body(new ZodValidationPipe(createUserSchema)) body: CreateUserInput,
+  ) {
+    const username = body.email.split('@')[0];
     return this.usersService.createUser({ ...body, username });
   }
 

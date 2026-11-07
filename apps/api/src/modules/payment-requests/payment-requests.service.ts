@@ -14,11 +14,13 @@ import {
   CreatePaymentRequestInput,
   RejectPaymentRequestInput,
   PaymentRequestStatus,
+  CausationBatchStatus,
   UserRole,
 } from '@scienpay/shared';
 import { PaymentRequestStateMachine } from '../../domain/payment-requests/payment-request-state-machine.js';
 import { RolePermissionsPolicy } from '../../domain/security/role-permissions.policy.js';
 import { eq, desc } from 'drizzle-orm';
+import { Decimal } from 'decimal.js';
 
 @Injectable()
 export class PaymentRequestsService {
@@ -63,7 +65,31 @@ export class PaymentRequestsService {
       throw new NotFoundException('LOTE_NO_ENCONTRADO: El lote de causación no existe');
     }
 
-    // 2. Generar código correlativo de solicitud: SOL-YYYY-NNN
+    // 2. Un lote anulado no puede originar nuevas solicitudes.
+    if (batch.status === CausationBatchStatus.ANULADO) {
+      throw new ConflictException(
+        'LOTE_ANULADO: No se puede crear una solicitud a partir de un lote de causación anulado',
+      );
+    }
+
+    // 3. El lote debe pertenecer al proyecto indicado en la solicitud.
+    if (batch.projectId !== input.projectId) {
+      throw new ConflictException(
+        'PROYECTO_INCOMPATIBLE: El lote de causación no pertenece al proyecto indicado',
+      );
+    }
+
+    // 4. El monto solicitado no puede exceder el total causado del lote.
+    const requestedAmount = new Decimal(input.requestedAmount);
+    const totalCausation = new Decimal(batch.totalCausationAmount);
+
+    if (requestedAmount.greaterThan(totalCausation)) {
+      throw new ConflictException(
+        'MONTO_EXCEDE_CAUSACION: El monto solicitado no puede exceder el total causado del lote',
+      );
+    }
+
+    // 5. Generar código correlativo de solicitud: SOL-YYYY-NNN
     const year = new Date().getFullYear();
     const countResult = await this.databaseService.db
       .select({ id: paymentRequests.id })
@@ -78,7 +104,7 @@ export class PaymentRequestsService {
         projectId: input.projectId,
         causationBatchId: input.causationBatchId,
         periodDescription: input.periodDescription || `${batch.periodStartDate} al ${batch.periodEndDate}`,
-        totalAmountUSD: batch.totalCausationAmount,
+        totalAmountUSD: requestedAmount.toFixed(2),
         status: PaymentRequestStatus.BORRADOR,
         createdByUserId: userId,
       })

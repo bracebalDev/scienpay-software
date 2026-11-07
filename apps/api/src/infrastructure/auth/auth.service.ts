@@ -1,3 +1,4 @@
+import { Injectable, Optional } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import crypto from 'node:crypto';
 import { UserRole } from '@scienpay/shared';
@@ -21,11 +22,16 @@ export interface RefreshTokenClaims extends UserTokenPayload {
   exp: number;
 }
 
+@Injectable()
 export class AuthService {
   constructor(
     private readonly passwordService: PasswordService,
-    private readonly jwtAccessSecret: string = process.env.JWT_ACCESS_SECRET || 'dev_jwt_access_secret_scienpay_minimum_64_characters_super_secure_key_12345',
-    private readonly jwtRefreshSecret: string = process.env.JWT_REFRESH_SECRET || 'dev_jwt_refresh_secret_scienpay_minimum_64_characters_super_secure_key_67890',
+    @Optional()
+    private readonly jwtAccessSecret: string = process.env.JWT_ACCESS_SECRET ||
+      'dev_jwt_access_secret_scienpay_minimum_64_characters_super_secure_key_12345',
+    @Optional()
+    private readonly jwtRefreshSecret: string = process.env.JWT_REFRESH_SECRET ||
+      'dev_jwt_refresh_secret_scienpay_minimum_64_characters_super_secure_key_67890',
   ) {}
 
   generateAccessToken(user: UserTokenPayload): string {
@@ -45,7 +51,10 @@ export class AuthService {
     return jwt.verify(token, this.jwtAccessSecret) as AccessTokenClaims;
   }
 
-  generateRefreshToken(user: UserTokenPayload, existingFamilyId?: string): { refreshToken: string; familyId: string } {
+  generateRefreshToken(
+    user: UserTokenPayload,
+    existingFamilyId?: string,
+  ): { refreshToken: string; familyId: string } {
     const familyId = existingFamilyId || crypto.randomUUID();
     const refreshToken = jwt.sign(
       {
@@ -56,7 +65,7 @@ export class AuthService {
         familyId,
       },
       this.jwtRefreshSecret,
-      { expiresIn: '7d' },
+      { expiresIn: '7d', jwtid: crypto.randomUUID() },
     );
 
     return { refreshToken, familyId };

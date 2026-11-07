@@ -9,11 +9,16 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { UserRole, registerDisbursementSchema } from '@scienpay/shared';
+import {
+  UserRole,
+  registerDisbursementSchema,
+  type RegisterDisbursementInput,
+} from '@scienpay/shared';
 import { DisbursementsService } from './disbursements.service.js';
 import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard.js';
 import { RolesGuard } from '../../infrastructure/auth/roles.guard.js';
 import { Roles } from '../../infrastructure/auth/roles.decorator.js';
+import { ZodValidationPipe } from '../../infrastructure/validation/zod-validation.pipe.js';
 
 @Controller('disbursements')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -55,8 +60,10 @@ export class DisbursementsController {
 
   @Post()
   @Roles(UserRole.RECEPTOR)
-  async registerDisbursement(@Body() body: unknown, @Req() req: any) {
-    const parsed = registerDisbursementSchema.parse(body);
-    return this.disbursementsService.registerDisbursement(parsed, req.user.id);
+  async registerDisbursement(
+    @Body(new ZodValidationPipe(registerDisbursementSchema)) body: RegisterDisbursementInput,
+    @Req() req: any,
+  ) {
+    return this.disbursementsService.registerDisbursement(body, req.user.id);
   }
 }

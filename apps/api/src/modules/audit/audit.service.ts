@@ -19,8 +19,9 @@ export interface RecordAuditEventInput {
 export class AuditService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async recordEvent(event: RecordAuditEventInput) {
-    const [entry] = await this.databaseService.db
+  async recordEvent(event: RecordAuditEventInput, tx?: any) {
+    const db = tx || this.databaseService.db;
+    const [entry] = await db
       .insert(auditLog)
       .values({
         userId: event.userId || null,

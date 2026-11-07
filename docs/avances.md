@@ -56,6 +56,19 @@
 
 ---
 
+### 📅 7 de Noviembre de 2026
+
+#### 📌 Fase 1: Correcciones Críticas de Backend (rama `plan/execution-tracking`)
+- **Inmutabilidad financiera a nivel de columna:** migración `0002_fix_causation_immutability_and_receipt_sequences.sql`. `causation_items` solo admite cambios en `paid_amount`, `remaining_debt` y `status`; `causation_batches` solo admite los campos de anulación. `DELETE` sigue bloqueado en ambas tablas.
+- **Secuencia de recibos sin huecos:** tabla `receipt_sequences` y función transaccional `next_receipt_number(year)`, sembrada desde los recibos existentes. Un `ROLLBACK` ya no consume números.
+- **Redondeo unificado:** ADR-002 y `docs/uso-de-ia.md` alineados con el código real (`ROUND_HALF_UP`). No se alteró ningún resultado financiero.
+- **Autenticación completa:** login con `identifier` (usuario o correo), refresh token rotativo con `jti`, detección de replay, revocación de toda la familia y rate limiting de 5 intentos por minuto por IP. Nuevo endpoint `POST /api/v1/auth/refresh`, `POST /api/v1/auth/logout` y `GET /api/v1/auth/me`.
+- **Validación global:** `ZodExceptionFilter` traduce cualquier `ZodError` a HTTP 400 con detalle por campo; `ZodValidationPipe` reutilizable sustituye las llamadas `.parse()` dispersas en 9 controladores.
+- **Anulación de causación:** `POST /api/v1/causation/batches/:id/annul` con motivo mínimo de 10 caracteres, bloqueo de lotes con solicitudes o pagos, anulación transaccional de ítems y auditoría `ANULACION_CAUSACION`. La creación de solicitudes rechaza lotes anulados, proyectos incompatibles y montos superiores al total causado.
+- **Verificación:** `npm run typecheck` sin errores y **72/72 tests** pasando en `@scienpay/api`.
+
+---
+
 ## 2. Mapa y Convención de Ramas en GitHub
 
 El equipo trabaja bajo el modelo **GitFlow Adaptado**, respetando las siguientes directrices:
@@ -69,6 +82,7 @@ El equipo trabaja bajo el modelo **GitFlow Adaptado**, respetando las siguientes
 | [`chore/setup-monorepo`](https://github.com/bracebalDev/scienpay-software/tree/chore/setup-monorepo) | Workspaces, Zod, TypeScript, ADRs | Completada y subida |
 | [`chore/devops-docker-ci`](https://github.com/bracebalDev/scienpay-software/tree/chore/devops-docker-ci) | Docker multi-stage, Nginx, CI Actions | Completada y subida |
 | [`feature/frontend-responsive`](https://github.com/bracebalDev/scienpay-software/tree/feature/frontend-responsive) | Notion Workspace, Login, Timer 5 min, Vistas RBAC | Completada y subida |
+| `plan/execution-tracking` | Ejecución controlada de Fases 1–3 del plan de completitud | En progreso (Fase 1 completada) |
 
 ---
 

@@ -127,3 +127,22 @@
   - Despliegue exitoso verificado en vivo en `https://scienpay-app.fly.dev` con endpoint de salud `https://scienpay-app.fly.dev/api/v1/health` retornando estado `ok`.
 - **Cambios Manuales Realizados y Motivo:**
   - Se unificó el servicio de la SPA dentro de NestJS para no requerir un segundo servicio o máquina virtual separada en la nube, optimizando recursos y garantizando latencia cero entre cliente y servidor.
+
+#### Sesión 15: Ejecución Controlada de Fases 1–3 del Plan de Completitud (rama `plan/execution-tracking`)
+- **Fecha:** 7 de Noviembre de 2026
+- **Herramienta de análisis y planificación:** Nemotron 3 Ultra (Free) vía OpenRouter, ejecutado en OpenCode.
+- **Herramienta de ejecución:** DeepSeek V4.1 Flash Free vía OpenCode Zen.
+- **Objetivo del Prompt:** Ejecutar únicamente las Fases 1, 2 y 3 del plan de completitud de Scienpay, sin tocar `main` ni iniciar las Fases 4 y 5. Mantener `docs/HANDOFF.md` como especificación viva y registrar cada decisión, hallazgo y validación en `docs/avances.md`, `docs/bitacora_ia.md`, `docs/uso-de-ia.md` y `docs/decisiones/`.
+- **Resultado Obtenido (Fase 1):**
+  - Migración `0002` con triggers de inmutabilidad por columna y contador transaccional de recibos `receipt_sequences` / `next_receipt_number(year)`.
+  - Motor `FinancialImmutabilityEngine` ampliado con `CAUSATION_ITEM_MUTABLE_COLUMNS`, `CAUSATION_BATCH_MUTABLE_COLUMNS` y DDL de la secuencia transaccional.
+  - Autenticación con identificador único (`username` o `email`), refresh rotativo con `jti`, detección de replay, revocación de familia y rate limiting de 5 intentos/minuto por IP.
+  - `ZodExceptionFilter` global y `ZodValidationPipe` reutilizable aplicados a 9 controladores; el login conserva `safeParse` para responder 401.
+  - Anulación formal de causación con `CausationAnnulmentPolicy`, endpoint `POST /causation/batches/:id/annul`, auditoría transaccional y validaciones de lote/proyecto/monto en la creación de solicitudes.
+  - Suite backend: **72/72 tests** pasando; `typecheck` sin errores en `@scienpay/shared` y `@scienpay/api`.
+- **Cambios Manuales Realizados y Motivo:**
+  - Se añadió `jwtid` aleatorio a los refresh tokens porque dos emisiones en el mismo segundo generaban tokens idénticos y la rotación no invalidaba el anterior.
+  - Se ajustaron los tests de inmutabilidad para verificar la lista negra de columnas (inmutables presentes, mutables ausentes), que es el mecanismo real del trigger.
+  - Se extrajo la política de anulación a una clase pura de dominio para poder probarla sin PostgreSQL, dado que Docker no está disponible en el entorno de ejecución.
+  - No se ejecutaron tests de integración contra PostgreSQL por ausencia de Docker; la limitación quedó registrada en `docs/HANDOFF.md`.
+

@@ -38,6 +38,15 @@ Este documento registra los prompts utilizados, las decisiones aceptadas y recha
 - **Objetivo del Prompt:** Incorporar el archivo de imagen oficial `logo web.jpg` en la aplicación web como favicon e imagotipo en componentes UI; documentar detalladamente el progreso del proyecto en un archivo fechado `docs/avances.md` para facilitar la trazabilidad y consulta por parte de los compañeros de equipo; y mantener la convención estricta de ramas en GitHub con Conventional Commits.
 - **Herramientas de IA utilizadas:** Asistente de codificación, documentación y gestión de repositorios Git.
 
+### Sesión 5: Ejecución Controlada de Fases 1–3 (rama `plan/execution-tracking`)
+- **Fecha:** Noviembre 2026
+- **Modelo de análisis y planificación:** Nemotron 3 Ultra (Free) vía OpenRouter en OpenCode.
+- **Modelo de ejecución:** DeepSeek V4.1 Flash Free vía OpenCode Zen.
+- **Prompt de Entrada:**
+  > "Ejecuta únicamente las Fases 1, 2 y 3 del plan de completitud de Scienpay en la rama `plan/execution-tracking`. No toques `main`, no inicies las Fases 4 ni 5. Mantén `docs/HANDOFF.md` como especificación viva y documenta cada avance, decisión y validación en `docs/avances.md`, `docs/bitacora_ia.md`, `docs/uso-de-ia.md` y `docs/decisiones/`. Sin adivinanzas ni supuestos: toda decisión debe quedar documentada."
+- **Objetivo del Prompt:** Completar las correcciones críticas de backend (Fase 1), los módulos backend faltantes (Fase 2) y la conexión real del frontend a la API (Fase 3), con verificación de typecheck, tests y build, commits atómicos y trazabilidad documental completa.
+- **Herramientas de IA utilizadas:** Nemotron 3 Ultra (Free) para análisis/planificación y DeepSeek V4.1 Flash Free para ejecución, ambos en OpenCode.
+
 ---
 
 ## 2. Decisiones Aceptadas vs. Rechazadas
@@ -46,9 +55,17 @@ Este documento registra los prompts utilizados, las decisiones aceptadas y recha
 |---|---|---|---|
 | **DEC-IA-01** | Uso de arquitectura Monorepo con npm workspaces para alojar `apps/api`, `apps/web` y `packages/shared`. | **Aceptada** | Permite compartir tipos y esquemas de validación Zod sin duplicar código entre cliente y servidor. |
 | **DEC-IA-02** | Selección de Drizzle ORM sobre Prisma. | **Aceptada** | Drizzle permite generar y ejecutar SQL nativo directo para triggers de inmutabilidad (`BEFORE UPDATE OR DELETE`), secuencias consecutivas sin huecos (`CREATE SEQUENCE`) e índices de exclusión (`btree_gist`), reduciendo el overhead en runtime. |
-| **DEC-IA-03** | Cálculo de causaciones en memoria con flotantes y redondeo JavaScript nativo (`Math.round`). | **Rechazada** | En sistemas financieros está estrictamente prohibido el uso de flotantes binarios. Se adoptó `decimal.js` y `NUMERIC(14,2)` con política de redondeo bancario (*Half to Even*). |
+| **DEC-IA-03** | Cálculo de causaciones en memoria con flotantes y redondeo JavaScript nativo (`Math.round`). | **Rechazada** | En sistemas financieros está estrictamente prohibido el uso de flotantes binarios. Se adoptó `decimal.js` y `NUMERIC(14,2)` con política `ROUND_HALF_UP` (decisión unificada el 2026-11-07; ver ADR-002). |
 | **DEC-IA-04** | Almacenamiento de refresh tokens en localStorage del navegador. | **Rechazada** | Inseguro frente a ataques XSS. Se implementó cookie `HttpOnly`, `Secure`, `SameSite=Strict` con rotación estricta y detección de reutilización por familia. |
 | **DEC-IA-05** | Regla de cuatro ojos validada únicamente en el cliente deshabilitando botones. | **Rechazada** | La interfaz es fácilmente manipulable. La regla se impone estrictamente en el backend (`created_by_user_id !== reviewer_user_id`) y a nivel de restricción en base de datos. |
+| **DEC-IA-06** | Mantener el redondeo bancario *Half to Even* documentado en ADR-002. | **Rechazada** | Todo el código financiero ya usa `ROUND_HALF_UP` y los tests documentan `10.125 → 10.13`. Se actualizó ADR-002 para eliminar la contradicción sin alterar resultados. |
+| **DEC-IA-07** | Permitir `UPDATE` completo en `causation_items` y `causation_batches` para desbloquear pagos y anulaciones. | **Rechazada** | Se implementó una lista negra por columna: solo `paid_amount`, `remaining_debt` y `status` en ítems; solo campos de anulación en lotes. `DELETE` permanece bloqueado. |
+| **DEC-IA-08** | Seguir usando `nextval('receipt_number_seq')` para numerar recibos. | **Rechazada** | `nextval` no es transaccional y deja huecos ante rollback. Se creó `receipt_sequences` + `next_receipt_number(year)` dentro de la transacción del desembolso. |
+| **DEC-IA-09** | Login solo por correo electrónico. | **Rechazada** | El requisito funcional exige usuario o correo. `loginSchema` ahora usa `identifier` y el backend busca por `username` o `email`. |
+| **DEC-IA-10** | Rate limiting con dependencia externa (`@nestjs/throttler`). | **Rechazada** | Se implementó `LoginRateLimiter` en memoria (5/min por IP) para no añadir dependencias; queda documentado que debe migrarse a un almacén compartido si se escala horizontalmente. |
+| **DEC-IA-11** | Mantener `.parse()` disperso en los controladores. | **Rechazada** | Se creó `ZodValidationPipe` reutilizable y `ZodExceptionFilter` global; los schemas compartidos siguen siendo la única fuente de verdad. |
+| **DEC-IA-12** | Permitir anular lotes de causación con solicitudes o pagos asociados. | **Rechazada** | `CausationAnnulmentPolicy` bloquea lotes inexistentes, ya anulados, con solicitudes o con pagos aplicados. La anulación es transaccional y genera auditoría `ANULACION_CAUSACION`. |
+| **DEC-IA-13** | Ignorar `requestedAmount` y usar siempre el total causado del lote al crear una solicitud. | **Rechazada** | El contrato Zod ya expone `requestedAmount`; se usa como `totalAmountUSD` y se rechaza si excede el total causado del lote. |
 
 ---
 
