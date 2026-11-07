@@ -67,6 +67,15 @@
 - **Anulación de causación:** `POST /api/v1/causation/batches/:id/annul` con motivo mínimo de 10 caracteres, bloqueo de lotes con solicitudes o pagos, anulación transaccional de ítems y auditoría `ANULACION_CAUSACION`. La creación de solicitudes rechaza lotes anulados, proyectos incompatibles y montos superiores al total causado.
 - **Verificación:** `npm run typecheck` sin errores y **72/72 tests** pasando en `@scienpay/api`.
 
+#### 📌 Fase 2: Completar Módulos Backend Faltantes
+- **Caja chica completa:** nuevos `GET /api/v1/petty-cash/:id/periods` y `GET /api/v1/petty-cash/periods/:periodId/vouchers`. `createPettyCash` valida que todos los proyectos existan; `openPeriod` bloquea la caja con `FOR UPDATE`, exige que el período previo esté cerrado y arrastra el saldo de cierre; `requestVoucher` valida período abierto, pertenencia del proyecto y usa `next_voucher_number(year)`; desembolso y rendición bloquean período y vale en orden consistente; `closePeriod` rechaza vales en estado `SOLICITADO`, `APROBADO` o `DESEMBOLSADO`.
+- **Migración `0003`:** tabla `voucher_sequences` + función `next_voucher_number(year)` con siembra desde vales existentes; sustitución de `uq_causation_batch_idempotence` por el índice parcial `uq_causation_batch_idempotence_active` que excluye lotes `ANULADO`.
+- **Auditoría consultable:** `auditQuerySchema` compartido con filtros `userId`, `entity`, `action`, `dateFrom`, `dateTo`, `page` y `limit` (máximo 200); respuesta paginada `{ data, total, page, limit, totalPages }`; solo ADMIN.
+- **PDF consolidado de solicitud:** `PdfReceiptGenerator.generatePaymentRequestPdf` y `GET /api/v1/payment-requests/:id/pdf`, con cabecera institucional, desglose por beneficiario (causado/pagado/pendiente), totales y firmas.
+- **FIFO transaccional y determinista:** `registerDisbursement` se ejecuta en una única transacción, bloquea la solicitud y los ítems con `FOR UPDATE`, filtra causaciones por proyecto mediante join con `causation_batches`, excluye ítems anulados o sin deuda, valida beneficiarios duplicados y la cuadratura entre `totalDeliveredAmount` y la suma de asignaciones. El motor FIFO desempata por ID cuando dos cuotas comparten fecha.
+- **Recibos sin huecos:** `next_receipt_number(year)` se invoca dentro de la transacción del desembolso; un rollback revierte el contador.
+- **Verificación:** `npm run typecheck` sin errores y **87/87 tests** pasando en `@scienpay/api`; build de API y typecheck de web correctos.
+
 ---
 
 ## 2. Mapa y Convención de Ramas en GitHub
@@ -82,7 +91,7 @@ El equipo trabaja bajo el modelo **GitFlow Adaptado**, respetando las siguientes
 | [`chore/setup-monorepo`](https://github.com/bracebalDev/scienpay-software/tree/chore/setup-monorepo) | Workspaces, Zod, TypeScript, ADRs | Completada y subida |
 | [`chore/devops-docker-ci`](https://github.com/bracebalDev/scienpay-software/tree/chore/devops-docker-ci) | Docker multi-stage, Nginx, CI Actions | Completada y subida |
 | [`feature/frontend-responsive`](https://github.com/bracebalDev/scienpay-software/tree/feature/frontend-responsive) | Notion Workspace, Login, Timer 5 min, Vistas RBAC | Completada y subida |
-| `plan/execution-tracking` | Ejecución controlada de Fases 1–3 del plan de completitud | En progreso (Fase 1 completada) |
+| `plan/execution-tracking` | Ejecución controlada de Fases 1–3 del plan de completitud | En progreso (Fases 1–2 completadas) |
 
 ---
 

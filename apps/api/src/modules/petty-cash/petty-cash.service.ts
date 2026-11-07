@@ -23,8 +23,14 @@ import {
   PettyCashMovementType,
 } from '@scienpay/shared';
 import { PettyCashLedgerEngine } from '../../domain/petty-cash/petty-cash-ledger.engine.js';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, or, desc, inArray, sql } from 'drizzle-orm';
 import { Decimal } from 'decimal.js';
+
+const PENDING_VOUCHER_STATUSES = [
+  PettyCashVoucherStatus.SOLICITADO,
+  PettyCashVoucherStatus.APROBADO,
+  PettyCashVoucherStatus.DESEMBOLSADO,
+];
 
 @Injectable()
 export class PettyCashService {
@@ -34,299 +40,492 @@ export class PettyCashService {
     return this.databaseService.db.select().from(pettyCash).orderBy(pettyCash.name);
   }
 
-  async createPettyCash(input: CreatePettyCashInput) {
-    const [created] = await this.databaseService.db
-      .insert(pettyCash)
-      .values({
-        name: input.name,
-        description: input.description || '',
-        custodianName: input.custodianName,
-        status: PettyCashStatus.ACTIVA,
-      })
-      .returning();
-
-    for (const projectId of input.projectIds) {
-      await this.databaseService.db.insert(pettyCashProjects).values({
-        pettyCashId: created.id,
-        projectId,
-      });
-    }
-
-    return created;
-  }
-
-  async openPeriod(pettyCashId: string, input: OpenPettyCashPeriodInput, userId: string) {
-    // 1. Verificar si ya existe período abierto para ese año y mes
-    const existing = await this.databaseService.db
-      .select({ id: pettyCashPeriods.id })
-      .from(pettyCashPeriods)
-      .where(
-        and(
-          eq(pettyCashPeriods.pettyCashId, pettyCashId),
-          eq(pettyCashPeriods.periodYear, input.periodYear),
-          eq(pettyCashPeriods.periodMonth, input.periodMonth),
-        ),
-      )
+  async listPeriods(pettyCashId: string) {
+    const [cash] = await this.databaseService.db
+      .select({ id: pettyCash.id })
+      .from(pettyCash)
+      .where(eq(pettyCash.id, pettyCashId))
       .limit(1);
 
-    if (existing.length > 0) {
-      throw new ConflictException('PERIODO_EXISTENTE: Ya existe un período registrado para este mes y año');
+    if (!cash) {
+      throw new NotFoundException('CAJA_NO_ENCONTRADA: La caja chica no existe');
     }
 
-    // 2. Comprobar si existe un mes anterior cerrado para arrastre de saldo automático
-    let openingBal = new Decimal(input.openingBalance);
-    const [previousPeriod] = await this.databaseService.db
+    return this.databaseService.db
       .select()
       .from(pettyCashPeriods)
       .where(eq(pettyCashPeriods.pettyCashId, pettyCashId))
-      .orderBy(desc(pettyCashPeriods.periodYear), desc(pettyCashPeriods.periodMonth))
+      .orderBy(desc(pettyCashPeriods.periodYear), desc(pettyCashPeriods.periodMonth));
+  }
+
+  async listVouchers(periodId: string) {
+    const [period] = await this.databaseService.db
+      .select({ id: pettyCashPeriods.id })
+      .from(pettyCashPeriods)
+      .where(eq(pettyCashPeriods.id, periodId))
       .limit(1);
 
-    if (previousPeriod && previousPeriod.status === PettyCashPeriodStatus.CERRADO) {
-      openingBal = new Decimal(previousPeriod.closingBalance);
+    if (!period) {
+      throw new NotFoundException('PERIODO_NO_ENCONTRADO: El período de caja chica no existe');
     }
 
-    const [period] = await this.databaseService.db
-      .insert(pettyCashPeriods)
-      .values({
-        pettyCashId,
-        periodYear: input.periodYear,
-        periodMonth: input.periodMonth,
-        openingBalance: openingBal.toFixed(2),
-        disbursedTotal: '0.00',
-        renderedTotal: '0.00',
-        closingBalance: openingBal.toFixed(2),
-        status: PettyCashPeriodStatus.ABIERTO,
-        openedByUserId: userId,
-      })
-      .returning();
+    return this.databaseService.db
+      .select()
+      .from(pettyCashVouchers)
+      .where(eq(pettyCashVouchers.pettyCashPeriodId, periodId))
+      .orderBy(desc(pettyCashVouchers.createdAt));
+  }
 
-    // Registrar movimiento inmutable de apertura
-    await this.databaseService.db.insert(pettyCashMovements).values({
-      pettyCashPeriodId: period.id,
-      movementType: PettyCashMovementType.APERTURA_ARRASTRE,
-      amount: openingBal.toFixed(2),
-      previousBalance: '0.00',
-      newBalance: openingBal.toFixed(2),
-      performedByUserId: userId,
-      notes: `Apertura mensual del período ${input.periodYear}-${input.periodMonth}`,
+  async createPettyCash(input: CreatePettyCashInput) {
+    const uniqueProjectIds = [...new Set(input.projectIds)];
+
+    return this.databaseService.db.transaction(async (tx) => {
+      const existingProjects = await tx
+        .select({ id: projects.id })
+        .from(projects)
+        .where(inArray(projects.id, uniqueProjectIds));
+
+      if (existingProjects.length !== uniqueProjectIds.length) {
+        const found = new Set(existingProjects.map((project) => project.id));
+        const missing = uniqueProjectIds.filter((id) => !found.has(id));
+        throw new NotFoundException(
+          `PROYECTO_NO_ENCONTRADO: Los siguientes proyectos no existen: ${missing.join(', ')}`,
+        );
+      }
+
+      const [created] = await tx
+        .insert(pettyCash)
+        .values({
+          name: input.name,
+          description: input.description || '',
+          custodianName: input.custodianName,
+          status: PettyCashStatus.ACTIVA,
+        })
+        .returning();
+
+      for (const projectId of uniqueProjectIds) {
+        await tx.insert(pettyCashProjects).values({
+          pettyCashId: created.id,
+          projectId,
+        });
+      }
+
+      return created;
     });
+  }
 
-    return period;
+  async openPeriod(pettyCashId: string, input: OpenPettyCashPeriodInput, userId: string) {
+    return this.databaseService.db.transaction(async (tx) => {
+      const [cash] = await tx
+        .select()
+        .from(pettyCash)
+        .where(eq(pettyCash.id, pettyCashId))
+        .limit(1)
+        .for('update');
+
+      if (!cash) {
+        throw new NotFoundException('CAJA_NO_ENCONTRADA: La caja chica no existe');
+      }
+
+      if (cash.status !== PettyCashStatus.ACTIVA) {
+        throw new ConflictException('CAJA_INACTIVA: No se pueden abrir períodos en una caja chica inactiva');
+      }
+
+      const existing = await tx
+        .select({ id: pettyCashPeriods.id })
+        .from(pettyCashPeriods)
+        .where(
+          and(
+            eq(pettyCashPeriods.pettyCashId, pettyCashId),
+            eq(pettyCashPeriods.periodYear, input.periodYear),
+            eq(pettyCashPeriods.periodMonth, input.periodMonth),
+          ),
+        )
+        .limit(1);
+
+      if (existing.length > 0) {
+        throw new ConflictException('PERIODO_EXISTENTE: Ya existe un período registrado para este mes y año');
+      }
+
+      // El arrastre solo puede provenir del período inmediatamente anterior y cerrado.
+      const [previousPeriod] = await tx
+        .select()
+        .from(pettyCashPeriods)
+        .where(
+          and(
+            eq(pettyCashPeriods.pettyCashId, pettyCashId),
+            or(
+              sql`${pettyCashPeriods.periodYear} < ${input.periodYear}`,
+              and(
+                eq(pettyCashPeriods.periodYear, input.periodYear),
+                sql`${pettyCashPeriods.periodMonth} < ${input.periodMonth}`,
+              ),
+            ),
+          ),
+        )
+        .orderBy(desc(pettyCashPeriods.periodYear), desc(pettyCashPeriods.periodMonth))
+        .limit(1);
+
+      if (previousPeriod && previousPeriod.status !== PettyCashPeriodStatus.CERRADO) {
+        throw new ConflictException(
+          'PERIODO_PREVIO_ABIERTO: Debe cerrar el período anterior antes de abrir uno nuevo',
+        );
+      }
+
+      let openingBal = new Decimal(input.openingBalance);
+
+      if (previousPeriod) {
+        openingBal = new Decimal(previousPeriod.closingBalance);
+      }
+
+      const [period] = await tx
+        .insert(pettyCashPeriods)
+        .values({
+          pettyCashId,
+          periodYear: input.periodYear,
+          periodMonth: input.periodMonth,
+          openingBalance: openingBal.toFixed(2),
+          disbursedTotal: '0.00',
+          renderedTotal: '0.00',
+          closingBalance: openingBal.toFixed(2),
+          status: PettyCashPeriodStatus.ABIERTO,
+          openedByUserId: userId,
+        })
+        .returning();
+
+      await tx.insert(pettyCashMovements).values({
+        pettyCashPeriodId: period.id,
+        movementType: PettyCashMovementType.APERTURA_ARRASTRE,
+        amount: openingBal.toFixed(2),
+        previousBalance: '0.00',
+        newBalance: openingBal.toFixed(2),
+        performedByUserId: userId,
+        notes: `Apertura mensual del período ${input.periodYear}-${input.periodMonth}`,
+      });
+
+      return period;
+    });
   }
 
   async requestVoucher(periodId: string, input: RequestPettyCashVoucherInput, requestedBy: string) {
-    const [period] = await this.databaseService.db
-      .select()
-      .from(pettyCashPeriods)
-      .where(eq(pettyCashPeriods.id, periodId))
-      .limit(1);
+    return this.databaseService.db.transaction(async (tx) => {
+      const [period] = await tx
+        .select()
+        .from(pettyCashPeriods)
+        .where(eq(pettyCashPeriods.id, periodId))
+        .limit(1)
+        .for('update');
 
-    if (!period || period.status !== PettyCashPeriodStatus.ABIERTO) {
-      throw new ConflictException('PERIODO_CERRADO: No se pueden emitir vales sobre un período cerrado o inexistente');
-    }
+      if (!period) {
+        throw new NotFoundException('PERIODO_NO_ENCONTRADO: El período de caja chica no existe');
+      }
 
-    const year = period.periodYear;
-    const countVouchers = await this.databaseService.db
-      .select({ id: pettyCashVouchers.id })
-      .from(pettyCashVouchers)
-      .where(eq(pettyCashVouchers.pettyCashPeriodId, periodId));
-    const nextSeq = (countVouchers.length + 1).toString().padStart(4, '0');
-    const voucherNumber = `VAL-${year}-${nextSeq}`;
+      if (period.status !== PettyCashPeriodStatus.ABIERTO) {
+        throw new ConflictException(
+          'PERIODO_CERRADO: No se pueden emitir vales sobre un período cerrado',
+        );
+      }
 
-    const [voucher] = await this.databaseService.db
-      .insert(pettyCashVouchers)
-      .values({
-        voucherNumber,
-        pettyCashPeriodId: periodId,
-        projectId: input.projectId,
-        requestedAmount: new Decimal(input.requestedAmount).toFixed(2),
-        purpose: input.purpose,
-        status: PettyCashVoucherStatus.SOLICITADO,
-        requestedBy,
-      })
-      .returning();
+      const [projectLink] = await tx
+        .select({ projectId: pettyCashProjects.projectId })
+        .from(pettyCashProjects)
+        .where(
+          and(
+            eq(pettyCashProjects.pettyCashId, period.pettyCashId),
+            eq(pettyCashProjects.projectId, input.projectId),
+          ),
+        )
+        .limit(1);
 
-    return voucher;
+      if (!projectLink) {
+        throw new ConflictException(
+          'PROYECTO_NO_ASOCIADO: El proyecto no está asociado a la caja chica de este período',
+        );
+      }
+
+      const year = period.periodYear;
+      const sequenceResult = await tx.execute(
+        sql`SELECT next_voucher_number(${year}) AS next_number`,
+      );
+      const nextNumber = Number((sequenceResult as any)[0]?.next_number ?? 0);
+
+      if (!Number.isFinite(nextNumber) || nextNumber <= 0) {
+        throw new ConflictException('SECUENCIA_VALE_INVALIDA: No se pudo reservar el número de vale');
+      }
+
+      const voucherNumber = `VAL-${year}-${nextNumber.toString().padStart(4, '0')}`;
+
+      const [voucher] = await tx
+        .insert(pettyCashVouchers)
+        .values({
+          voucherNumber,
+          pettyCashPeriodId: periodId,
+          projectId: input.projectId,
+          requestedAmount: new Decimal(input.requestedAmount).toFixed(2),
+          purpose: input.purpose,
+          status: PettyCashVoucherStatus.SOLICITADO,
+          requestedBy,
+        })
+        .returning();
+
+      return voucher;
+    });
   }
 
   async approveVoucher(voucherId: string, userId: string) {
-    const [voucher] = await this.databaseService.db
-      .select()
-      .from(pettyCashVouchers)
-      .where(eq(pettyCashVouchers.id, voucherId))
-      .limit(1);
+    return this.databaseService.db.transaction(async (tx) => {
+      const [voucher] = await tx
+        .select()
+        .from(pettyCashVouchers)
+        .where(eq(pettyCashVouchers.id, voucherId))
+        .limit(1)
+        .for('update');
 
-    if (!voucher || voucher.status !== PettyCashVoucherStatus.SOLICITADO) {
-      throw new ConflictException('ESTADO_INVALIDO: Solo se pueden aprobar vales en estado SOLICITADO');
-    }
+      if (!voucher || voucher.status !== PettyCashVoucherStatus.SOLICITADO) {
+        throw new ConflictException('ESTADO_INVALIDO: Solo se pueden aprobar vales en estado SOLICITADO');
+      }
 
-    const [approved] = await this.databaseService.db
-      .update(pettyCashVouchers)
-      .set({
-        status: PettyCashVoucherStatus.APROBADO,
-        approvedByUserId: userId,
-      })
-      .where(eq(pettyCashVouchers.id, voucherId))
-      .returning();
+      const [approved] = await tx
+        .update(pettyCashVouchers)
+        .set({
+          status: PettyCashVoucherStatus.APROBADO,
+          approvedByUserId: userId,
+        })
+        .where(eq(pettyCashVouchers.id, voucherId))
+        .returning();
 
-    return approved;
+      return approved;
+    });
   }
 
   async disburseVoucher(voucherId: string, userId: string) {
-    const [voucher] = await this.databaseService.db
-      .select()
-      .from(pettyCashVouchers)
-      .where(eq(pettyCashVouchers.id, voucherId))
-      .limit(1);
+    return this.databaseService.db.transaction(async (tx) => {
+      const [voucherSnapshot] = await tx
+        .select()
+        .from(pettyCashVouchers)
+        .where(eq(pettyCashVouchers.id, voucherId))
+        .limit(1);
 
-    if (!voucher || voucher.status !== PettyCashVoucherStatus.APROBADO) {
-      throw new ConflictException('ESTADO_INVALIDO: Solo se pueden desembolsar vales en estado APROBADO');
-    }
+      if (!voucherSnapshot) {
+        throw new NotFoundException('VALE_NO_ENCONTRADO: El vale de caja chica no existe');
+      }
 
-    const [period] = await this.databaseService.db
-      .select()
-      .from(pettyCashPeriods)
-      .where(eq(pettyCashPeriods.id, voucher.pettyCashPeriodId))
-      .limit(1);
+      // Orden de bloqueo consistente: primero período, luego vale.
+      const [period] = await tx
+        .select()
+        .from(pettyCashPeriods)
+        .where(eq(pettyCashPeriods.id, voucherSnapshot.pettyCashPeriodId))
+        .limit(1)
+        .for('update');
 
-    const canDisburse = PettyCashLedgerEngine.canDisburse(period.closingBalance, voucher.requestedAmount);
-    if (!canDisburse) {
-      throw new ConflictException('FONDOS_INSUFICIENTES: El saldo de la caja chica es insuficiente para este desembolso');
-    }
+      if (!period || period.status !== PettyCashPeriodStatus.ABIERTO) {
+        throw new ConflictException(
+          'PERIODO_CERRADO: No se pueden desembolsar vales sobre un período cerrado',
+        );
+      }
 
-    const newBal = PettyCashLedgerEngine.calculateBalanceAfterDisbursement(
-      period.closingBalance,
-      voucher.requestedAmount,
-    );
+      const [voucher] = await tx
+        .select()
+        .from(pettyCashVouchers)
+        .where(eq(pettyCashVouchers.id, voucherId))
+        .limit(1)
+        .for('update');
 
-    const [disbursed] = await this.databaseService.db
-      .update(pettyCashVouchers)
-      .set({
-        status: PettyCashVoucherStatus.DESEMBOLSADO,
-        disbursedByUserId: userId,
-      })
-      .where(eq(pettyCashVouchers.id, voucherId))
-      .returning();
+      if (!voucher || voucher.status !== PettyCashVoucherStatus.APROBADO) {
+        throw new ConflictException('ESTADO_INVALIDO: Solo se pueden desembolsar vales en estado APROBADO');
+      }
 
-    const newDisbursedTotal = new Decimal(period.disbursedTotal).plus(voucher.requestedAmount).toFixed(2);
-    await this.databaseService.db
-      .update(pettyCashPeriods)
-      .set({
-        closingBalance: newBal,
-        disbursedTotal: newDisbursedTotal,
-      })
-      .where(eq(pettyCashPeriods.id, period.id));
+      const canDisburse = PettyCashLedgerEngine.canDisburse(
+        period.closingBalance,
+        voucher.requestedAmount,
+      );
 
-    // Registrar movimiento inmutable de desembolso
-    await this.databaseService.db.insert(pettyCashMovements).values({
-      pettyCashPeriodId: period.id,
-      voucherId: voucher.id,
-      movementType: PettyCashMovementType.DESEMBOLSO_VALE,
-      amount: voucher.requestedAmount,
-      previousBalance: period.closingBalance,
-      newBalance: newBal,
-      performedByUserId: userId,
-      notes: `Desembolso de vale ${voucher.voucherNumber}`,
+      if (!canDisburse) {
+        throw new ConflictException(
+          'FONDOS_INSUFICIENTES: El saldo de la caja chica es insuficiente para este desembolso',
+        );
+      }
+
+      const newBal = PettyCashLedgerEngine.calculateBalanceAfterDisbursement(
+        period.closingBalance,
+        voucher.requestedAmount,
+      );
+
+      const [disbursed] = await tx
+        .update(pettyCashVouchers)
+        .set({
+          status: PettyCashVoucherStatus.DESEMBOLSADO,
+          disbursedByUserId: userId,
+        })
+        .where(eq(pettyCashVouchers.id, voucherId))
+        .returning();
+
+      const newDisbursedTotal = new Decimal(period.disbursedTotal)
+        .plus(voucher.requestedAmount)
+        .toFixed(2);
+
+      await tx
+        .update(pettyCashPeriods)
+        .set({
+          closingBalance: newBal,
+          disbursedTotal: newDisbursedTotal,
+        })
+        .where(eq(pettyCashPeriods.id, period.id));
+
+      await tx.insert(pettyCashMovements).values({
+        pettyCashPeriodId: period.id,
+        voucherId: voucher.id,
+        movementType: PettyCashMovementType.DESEMBOLSO_VALE,
+        amount: voucher.requestedAmount,
+        previousBalance: period.closingBalance,
+        newBalance: newBal,
+        performedByUserId: userId,
+        notes: `Desembolso de vale ${voucher.voucherNumber}`,
+      });
+
+      return disbursed;
     });
-
-    return disbursed;
   }
 
   async renderVoucher(voucherId: string, input: RenderPettyCashVoucherInput, userId: string) {
-    const [voucher] = await this.databaseService.db
-      .select()
-      .from(pettyCashVouchers)
-      .where(eq(pettyCashVouchers.id, voucherId))
-      .limit(1);
+    return this.databaseService.db.transaction(async (tx) => {
+      const [voucherSnapshot] = await tx
+        .select()
+        .from(pettyCashVouchers)
+        .where(eq(pettyCashVouchers.id, voucherId))
+        .limit(1);
 
-    if (!voucher || voucher.status !== PettyCashVoucherStatus.DESEMBOLSADO) {
-      throw new ConflictException('ESTADO_INVALIDO: Solo se pueden rendir vales que hayan sido desembolsados');
-    }
+      if (!voucherSnapshot) {
+        throw new NotFoundException('VALE_NO_ENCONTRADO: El vale de caja chica no existe');
+      }
 
-    // Validar cuadratura exacta
-    const isBalanced = PettyCashLedgerEngine.isReconciliationBalanced({
-      requestedAmount: voucher.requestedAmount,
-      renderedAmount: input.renderedAmount,
-      changeAmount: input.changeAmount,
-    });
+      // Orden de bloqueo consistente: primero período, luego vale.
+      const [period] = await tx
+        .select()
+        .from(pettyCashPeriods)
+        .where(eq(pettyCashPeriods.id, voucherSnapshot.pettyCashPeriodId))
+        .limit(1)
+        .for('update');
 
-    if (!isBalanced) {
-      throw new ConflictException(
-        'RENDICION_DESCUADRADA: La suma del monto rendido y el vuelto debe coincidir exactamente con el monto desembolsado',
-      );
-    }
+      if (!period || period.status !== PettyCashPeriodStatus.ABIERTO) {
+        throw new ConflictException(
+          'PERIODO_CERRADO: No se pueden rendir vales sobre un período cerrado',
+        );
+      }
 
-    const [period] = await this.databaseService.db
-      .select()
-      .from(pettyCashPeriods)
-      .where(eq(pettyCashPeriods.id, voucher.pettyCashPeriodId))
-      .limit(1);
+      const [voucher] = await tx
+        .select()
+        .from(pettyCashVouchers)
+        .where(eq(pettyCashVouchers.id, voucherId))
+        .limit(1)
+        .for('update');
 
-    const changeReturned = new Decimal(input.changeAmount);
-    let currentBalance = new Decimal(period.closingBalance);
+      if (!voucher || voucher.status !== PettyCashVoucherStatus.DESEMBOLSADO) {
+        throw new ConflictException('ESTADO_INVALIDO: Solo se pueden rendir vales que hayan sido desembolsados');
+      }
 
-    if (changeReturned.greaterThan(0)) {
-      currentBalance = currentBalance.plus(changeReturned);
-    }
-
-    const [rendered] = await this.databaseService.db
-      .update(pettyCashVouchers)
-      .set({
-        renderedAmount: new Decimal(input.renderedAmount).toFixed(2),
-        changeAmount: changeReturned.toFixed(2),
-        invoiceReference: input.invoiceReference,
-        status: PettyCashVoucherStatus.RENDIDO,
-      })
-      .where(eq(pettyCashVouchers.id, voucherId))
-      .returning();
-
-    const newRenderedTotal = new Decimal(period.renderedTotal).plus(input.renderedAmount).toFixed(2);
-    await this.databaseService.db
-      .update(pettyCashPeriods)
-      .set({
-        closingBalance: currentBalance.toFixed(2),
-        renderedTotal: newRenderedTotal,
-      })
-      .where(eq(pettyCashPeriods.id, period.id));
-
-    // Si hubo vuelto, registrar movimiento inmutable
-    if (changeReturned.greaterThan(0)) {
-      await this.databaseService.db.insert(pettyCashMovements).values({
-        pettyCashPeriodId: period.id,
-        voucherId: voucher.id,
-        movementType: PettyCashMovementType.DEVOLUCION_CAMBIO,
-        amount: changeReturned.toFixed(2),
-        previousBalance: period.closingBalance,
-        newBalance: currentBalance.toFixed(2),
-        performedByUserId: userId,
-        notes: `Devolución de vuelto de vale ${voucher.voucherNumber} (Factura: ${input.invoiceReference})`,
+      const isBalanced = PettyCashLedgerEngine.isReconciliationBalanced({
+        requestedAmount: voucher.requestedAmount,
+        renderedAmount: input.renderedAmount,
+        changeAmount: input.changeAmount,
       });
-    }
 
-    return rendered;
+      if (!isBalanced) {
+        throw new ConflictException(
+          'RENDICION_DESCUADRADA: La suma del monto rendido y el vuelto debe coincidir exactamente con el monto desembolsado',
+        );
+      }
+
+      const changeReturned = new Decimal(input.changeAmount);
+      let currentBalance = new Decimal(period.closingBalance);
+
+      if (changeReturned.greaterThan(0)) {
+        currentBalance = currentBalance.plus(changeReturned);
+      }
+
+      const [rendered] = await tx
+        .update(pettyCashVouchers)
+        .set({
+          renderedAmount: new Decimal(input.renderedAmount).toFixed(2),
+          changeAmount: changeReturned.toFixed(2),
+          invoiceReference: input.invoiceReference,
+          status: PettyCashVoucherStatus.RENDIDO,
+        })
+        .where(eq(pettyCashVouchers.id, voucherId))
+        .returning();
+
+      const newRenderedTotal = new Decimal(period.renderedTotal)
+        .plus(input.renderedAmount)
+        .toFixed(2);
+
+      await tx
+        .update(pettyCashPeriods)
+        .set({
+          closingBalance: currentBalance.toFixed(2),
+          renderedTotal: newRenderedTotal,
+        })
+        .where(eq(pettyCashPeriods.id, period.id));
+
+      if (changeReturned.greaterThan(0)) {
+        await tx.insert(pettyCashMovements).values({
+          pettyCashPeriodId: period.id,
+          voucherId: voucher.id,
+          movementType: PettyCashMovementType.DEVOLUCION_CAMBIO,
+          amount: changeReturned.toFixed(2),
+          previousBalance: period.closingBalance,
+          newBalance: currentBalance.toFixed(2),
+          performedByUserId: userId,
+          notes: `Devolución de vuelto de vale ${voucher.voucherNumber} (Factura: ${input.invoiceReference})`,
+        });
+      }
+
+      return rendered;
+    });
   }
 
   async closePeriod(periodId: string, userId: string) {
-    const [period] = await this.databaseService.db
-      .select()
-      .from(pettyCashPeriods)
-      .where(eq(pettyCashPeriods.id, periodId))
-      .limit(1);
+    return this.databaseService.db.transaction(async (tx) => {
+      const [period] = await tx
+        .select()
+        .from(pettyCashPeriods)
+        .where(eq(pettyCashPeriods.id, periodId))
+        .limit(1)
+        .for('update');
 
-    if (!period || period.status !== PettyCashPeriodStatus.ABIERTO) {
-      throw new ConflictException('PERIODO_INVALIDO: El período ya está cerrado o no existe');
-    }
+      if (!period || period.status !== PettyCashPeriodStatus.ABIERTO) {
+        throw new ConflictException('PERIODO_INVALIDO: El período ya está cerrado o no existe');
+      }
 
-    const [closed] = await this.databaseService.db
-      .update(pettyCashPeriods)
-      .set({
-        status: PettyCashPeriodStatus.CERRADO,
-        closedByUserId: userId,
-      })
-      .where(eq(pettyCashPeriods.id, periodId))
-      .returning();
+      const pendingVouchers = await tx
+        .select({
+          voucherNumber: pettyCashVouchers.voucherNumber,
+          status: pettyCashVouchers.status,
+        })
+        .from(pettyCashVouchers)
+        .where(
+          and(
+            eq(pettyCashVouchers.pettyCashPeriodId, periodId),
+            inArray(pettyCashVouchers.status, PENDING_VOUCHER_STATUSES),
+          ),
+        );
 
-    return closed;
+      if (pendingVouchers.length > 0) {
+        const list = pendingVouchers.map((voucher) => voucher.voucherNumber).join(', ');
+        throw new ConflictException(
+          `VALES_PENDIENTES: No se puede cerrar el período. Existen ${pendingVouchers.length} vale(s) pendientes: ${list}`,
+        );
+      }
+
+      const [closed] = await tx
+        .update(pettyCashPeriods)
+        .set({
+          status: PettyCashPeriodStatus.CERRADO,
+          closedByUserId: userId,
+        })
+        .where(eq(pettyCashPeriods.id, periodId))
+        .returning();
+
+      return closed;
+    });
   }
 }

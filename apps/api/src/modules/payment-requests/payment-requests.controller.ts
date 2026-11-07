@@ -7,6 +7,7 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -37,6 +38,18 @@ export class PaymentRequestsController {
   @Roles(UserRole.ADMIN, UserRole.GENERADOR, UserRole.RECEPTOR)
   async getRequestById(@Param('id') id: string) {
     return this.paymentRequestsService.getRequestById(id);
+  }
+
+  @Get(':id/pdf')
+  @Roles(UserRole.ADMIN, UserRole.GENERADOR, UserRole.RECEPTOR)
+  async downloadRequestPdf(@Param('id') id: string, @Res() res: any) {
+    const { buffer, filename } = await this.paymentRequestsService.generateRequestPdfBuffer(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
   }
 
   @Post()

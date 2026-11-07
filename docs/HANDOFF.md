@@ -29,7 +29,7 @@ Cada cambio de estado se registra en el historial de este documento y se acompa�
 | Fase | Título | Estado global | Progreso |
 |---|---|---|---|
 | **Fase 1** | Correcciones críticas de backend | 🟢 Completada | 5/5 |
-| **Fase 2** | Completar módulos backend faltantes | 🔴 Por hacer | 0/5 |
+| **Fase 2** | Completar módulos backend faltantes | 🟢 Completada | 5/5 |
 | **Fase 3** | Frontend real conectado a la API | 🔴 Por hacer | 0/7 |
 | **Fase 4** | Testing y calidad | ⚪ Fuera de alcance | — |
 | **Fase 5** | Pulimiento y entrega | ⚪ Fuera de alcance | — |
@@ -115,7 +115,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🔴 Por hacer |
+| **Estado** | 🟢 Completada |
 | **Problema** | Faltan GET de períodos/vales; no se valida que la caja o el proyecto existan; la numeración de vales usa conteo no transaccional; el cierre no valida vales pendientes. |
 | **Solución** | GET `/petty-cash/:id/periods` y `/petty-cash/periods/:id/vouchers`; validación de caja/proyecto/período; bloqueo `FOR UPDATE` del período y numeración transaccional de vales; cierre solo si no hay vales pendientes; movimientos y saldos dentro de transacción. |
 | **Aceptación** | Flujo completo y consultas funcionan; no hay números duplicados bajo concurrencia; cierre bloquea vales pendientes; tests. |
@@ -125,7 +125,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🔴 Por hacer |
+| **Estado** | 🟢 Completada |
 | **Problema** | `GET /audit` solo acepta `limit`. |
 | **Solución** | Filtros `userId`, `entity`, `action`, `dateFrom`, `dateTo`, `page`, `limit`; respuesta `{ data, total, page, limit, totalPages }`; límite máximo 200; solo ADMIN. |
 | **Aceptación** | Filtros combinados y paginación correctos; no expone campos sensibles; tests. |
@@ -135,7 +135,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🔴 Por hacer |
+| **Estado** | 🟢 Completada |
 | **Problema** | Solo existe PDF de recibo individual. |
 | **Solución** | Extender `PdfReceiptGenerator` con `generatePaymentRequestPdf`; `GET /payment-requests/:id/pdf` con cabecera, beneficiarios, causado/pagado/pendiente, totales y firmas; acceso ADMIN/GENERADOR/RECEPTOR. |
 | **Aceptación** | PDF válido descargable; contenido cuadra con BD; tests de generación. |
@@ -145,7 +145,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🔴 Por hacer |
+| **Estado** | 🟢 Completada |
 | **Problema** | Lectura-calculo-escritura sin transacción; riesgo de sobrepago; filtro por persona sin proyecto. |
 | **Solución** | Transacción única; bloqueo `FOR UPDATE` de la solicitud y de los `causation_items` del proyecto, con orden determinista; filtro por proyecto mediante join con `causation_batches`; validación de suma de asignaciones contra `totalDeliveredAmount`. |
 | **Aceptación** | Sin sobrepago bajo concurrencia; cuadratura exacta; tests de concurrencia (si el entorno de BD lo permite) y tests unitarios del motor. |
@@ -155,7 +155,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🔴 Por hacer |
+| **Estado** | 🟢 Completada |
 | **Problema** | `nextval` no transaccional. |
 | **Solución** | Usar `next_receipt_number(year)` dentro de la transacción del desembolso; el rollback revierte el contador. |
 | **Aceptación** | Un fallo posterior no consume número; 100 desembolsos con 10 fallos dejan 90 números y 0 huecos; test. |
@@ -227,10 +227,10 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 
 | Métrica | Objetivo | Actual |
 |---|---|---|
-| Tareas de Fases 1–3 | 17 | 5 completadas |
-| Tests unitarios backend | 100 % pasando | 72/72 pasando |
-| Typecheck | Sin errores | API y shared sin errores |
-| Build | Exitoso | Pendiente de verificación final de fase |
+| Tareas de Fases 1–3 | 17 | 10 completadas |
+| Tests unitarios backend | 100 % pasando | 87/87 pasando |
+| Typecheck | Sin errores | API, shared y web sin errores |
+| Build | Exitoso | API y shared compilan; web pendiente de build final de Fase 3 |
 | Frontend conectado a API | 100 % | 0 % |
 
 ---
@@ -245,6 +245,11 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 | 2026-11-07 | 1.3 Autenticación completa | 🔴 Por hacer | 🟢 Completada | — | `identifier`, refresh rotativo con `jti`, replay, revocación de familia y rate limit 5/min. |
 | 2026-11-07 | 1.4 Filtro Zod + pipe | 🔴 Por hacer | 🟢 Completada | — | `ZodExceptionFilter` global y `ZodValidationPipe` aplicado a 9 controladores. |
 | 2026-11-07 | 1.5 Anulación de causación | 🔴 Por hacer | 🟢 Completada | — | Endpoint, política de dominio, auditoría transaccional y validaciones de solicitud. |
+| 2026-11-07 | 2.1 Caja chica | 🔴 Por hacer | 🟢 Completada | — | GET de períodos/vales, validaciones de pertenencia, `FOR UPDATE`, `next_voucher_number(year)` y cierre con vales pendientes. |
+| 2026-11-07 | 2.2 Auditoría | 🔴 Por hacer | 🟢 Completada | — | `auditQuerySchema`, filtros combinados, paginación y respuesta `{ data, total, page, limit, totalPages }`. |
+| 2026-11-07 | 2.3 PDF de solicitud | 🔴 Por hacer | 🟢 Completada | — | `generatePaymentRequestPdf` y `GET /payment-requests/:id/pdf`. |
+| 2026-11-07 | 2.4 FIFO transaccional | 🔴 Por hacer | 🟢 Completada | — | Transacción única, `FOR UPDATE`, filtro por proyecto vía join, desempate determinista y validación de total. |
+| 2026-11-07 | 2.5 Recibos sin huecos | 🔴 Por hacer | 🟢 Completada | — | `next_receipt_number(year)` dentro de la transacción del desembolso. |
 
 ---
 
@@ -252,13 +257,19 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 
 1. **Refresh token único por emisión:** se añadió `jwtid` (`jti`) aleatorio al firmar el refresh token. Sin él, dos emisiones dentro del mismo segundo producían tokens idénticos y la rotación no invalidaba realmente el anterior.
 2. **Trigger por lista negra:** la función de `causation_items` y `causation_batches` enumera las columnas inmutables y rechaza sus cambios; las columnas mutables quedan fuera de esa comparación. Los tests verifican ambas caras (columnas inmutables presentes y mutables ausentes).
-3. **Anulación y regeneración:** la anulación conserva el lote como registro histórico y marca sus ítems como `ANULADO`. El código de `generateBatch` permite crear un lote nuevo para el mismo período si el anterior está anulado, porque la migración SQL no crea el índice único de idempotencia que sí declara el esquema Drizzle.
+3. **Anulación y regeneración:** la anulación conserva el lote como registro histórico y marca sus ítems como `ANULADO`. La migración `0003` sustituye la restricción `uq_causation_batch_idempotence` por el índice parcial `uq_causation_batch_idempotence_active WHERE status <> 'ANULADO'`, de modo que un lote anulado no bloquea regenerar el período y la idempotencia se mantiene entre lotes activos. `generateBatch` filtra explícitamente por `status <> 'ANULADO'`.
 4. **Auditoría transaccional:** `AuditService.recordEvent` acepta una transacción opcional para que la anulación y su traza sean atómicas. Las llamadas existentes siguen usando la conexión normal.
 5. **Monto de la solicitud:** `createRequest` usa `input.requestedAmount` como `totalAmountUSD` y rechaza montos superiores al total causado del lote. Antes se ignoraba el monto enviado y se usaba siempre el total del lote; la decisión se tomó para que el contrato Zod y la persistencia coincidan.
 6. **Código de solicitud:** `SOL-YYYY-NNN` sigue calculándose con `count + 1`. No se corrigió en Fase 1 porque el plan solo exige numeración transaccional para recibos (2.5); queda registrado como limitación para una tarea posterior.
 7. **Rate limiter en memoria:** es suficiente para una instancia única. Si se escala horizontalmente, debe sustituirse por un almacén compartido sin cambiar el contrato del controlador.
 8. **Tests de integración con PostgreSQL:** no se ejecutaron porque Docker no está disponible en el entorno. Las migraciones y triggers están cubiertos por tests de generación de DDL y por la suite de dominio; la validación contra una BD real queda para Fase 4.
 9. **Login conserva `safeParse`:** a diferencia del resto de controladores, el login mantiene `safeParse` para responder 401 con semántica de credenciales inválidas en lugar de 400 genérico. Es la excepción explícita admitida en 1.4.
+10. **Numeración de vales:** se usa `voucher_sequences` + `next_voucher_number(year)` con `INSERT ... ON CONFLICT DO UPDATE ... RETURNING` dentro de la transacción del vale. La siembra toma el máximo histórico con formato `VAL-YYYY-NNNN`; si el formato no coincide, el vale no se cuenta y queda documentado.
+11. **Cierre de período con vales pendientes:** se consideran pendientes los estados `SOLICITADO`, `APROBADO` y `DESEMBOLSADO`; solo `RENDIDO` permite cerrar. El mensaje incluye la lista de vales que bloquean el cierre.
+12. **Auditoría paginada:** `auditQuerySchema` usa `z.coerce` para aceptar query params como strings; el límite máximo es 200 y el filtro de fechas se aplica en UTC (`00:00:00.000Z` a `23:59:59.999Z`). La respuesta conserva el nombre `data` para no romper consumidores existentes.
+13. **PDF de solicitud:** las cifras se recalculan desde la BD al momento de generar el documento (no se congelan en la solicitud); el PDF refleja el estado real de los ítems del lote.
+14. **Desembolso transaccional:** se bloquea primero la solicitud (`FOR UPDATE`), luego los ítems de cada persona con `FOR UPDATE OF causation_items` y orden determinista `periodStartDate, id`. El filtro por proyecto se hace con `INNER JOIN causation_batches` y se excluyen ítems `ANULADO` y con deuda cero. Se rechazan beneficiarios duplicados y un total declarado distinto de la suma de asignaciones.
+15. **Código de solicitud (pendiente):** `SOL-YYYY-NNN` sigue usando `count + 1`; no se abordó en Fase 2 porque el plan solo exige numeración transaccional para recibos y vales. Queda como limitación conocida para una tarea posterior.
 
 ---
 

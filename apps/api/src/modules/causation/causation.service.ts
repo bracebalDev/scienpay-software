@@ -89,7 +89,7 @@ export class CausationService {
   }
 
   async generateBatch(input: GenerateCausationBatchInput, userId: string) {
-    // 1. Idempotencia: Verificar si ya existe lote para este corte exacto
+    // 1. Idempotencia: Verificar si ya existe lote activo para este corte exacto
     const existing = await this.databaseService.db
       .select({ id: causationBatches.id, status: causationBatches.status })
       .from(causationBatches)
@@ -99,11 +99,12 @@ export class CausationService {
           eq(causationBatches.paymentGroupId, input.paymentGroupId),
           eq(causationBatches.periodStartDate, input.periodStartDate),
           eq(causationBatches.periodEndDate, input.periodEndDate),
+          ne(causationBatches.status, CausationBatchStatus.ANULADO),
         ),
       )
       .limit(1);
 
-    if (existing.length > 0 && existing[0].status !== CausationBatchStatus.ANULADO) {
+    if (existing.length > 0) {
       throw new ConflictException(
         'CAUSACION_IDEMPOTENTE: Ya existe un lote de causación activo para este proyecto, grupo y período',
       );

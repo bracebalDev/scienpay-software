@@ -145,4 +145,16 @@
   - Se ajustaron los tests de inmutabilidad para verificar la lista negra de columnas (inmutables presentes, mutables ausentes), que es el mecanismo real del trigger.
   - Se extrajo la política de anulación a una clase pura de dominio para poder probarla sin PostgreSQL, dado que Docker no está disponible en el entorno de ejecución.
   - No se ejecutaron tests de integración contra PostgreSQL por ausencia de Docker; la limitación quedó registrada en `docs/HANDOFF.md`.
+- **Resultado Obtenido (Fase 2):**
+  - `PettyCashService` reescrito con consultas GET, validaciones de existencia y pertenencia, transacciones, bloqueo `FOR UPDATE` y numeración de vales `next_voucher_number(year)`; cierre bloqueado con vales pendientes.
+  - Migración `0003` con `voucher_sequences` y el índice parcial de idempotencia que permite regenerar lotes anulados.
+  - `AuditService.listLogs` con filtros combinados, paginación y contrato `auditQuerySchema`.
+  - `PdfReceiptGenerator.generatePaymentRequestPdf` y endpoint `GET /payment-requests/:id/pdf`.
+  - `FIFOAllocationEngine` con desempate determinista por ID y `registerDisbursement` transaccional con bloqueo, filtro por proyecto y validación de total.
+  - Suite backend: **87/87 tests** pasando; typecheck de API/shared/web y build de API correctos.
+- **Cambios Manuales Realizados y Motivo (Fase 2):**
+  - Se corrigió la nota previa de HANDOFF sobre el índice de idempotencia: la restricción sí existía en `0001`; la migración `0003` la reemplaza por un índice parcial para permitir regenerar períodos anulados sin perder idempotencia entre lotes activos.
+  - Se ordenó el bloqueo período→vale en desembolso y rendición para evitar interbloqueos entre transacciones concurrentes.
+  - Se recalculan las cifras del PDF de solicitud desde la BD al generar el documento, para reflejar el estado real y no una foto potencialmente desactualizada.
+
 

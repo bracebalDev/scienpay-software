@@ -36,6 +36,18 @@ export class PettyCashController {
     return this.pettyCashService.listPettyCashes();
   }
 
+  @Get(':id/periods')
+  @Roles(UserRole.ADMIN, UserRole.GENERADOR, UserRole.RECEPTOR)
+  async listPeriods(@Param('id') id: string) {
+    return this.pettyCashService.listPeriods(id);
+  }
+
+  @Get('periods/:periodId/vouchers')
+  @Roles(UserRole.ADMIN, UserRole.GENERADOR, UserRole.RECEPTOR)
+  async listVouchers(@Param('periodId') periodId: string) {
+    return this.pettyCashService.listVouchers(periodId);
+  }
+
   @Post()
   @Roles(UserRole.RECEPTOR)
   async createPettyCash(

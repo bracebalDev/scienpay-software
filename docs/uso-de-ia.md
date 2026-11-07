@@ -66,6 +66,13 @@ Este documento registra los prompts utilizados, las decisiones aceptadas y recha
 | **DEC-IA-11** | Mantener `.parse()` disperso en los controladores. | **Rechazada** | Se creó `ZodValidationPipe` reutilizable y `ZodExceptionFilter` global; los schemas compartidos siguen siendo la única fuente de verdad. |
 | **DEC-IA-12** | Permitir anular lotes de causación con solicitudes o pagos asociados. | **Rechazada** | `CausationAnnulmentPolicy` bloquea lotes inexistentes, ya anulados, con solicitudes o con pagos aplicados. La anulación es transaccional y genera auditoría `ANULACION_CAUSACION`. |
 | **DEC-IA-13** | Ignorar `requestedAmount` y usar siempre el total causado del lote al crear una solicitud. | **Rechazada** | El contrato Zod ya expone `requestedAmount`; se usa como `totalAmountUSD` y se rechaza si excede el total causado del lote. |
+| **DEC-IA-14** | Numerar vales de caja chica con `count + 1`. | **Rechazada** | Bajo concurrencia produce duplicados y deja huecos ante rollback. Se creó `voucher_sequences` + `next_voucher_number(year)` dentro de la transacción del vale. |
+| **DEC-IA-15** | Mantener la restricción única de idempotencia de causaciones tal cual. | **Rechazada** | Impedía regenerar un lote para un período anulado. Se sustituyó por un índice único parcial que solo considera lotes activos (`status <> 'ANULADO'`). |
+| **DEC-IA-16** | Cerrar períodos de caja chica con vales pendientes. | **Rechazada** | `closePeriod` bloquea el cierre si existen vales en `SOLICITADO`, `APROBADO` o `DESEMBOLSADO`, e informa cuáles bloquean. |
+| **DEC-IA-17** | Filtrar causaciones FIFO solo por `personId`. | **Rechazada** | Se añadió join con `causation_batches` para filtrar por proyecto, se excluyen ítems anulados o sin deuda y se bloquean las filas con `FOR UPDATE`. |
+| **DEC-IA-18** | Aplicar FIFO sin desempate cuando dos cuotas comparten fecha. | **Rechazada** | El motor ordena por `periodStartDate` y desempata por ID para que el resultado sea determinista y reproducible. |
+| **DEC-IA-19** | Congelar las cifras del PDF de solicitud al momento de crearla. | **Rechazada** | El PDF se genera bajo demanda y recalcula causado/pagado/pendiente desde la BD para reflejar el estado real del lote. |
+| **DEC-IA-20** | Exponer la auditoría sin paginación ni filtros. | **Rechazada** | `auditQuerySchema` valida filtros y paginación (máximo 200) y la respuesta incluye `total` y `totalPages`. |
 
 ---
 
