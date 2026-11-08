@@ -73,6 +73,14 @@ Este documento registra los prompts utilizados, las decisiones aceptadas y recha
 | **DEC-IA-18** | Aplicar FIFO sin desempate cuando dos cuotas comparten fecha. | **Rechazada** | El motor ordena por `periodStartDate` y desempata por ID para que el resultado sea determinista y reproducible. |
 | **DEC-IA-19** | Congelar las cifras del PDF de solicitud al momento de crearla. | **Rechazada** | El PDF se genera bajo demanda y recalcula causado/pagado/pendiente desde la BD para reflejar el estado real del lote. |
 | **DEC-IA-20** | Exponer la auditoría sin paginación ni filtros. | **Rechazada** | `auditQuerySchema` valida filtros y paginación (máximo 200) y la respuesta incluye `total` y `totalPages`. |
+| **DEC-IA-21** | Persistir el access token en `localStorage` para simplificar la sesión del frontend. | **Rechazada** | Expone el token a XSS. El access token vive en memoria y la sesión se restaura con el refresh token `HttpOnly` mediante `POST /auth/refresh`. |
+| **DEC-IA-22** | Instalar `@hookform/resolvers` para integrar Zod con React Hook Form. | **Rechazada** | La dependencia no está disponible en el workspace. Se implementó `lib/zodResolver.ts` compatible con RHF y se documentó para poder sustituirlo si se instala más adelante. |
+| **DEC-IA-23** | Mantener los mocks temporalmente mientras se conectan las vistas. | **Rechazada** | Se eliminaron `mockData.ts` y `app.types.ts`; todas las vistas y formularios consumen `/api/v1`. No se admite código mock en producción. |
+| **DEC-IA-24** | Refrescar la sesión en cada 401 sin coordinación entre llamadas concurrentes. | **Rechazada** | React StrictMode duplica el efecto de montaje y dos refresh con el mismo token se interpretan como replay. Se deduplicó con una promesa module-level compartida. |
+| **DEC-IA-25** | Limitar el monto del desembolso a la deuda del lote de la solicitud. | **Rechazada** | El backend aplica FIFO sobre todas las causaciones pendientes del beneficiario en el proyecto, no solo sobre el lote. El formulario muestra la deuda del lote y advierte que el alcance real es el proyecto. |
+| **DEC-IA-26** | Renderizar las tres experiencias de rol desde un único componente monolítico. | **Rechazada** | Se separaron `AdminView`, `GeneratorView` y `ReceptorView`, cada una con sus hooks y mutaciones; `App.tsx` solo coordina la pestaña activa. |
+| **DEC-IA-27** | Añadir una librería de portales para los modales. | **Rechazada** | Se mantiene un `Modal` propio con overlay fijo, sin dependencias adicionales y coherente con el sistema visual existente. |
+| **DEC-IA-28** | Sumar los montos del desembolso con aritmética de coma flotante. | **Rechazada** | Se convierten a centavos antes de sumar y comparar para que el total coincida con la validación `Decimal` del backend y no se rechacen desembolsos válidos. |
 
 ---
 
@@ -87,3 +95,6 @@ Este documento registra los prompts utilizados, las decisiones aceptadas y recha
 3. **Setup de Monorepo y Docker:**
    - *Generado:* Configuración de workspaces, pipeline de CI en GitHub Actions y servicios docker-compose con proxy Nginx.
    - *Revisión Humana:* Se verificó que `.gitignore` excluya con rigor cualquier clave o archivo `.env`.
+4. **Frontend real conectado a la API (Fase 3):**
+   - *Generado:* `apiClient` con refresh/retry, `AuthContext` con deduplicación de refresh, 10 módulos de hooks TanStack Query, 12 formularios de dominio RHF+Zod (más el login), componentes UI reutilizables y las vistas `AdminView`, `GeneratorView` y `ReceptorView`.
+   - *Revisión Humana:* Se verificó que no queden imports a `mockData.ts` ni a `app.types.ts`, que el access token no se persista en el navegador, que las mutaciones invaliden sus claves de caché y que `typecheck` y `build` del workspace web finalicen sin errores. La suite de API se mantuvo en 87/87.

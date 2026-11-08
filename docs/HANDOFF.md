@@ -4,7 +4,7 @@
 > **Rama de trabajo:** `plan/execution-tracking` (aislada de `main`)
 > **Alcance autorizado:** únicamente **Fases 1, 2 y 3**. Las Fases 4 y 5 quedan explícitamente fuera de alcance.
 > **Fecha de inicio de ejecución:** 2026-11-07
-> **Última actualización:** 2026-11-07
+> **Última actualización:** 2026-11-08
 > **Modelo de análisis y planificación:** Nemotron 3 Ultra (Free) vía OpenRouter en OpenCode.
 > **Modelo de ejecución de Fases 1–3:** DeepSeek V4.1 Flash Free vía OpenCode Zen.
 
@@ -30,7 +30,7 @@ Cada cambio de estado se registra en el historial de este documento y se acompa�
 |---|---|---|---|
 | **Fase 1** | Correcciones críticas de backend | 🟢 Completada | 5/5 |
 | **Fase 2** | Completar módulos backend faltantes | 🟢 Completada | 5/5 |
-| **Fase 3** | Frontend real conectado a la API | 🔴 Por hacer | 0/7 |
+| **Fase 3** | Frontend real conectado a la API | 🟢 Completada | 7/7 |
 | **Fase 4** | Testing y calidad | ⚪ Fuera de alcance | — |
 | **Fase 5** | Pulimiento y entrega | ⚪ Fuera de alcance | — |
 
@@ -169,56 +169,63 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🔴 Por hacer |
+| **Estado** | 🟢 Completada |
 | **Solución** | `lib/apiClient.ts` con `credentials: 'include'`, token de acceso en memoria, manejo de errores tipado y descarga de blobs; `lib/queryClient.ts`; eliminación de `data/mockData.ts` y de `PASSWORDS`. |
+| **Implementado** | `apiClient` expone `get/post/patch/delete/download`, inyecta `Authorization: Bearer` desde una variable de módulo (nunca `localStorage`), reintenta una vez tras refresh en 401 y limpia la sesión si el reintento falla. `queryClient` centraliza `staleTime`, reintentos y `refetchOnWindowFocus`. Se eliminaron `apps/web/src/data/mockData.ts` y `apps/web/src/types/app.types.ts`; no quedan imports a mocks en producción. |
 | **Aceptación** | No quedan mocks; el frontend consume `/api/v1`; el proxy de Vite se mantiene. |
 
 ### 3.2 AuthContext
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🔴 Por hacer |
-| **Solución** | `AuthProvider` con `user`, `login`, `logout`, `refresh`, `isLoading`; restauración de sesión vía refresh al montar; refresh automático antes de expirar; guardas de ruta/rol. |
+| **Estado** | 🟢 Completada |
+| **Solución** | `AuthProvider` con `user`, `login`, `logout`, `refreshSession`, `isLoading`; restauración de sesión vía refresh al montar; refresh automático antes de expirar; guardas de ruta/rol. |
+| **Implementado** | `AuthContext` restaura la sesión con `POST /auth/refresh` al montar, programa el refresh 60 s antes del vencimiento del access token, deduplica refrescos concurrentes con una promesa module-level (evita el replay provocado por React StrictMode) y expone `login/logout/refreshSession`. `App.tsx` muestra pantalla de carga, exige sesión para renderizar y deriva la pestaña inicial del rol. |
 | **Aceptación** | Login real, logout real, sesión restaurada, rutas por rol. |
 
 ### 3.3 Hooks TanStack Query por dominio
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🔴 Por hacer |
+| **Estado** | 🟢 Completada |
 | **Solución** | Hooks de proyectos, personas, asignaciones, causación, solicitudes, desembolsos/recibos, caja chica y administración; invalidación de caché tras mutaciones. Se co-localizan queries y mutations por dominio para reducir dispersión, decisión documentada. |
+| **Implementado** | 10 módulos en `apps/web/src/hooks/`: `useProjects`, `usePersons`, `useAssignments`, `usePaymentGroups`, `useCausation`, `usePaymentRequests`, `useDisbursements`, `usePettyCash`, `useUsers` y `useAudit`. Cada mutación invalida las claves afectadas; las descargas PDF usan `apiClient.download`. |
 | **Aceptación** | Vistas obtienen datos reales con estados de carga/error/vacío; mutaciones invalidan caché. |
 
 ### 3.4 Formularios React Hook Form + Zod
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🔴 Por hacer |
+| **Estado** | 🟢 Completada |
 | **Solución** | Resolver Zod local compatible con RHF (o `@hookform/resolvers` si se instala y verifica); componentes `FormField`, `SelectField`, `CurrencyField`; formularios de proyecto, persona, asignación, causación, solicitud, desembolso, vale de caja chica y login. |
+| **Implementado** | `@hookform/resolvers` no está instalado; se implementó `lib/zodResolver.ts` compatible con `react-hook-form` y se documentó la decisión. Hay 9 archivos en `components/Forms/` con 12 formularios de dominio: proyecto, persona, grupo de pago, asignación, causación, solicitud, desembolso, usuario, creación de caja chica, apertura de período, solicitud de vale y rendición de vale. El login con RHF+Zod vive en `NotionLogin.tsx`. Los formularios reutilizan los schemas de `@scienpay/shared` como fuente única de validación. |
 | **Aceptación** | Validación inline, errores claros, submit tipado y deshabilitado hasta validez. |
 
 ### 3.5 Vistas por rol con datos reales
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🔴 Por hacer |
+| **Estado** | 🟢 Completada |
 | **Solución** | AdminView con usuarios/auditoría reales y acciones de desbloqueo/reset; GeneratorView con proyectos, personas, asignaciones, causación y solicitudes; ReceptorView con bandeja, desembolsos FIFO, recibos y caja chica. |
+| **Implementado** | `AdminView` lista usuarios y auditoría paginada con filtros, crea usuarios y ejecuta desbloqueo/reset. `GeneratorView` gestiona proyectos, beneficiarios, asignaciones, previsualización/generación/anulación de causación y solicitudes. `ReceptorView` gestiona aprobación/rechazo, desembolsos FIFO con recibos PDF, cierre de solicitudes entregadas y caja chica (períodos, vales, desembolso, rendición y cierre). "Mis Solicitudes" filtra por `createdByUserId` del usuario autenticado. |
 | **Aceptación** | Tablas y tarjetas con datos de API; acciones reales; estados de carga/error/vacío. |
 
 ### 3.6 Descarga de PDF
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🔴 Por hacer |
+| **Estado** | 🟢 Completada |
 | **Solución** | Hook de descarga de blob para recibo y solicitud; nombre de archivo correcto; manejo de errores. |
+| **Implementado** | `apiClient.download` obtiene el blob con credenciales, extrae el nombre desde `Content-Disposition` y fuerza la descarga en el navegador. `useDownloadPaymentRequestPdf` y `useDownloadReceiptPdf` cubren `SOL-*.pdf` y `REC-*.pdf`; los errores se muestran con toast. |
 | **Aceptación** | Descarga real de `REC-*.pdf` y `SOL-*.pdf`. |
 
 ### 3.7 Errores globales y UX
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🔴 Por hacer |
+| **Estado** | 🟢 Completada |
 | **Solución** | `ToastProvider` propio; intercepción 401/403/400/500; logout automático en 401; estados de carga. |
+| **Implementado** | `ToastProvider` global con variantes `success/error/info`; `apiClient` normaliza errores del backend (`message`/`error`) y dispara `unauthorizedHandler` cuando el refresh falla, lo que cierra la sesión y vuelve al login. Las vistas muestran `LoadingState`, `EmptyState` y `ErrorState`; los formularios deshabilitan el submit mientras hay mutación en curso. |
 | **Aceptación** | Feedback visible, sin errores silenciosos, redirección a login en 401. |
 
 ---
@@ -227,11 +234,11 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 
 | Métrica | Objetivo | Actual |
 |---|---|---|
-| Tareas de Fases 1–3 | 17 | 10 completadas |
+| Tareas de Fases 1–3 | 17 | 17 completadas |
 | Tests unitarios backend | 100 % pasando | 87/87 pasando |
 | Typecheck | Sin errores | API, shared y web sin errores |
-| Build | Exitoso | API y shared compilan; web pendiente de build final de Fase 3 |
-| Frontend conectado a API | 100 % | 0 % |
+| Build | Exitoso | API, shared y web compilan |
+| Frontend conectado a API | 100 % | 100 % (sin mocks) |
 
 ---
 
@@ -250,6 +257,13 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 | 2026-11-07 | 2.3 PDF de solicitud | 🔴 Por hacer | 🟢 Completada | — | `generatePaymentRequestPdf` y `GET /payment-requests/:id/pdf`. |
 | 2026-11-07 | 2.4 FIFO transaccional | 🔴 Por hacer | 🟢 Completada | — | Transacción única, `FOR UPDATE`, filtro por proyecto vía join, desempate determinista y validación de total. |
 | 2026-11-07 | 2.5 Recibos sin huecos | 🔴 Por hacer | 🟢 Completada | — | `next_receipt_number(year)` dentro de la transacción del desembolso. |
+| 2026-11-08 | 3.1 Cliente API y eliminación de mocks | 🔴 Por hacer | 🟢 Completada | — | `apiClient`, `queryClient`, token en memoria, descargas autenticadas y eliminación de `mockData.ts`/`app.types.ts`. |
+| 2026-11-08 | 3.2 AuthContext | 🔴 Por hacer | 🟢 Completada | — | Restauración de sesión, refresh programado, deduplicación de refresh y logout. |
+| 2026-11-08 | 3.3 Hooks TanStack Query | 🔴 Por hacer | 🟢 Completada | — | 10 módulos de hooks por dominio con invalidación de caché. |
+| 2026-11-08 | 3.4 Formularios RHF + Zod | 🔴 Por hacer | 🟢 Completada | — | 12 formularios de dominio y login, con `zodResolver` local compatible con RHF. |
+| 2026-11-08 | 3.5 Vistas por rol | 🔴 Por hacer | 🟢 Completada | — | `AdminView`, `GeneratorView` y `ReceptorView` con datos reales y acciones de API. |
+| 2026-11-08 | 3.6 Descarga de PDF | 🔴 Por hacer | 🟢 Completada | — | `apiClient.download` + hooks de recibo y solicitud. |
+| 2026-11-08 | 3.7 Errores globales y UX | 🔴 Por hacer | 🟢 Completada | — | `ToastProvider`, intercepción 401 y estados de carga/error/vacío. |
 
 ---
 
@@ -270,6 +284,20 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 13. **PDF de solicitud:** las cifras se recalculan desde la BD al momento de generar el documento (no se congelan en la solicitud); el PDF refleja el estado real de los ítems del lote.
 14. **Desembolso transaccional:** se bloquea primero la solicitud (`FOR UPDATE`), luego los ítems de cada persona con `FOR UPDATE OF causation_items` y orden determinista `periodStartDate, id`. El filtro por proyecto se hace con `INNER JOIN causation_batches` y se excluyen ítems `ANULADO` y con deuda cero. Se rechazan beneficiarios duplicados y un total declarado distinto de la suma de asignaciones.
 15. **Código de solicitud (pendiente):** `SOL-YYYY-NNN` sigue usando `count + 1`; no se abordó en Fase 2 porque el plan solo exige numeración transaccional para recibos y vales. Queda como limitación conocida para una tarea posterior.
+16. **Token de acceso solo en memoria:** el frontend nunca persiste el access token en `localStorage` ni en `sessionStorage`. La sesión se restaura mediante el refresh token `HttpOnly` y `POST /auth/refresh`. Esto reduce la superficie de XSS a cambio de que un recargado de página siempre dispare un refresh.
+17. **Deduplicación de refresh concurrente:** React StrictMode monta los efectos dos veces en desarrollo y provocaba dos refresh simultáneos con el mismo token, lo que el backend interpreta como replay y revoca la familia. `AuthContext` comparte una única promesa de refresh a nivel de módulo mientras está en vuelo; las llamadas concurrentes esperan el mismo resultado.
+18. **Resolver Zod local:** `@hookform/resolvers` no está instalado en el workspace. Para no introducir una dependencia no verificada se implementó `apps/web/src/lib/zodResolver.ts`, compatible con la interfaz de `react-hook-form`, y se cubrió con typecheck y build. Si en el futuro se instala `@hookform/resolvers`, puede sustituirse sin cambiar los formularios.
+19. **Vistas por rol con hooks internos:** cada vista (`AdminView`, `GeneratorView`, `ReceptorView`) obtiene sus propios datos y ejecuta sus mutaciones; `App.tsx` solo pasa `activeTab`. "Mis Solicitudes" se filtra en cliente por `createdByUserId` del usuario autenticado porque la API no expone ese filtro como query param.
+20. **Modal propio sin portal:** se mantiene el `Modal` basado en `fixed` + overlay sin `createPortal` para no añadir dependencias ni duplicar el árbol de estilos. El foco y el cierre por overlay se gestionan en el componente.
+21. **Montos del desembolso en centavos:** `DisbursementForm` convierte cada importe a centavos antes de sumar y comparar, evitando que errores de coma flotante produzcan un total que el backend rechace al validar con `Decimal`.
+22. **Deuda mostrada en desembolso:** el formulario muestra solo la deuda del lote de la solicitud, pero no limita el monto contra esa deuda porque el backend aplica FIFO sobre todas las causaciones pendientes del beneficiario en el proyecto. La interfaz lo advierte explícitamente para no inducir a error.
+23. **Estabilidad de la pestaña activa:** `App.tsx` usa `initializedUserId` (ref) para ejecutar la selección de pestaña inicial solo cuando cambia el usuario. Sin esto, cada refresco de `/auth/me` reiniciaba la vista a la pestaña por defecto del rol.
+24. **Descargas autenticadas:** `apiClient.download` reintenta una vez tras un refresh en 401 y, si el reintento vuelve a fallar, limpia la sesión. Así se evita descargar HTML de login como si fuera un PDF.
+25. **Previsualización de causación:** el botón "Generar y Congelar Lote" se deshabilita si los parámetros actuales del formulario no coinciden con la previsualización vigente. La comparación es por `projectId`, `paymentGroupId`, `periodStartDate` y `periodEndDate`.
+26. **Cierre de solicitudes entregadas:** `ReceptorView` expone `PATCH /payment-requests/:id/close` solo para solicitudes en estado `ENTREGADA`; la transición sigue validada por la máquina de estados del backend.
+27. **Verificación del frontend:** la Fase 3 se validó con `npm run typecheck --workspace=@scienpay/web` y `npm run build --workspace=@scienpay/web`. No existe suite automatizada de componentes en el workspace web; esa cobertura corresponde a la Fase 4, fuera de alcance.
+28. **Notas de solicitud:** `createPaymentRequestSchema` acepta `notes`, pero `PaymentRequestsService.createRequest` no la persiste porque el esquema de BD no tiene columna para ella. El frontend conserva el campo; queda registrado como limitación conocida.
+29. **RBAC en la interfaz:** ocultar pestañas y acciones por rol es solo una ayuda de UX. La autorización efectiva se mantiene en los guards y servicios del backend; ninguna vista asume que el ocultamiento reemplaza la validación del servidor.
 
 ---
 

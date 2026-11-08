@@ -76,6 +76,17 @@
 - **Recibos sin huecos:** `next_receipt_number(year)` se invoca dentro de la transacción del desembolso; un rollback revierte el contador.
 - **Verificación:** `npm run typecheck` sin errores y **87/87 tests** pasando en `@scienpay/api`; build de API y typecheck de web correctos.
 
+#### 📌 Fase 3: Frontend Real Conectado a la API
+- **Eliminación total de mocks:** se retiraron `apps/web/src/data/mockData.ts` y `apps/web/src/types/app.types.ts`; las vistas, formularios y el login consumen exclusivamente `/api/v1`.
+- **Cliente HTTP y caché:** `lib/apiClient.ts` envía `credentials: 'include'`, mantiene el access token en memoria (nunca en `localStorage`), normaliza errores, reintenta una vez tras refresh en 401 y descarga blobs autenticados con `Content-Disposition`. `lib/queryClient.ts` configura TanStack Query.
+- **Sesión real:** `AuthContext` restaura la sesión con `POST /auth/refresh`, programa el refresh 60 s antes del vencimiento, deduplica refrescos concurrentes para evitar falsos replays por React StrictMode y ejecuta logout real. `App.tsx` incorpora pantalla de carga y navegación por rol.
+- **Hooks por dominio:** 10 módulos (`useProjects`, `usePersons`, `useAssignments`, `usePaymentGroups`, `useCausation`, `usePaymentRequests`, `useDisbursements`, `usePettyCash`, `useUsers` y `useAudit`) con invalidación de caché tras cada mutación.
+- **Formularios RHF + Zod:** 12 formularios de dominio en `components/Forms/` (proyecto, persona, grupo de pago, asignación, causación, solicitud, desembolso, usuario, caja chica, apertura de período, vale y rendición) más el login, todos validados con los schemas compartidos mediante `lib/zodResolver.ts`, un resolver local compatible con `react-hook-form` porque `@hookform/resolvers` no está instalado.
+- **Vistas por rol:** `AdminView` (usuarios, desbloqueo/reset y auditoría paginada con filtros), `GeneratorView` (proyectos, beneficiarios, asignaciones, causación y solicitudes) y `ReceptorView` (aprobación/rechazo, desembolsos FIFO con recibos PDF, cierre de solicitudes y caja chica completa).
+- **UX:** `ToastProvider` global, estados de carga/error/vacío, confirmación de logout y descarga real de `SOL-*.pdf` y `REC-*.pdf`.
+- **Decisiones de integración:** montos del desembolso calculados en centavos; la deuda mostrada corresponde solo al lote de la solicitud y se advierte que el FIFO del backend abarca todo el proyecto; la previsualización de causación debe coincidir con los parámetros actuales para habilitar la generación; `App.tsx` no reinicia la pestaña cuando `/auth/me` refresca el perfil.
+- **Verificación:** `npm run typecheck --workspace=@scienpay/web` sin errores, `npm run build --workspace=@scienpay/web` exitoso (1677 módulos, bundle 436.42 kB) y **87/87 tests** de API pasando.
+
 ---
 
 ## 2. Mapa y Convención de Ramas en GitHub
@@ -91,7 +102,7 @@ El equipo trabaja bajo el modelo **GitFlow Adaptado**, respetando las siguientes
 | [`chore/setup-monorepo`](https://github.com/bracebalDev/scienpay-software/tree/chore/setup-monorepo) | Workspaces, Zod, TypeScript, ADRs | Completada y subida |
 | [`chore/devops-docker-ci`](https://github.com/bracebalDev/scienpay-software/tree/chore/devops-docker-ci) | Docker multi-stage, Nginx, CI Actions | Completada y subida |
 | [`feature/frontend-responsive`](https://github.com/bracebalDev/scienpay-software/tree/feature/frontend-responsive) | Notion Workspace, Login, Timer 5 min, Vistas RBAC | Completada y subida |
-| `plan/execution-tracking` | Ejecución controlada de Fases 1–3 del plan de completitud | En progreso (Fases 1–2 completadas) |
+| `plan/execution-tracking` | Ejecución controlada de Fases 1–3 del plan de completitud | Completada (Fases 1–3) |
 
 ---
 

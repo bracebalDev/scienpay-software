@@ -156,5 +156,20 @@
   - Se corrigió la nota previa de HANDOFF sobre el índice de idempotencia: la restricción sí existía en `0001`; la migración `0003` la reemplaza por un índice parcial para permitir regenerar períodos anulados sin perder idempotencia entre lotes activos.
   - Se ordenó el bloqueo período→vale en desembolso y rendición para evitar interbloqueos entre transacciones concurrentes.
   - Se recalculan las cifras del PDF de solicitud desde la BD al generar el documento, para reflejar el estado real y no una foto potencialmente desactualizada.
+- **Resultado Obtenido (Fase 3):**
+  - Frontend conectado a la API real: `apiClient` con token en memoria, `credentials: 'include'`, refresh/retry en 401 y descargas autenticadas; `queryClient` de TanStack Query.
+  - `AuthContext` con restauración de sesión, refresh programado, deduplicación de refresh concurrente y logout; `App.tsx` con pantalla de carga, navegación por rol e historial.
+  - 10 módulos de hooks por dominio y 12 formularios de dominio RHF+Zod (más el login) que reutilizan los schemas de `@scienpay/shared`.
+  - `AdminView`, `GeneratorView` y `ReceptorView` operativas con datos reales, mutaciones, toasts y estados de carga/error/vacío.
+  - Descarga real de PDF de solicitud y de recibo; cierre de solicitudes entregadas desde la bandeja del receptor.
+  - Eliminación de `apps/web/src/data/mockData.ts` y `apps/web/src/types/app.types.ts`; no quedan mocks en producción.
+  - Verificación: `npm run typecheck --workspace=@scienpay/web` sin errores, `npm run build --workspace=@scienpay/web` exitoso y **87/87 tests** de API pasando.
+- **Cambios Manuales Realizados y Motivo (Fase 3):**
+  - Se implementó `lib/zodResolver.ts` en lugar de instalar `@hookform/resolvers`, que no está disponible en el workspace; se mantiene la misma interfaz para poder sustituirlo sin tocar los formularios.
+  - Se deduplicó el refresh con una promesa module-level porque React StrictMode monta el efecto dos veces y el segundo refresh con el mismo token era interpretado como replay por el backend.
+  - Se usó `initializedUserId` (ref) en `App.tsx` para que el refresco de `/auth/me` no reinicie la pestaña activa del usuario.
+  - Se calculan los montos del desembolso en centavos para que la suma coincida exactamente con la validación `Decimal` del backend.
+  - Se documentó que la deuda mostrada en el desembolso corresponde solo al lote de la solicitud, mientras el FIFO del backend abarca todas las causaciones pendientes del proyecto.
+  - No se ejecutaron pruebas automatizadas de componentes ni tests de integración con PostgreSQL por ausencia de Docker y de suite de frontend; ambas limitaciones quedan registradas para la Fase 4.
 
 
