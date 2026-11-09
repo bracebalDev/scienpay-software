@@ -239,6 +239,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 | Typecheck | Sin errores | API, shared y web sin errores |
 | Build | Exitoso | API, shared y web compilan |
 | Frontend conectado a API | 100 % | 100 % (sin mocks) |
+| Integración con PostgreSQL aislado | 100 % | 158/158 PASS (2026-11-08) |
 
 ---
 
@@ -276,7 +277,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 5. **Monto de la solicitud:** `createRequest` usa `input.requestedAmount` como `totalAmountUSD` y rechaza montos superiores al total causado del lote. Antes se ignoraba el monto enviado y se usaba siempre el total del lote; la decisión se tomó para que el contrato Zod y la persistencia coincidan.
 6. **Código de solicitud:** `SOL-YYYY-NNN` sigue calculándose con `count + 1`. No se corrigió en Fase 1 porque el plan solo exige numeración transaccional para recibos (2.5); queda registrado como limitación para una tarea posterior.
 7. **Rate limiter en memoria:** es suficiente para una instancia única. Si se escala horizontalmente, debe sustituirse por un almacén compartido sin cambiar el contrato del controlador.
-8. **Tests de integración con PostgreSQL:** no se ejecutaron porque Docker no está disponible en el entorno. Las migraciones y triggers están cubiertos por tests de generación de DDL y por la suite de dominio; la validación contra una BD real queda para Fase 4.
+8. **Tests de integración con PostgreSQL:** se ejecutaron el 2026-11-08 contra un contenedor aislado `scienpay_verify_db` (PostgreSQL 16 Alpine, puerto `55432`), separado del volumen de desarrollo. El script temporal `scienpay-integration.mjs` (fuera del repositorio) ejecutó **158/158 verificaciones PASS** sobre health, autenticación/refresh/replay, RBAC, catálogos, causación, solicitudes/cuatro ojos, FIFO, recibos/PDF, anulación/regeneración, auditoría, caja chica, usuarios, rate limit, logout y validación de UUID. Las migraciones se aplicaron dos veces y el seed se ejecutó dos veces con idempotencia confirmada. El 2026-11-09 no fue posible reejecutar la suite porque Docker Desktop no estaba en ejecución; la corrida del 2026-11-08 se mantiene como evidencia válida.
 9. **Login conserva `safeParse`:** a diferencia del resto de controladores, el login mantiene `safeParse` para responder 401 con semántica de credenciales inválidas en lugar de 400 genérico. Es la excepción explícita admitida en 1.4.
 10. **Numeración de vales:** se usa `voucher_sequences` + `next_voucher_number(year)` con `INSERT ... ON CONFLICT DO UPDATE ... RETURNING` dentro de la transacción del vale. La siembra toma el máximo histórico con formato `VAL-YYYY-NNNN`; si el formato no coincide, el vale no se cuenta y queda documentado.
 11. **Cierre de período con vales pendientes:** se consideran pendientes los estados `SOLICITADO`, `APROBADO` y `DESEMBOLSADO`; solo `RENDIDO` permite cerrar. El mensaje incluye la lista de vales que bloquean el cierre.
@@ -298,6 +299,12 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 27. **Verificación del frontend:** la Fase 3 se validó con `npm run typecheck --workspace=@scienpay/web` y `npm run build --workspace=@scienpay/web`. No existe suite automatizada de componentes en el workspace web; esa cobertura corresponde a la Fase 4, fuera de alcance.
 28. **Notas de solicitud:** `createPaymentRequestSchema` acepta `notes`, pero `PaymentRequestsService.createRequest` no la persiste porque el esquema de BD no tiene columna para ella. El frontend conserva el campo; queda registrado como limitación conocida.
 29. **RBAC en la interfaz:** ocultar pestañas y acciones por rol es solo una ayuda de UX. La autorización efectiva se mantiene en los guards y servicios del backend; ninguna vista asume que el ocultamiento reemplaza la validación del servidor.
+30. **Corrección de `RAISE` en triggers:** la migración `0002` y el DDL del motor usaban `RAISE EXCEPTION '...', TG_TABLE_NAME` sin placeholder `%`; PostgreSQL 16 fallaba con `too many parameters specified for RAISE`. Se añadió `%` y la migración corre en base limpia.
+31. **Seed sincronizado con la secuencia de recibos:** el seed insertaba `REC-2026-000001` de forma fija sin avanzar `receipt_sequences`, y el primer desembolso real chocaba con `receipts_receipt_number_key`. Ahora el seed reserva el número con `next_receipt_number(2026)` y lo formatea con `FinancialImmutabilityEngine.formatReceiptNumber`.
+32. **Runner de desarrollo con `tsc`:** `npm run dev:api` usaba `tsx`, que no emite `design:paramtypes`; los controladores recibían dependencias `undefined` y el login devolvía 500. El nuevo runner `apps/api/scripts/dev.mjs` usa `tsc` + `tsc --watch` + `node --watch dist/main.js`, sin dependencias nuevas. El arranque compilado y el runner se verificaron con login 200 y la corrida 158/158.
+33. **Validación de UUID en el borde HTTP:** un UUID inválido en path o query llegaba a PostgreSQL y producía `invalid input syntax for type uuid` (HTTP 500). Se añadieron `UuidParam`/`UuidQuery` con `ParseUUIDPipe` en todos los controladores; ahora responde 400 con `UUID_INVALIDO`. La verificación cubre paths y query params de proyectos, causación, solicitudes, desembolsos, asignaciones, auditoría y caja chica.
+34. **Anulación de causación responde 201:** `POST /causation/batches/:id/annul` no declara `@HttpCode`, por lo que NestJS usa 201 para POST. El frontend usa `response.ok`, de modo que el contrato funciona; se acepta y documenta en lugar de forzar 200 para no introducir un cambio innecesario. Si un consumidor exige 200, debe añadirse `@HttpCode(HttpStatus.OK)` y actualizar la prueba.
+35. **Script de integración fuera del repositorio:** la verificación end-to-end se ejecutó con un script temporal en `C:\Users\Usuario\AppData\Local\Temp\opencode\scienpay-integration.mjs` para no introducir artefactos de Fase 4 en el repositorio. El script crea datos con sufijo temporal y puede reejecutarse sobre la misma base. La suite automatizada de integración queda para Fase 4.
 
 ---
 
@@ -310,3 +317,17 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 5. `npm run typecheck`, `npm run test` y `npm run build` deben pasar antes de cerrar cada fase.
 6. No se introducen mocks en el código de producción del frontend.
 7. Los secretos no se hardcodean; se documentan en `.env.example`.
+
+---
+
+## 11. Estado final
+
+- **Fases 1–3:** completadas (17/17 tareas).
+- **Backend:** 87/87 tests unitarios pasando.
+- **Typecheck:** API, shared y web sin errores.
+- **Build:** API, shared y web compilan correctamente.
+- **Integración:** 158/158 verificaciones PASS contra PostgreSQL 16 aislado (`scienpay_verify_db`, puerto `55432`), ejecutadas el 2026-11-08.
+- **Frontend:** conectado a la API real, sin mocks de producción.
+- **Documentación:** `HANDOFF.md`, `avances.md` y `bitacora_ia.md` actualizados.
+- **Tareas pendientes:** ninguna dentro del alcance de Fases 1–3.
+- **Bloqueos:** ninguno. El 2026-11-09 no fue posible reejecutar la suite de integración porque Docker Desktop no estaba en ejecución; la corrida 158/158 del 2026-11-08 se mantiene como evidencia válida. Los tests unitarios, el typecheck y el build sí se reejecutaron y pasaron ese día.

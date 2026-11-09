@@ -170,6 +170,18 @@
   - Se usó `initializedUserId` (ref) en `App.tsx` para que el refresco de `/auth/me` no reinicie la pestaña activa del usuario.
   - Se calculan los montos del desembolso en centavos para que la suma coincida exactamente con la validación `Decimal` del backend.
   - Se documentó que la deuda mostrada en el desembolso corresponde solo al lote de la solicitud, mientras el FIFO del backend abarca todas las causaciones pendientes del proyecto.
-  - No se ejecutaron pruebas automatizadas de componentes ni tests de integración con PostgreSQL por ausencia de Docker y de suite de frontend; ambas limitaciones quedan registradas para la Fase 4.
+  - En la sesión de Fase 3 no se ejecutaron pruebas automatizadas de componentes; la integración con PostgreSQL se verificó después, en la Sesión 6 (158/158 PASS).
 
+#### Sesión 6: Verificación final de Fases 1-3
+- **Fecha:** 9 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / OpenCode
+- **Objetivo:** Verificar que las Fases 1-3 estén completas, confirmar la integración con PostgreSQL aislado y dejar constancia del estado final.
+- **Resultado Obtenido:**
+  - Fases 1-3 completadas y verificadas (17/17 tareas).
+  - Integración con el contenedor aislado `scienpay_verify_db` (puerto 55432): **158/158 PASS** (corrida del 2026-11-08).
+  - Backend: 87/87 tests; typecheck y build de API, shared y web sin errores (reverificados el 2026-11-09).
+  - Documentación final actualizada en `HANDOFF.md`, `avances.md` y `bitacora_ia.md`.
+  - Sin tareas pendientes ni bloqueos dentro del alcance.
+
+> Nota: el 2026-11-09 no fue posible reejecutar la suite de integración porque Docker Desktop no estaba en ejecución; la corrida 158/158 del 2026-11-08 se mantiene como evidencia válida.
 

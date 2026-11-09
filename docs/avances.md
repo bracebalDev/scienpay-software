@@ -87,6 +87,19 @@
 - **Decisiones de integración:** montos del desembolso calculados en centavos; la deuda mostrada corresponde solo al lote de la solicitud y se advierte que el FIFO del backend abarca todo el proyecto; la previsualización de causación debe coincidir con los parámetros actuales para habilitar la generación; `App.tsx` no reinicia la pestaña cuando `/auth/me` refresca el perfil.
 - **Verificación:** `npm run typecheck --workspace=@scienpay/web` sin errores, `npm run build --workspace=@scienpay/web` exitoso (1677 módulos, bundle 436.42 kB) y **87/87 tests** de API pasando.
 
+### 📅 8 de Noviembre de 2026
+
+#### 📌 Verificación de Integración de las Fases 1–3
+- **Entorno aislado:** PostgreSQL 16 Alpine en el contenedor `scienpay_verify_db` (puerto `55432`), separado del volumen de desarrollo. Migraciones aplicadas dos veces y seed ejecutado dos veces con idempotencia confirmada.
+- **Corrida end-to-end:** **158/158 verificaciones PASS, 0 FAIL** con un script temporal fuera del repositorio. Cubre health, login por usuario/email, refresh rotativo, detección de replay, revocación de familia, RBAC, catálogos, preview/generación/anulación/regeneración de causación, solicitudes y cuatro ojos, FIFO, recibos y PDFs, auditoría, caja chica, usuarios, rate limit, logout y UUID inválidos.
+- **Verificación SQL directa:** `next_receipt_number` no deja huecos tras `ROLLBACK`; los triggers bloquean `UPDATE` de columnas inmutables y `DELETE`, y permiten solo columnas de pago/anulación; `receipt_sequences` queda sincronizada (`2026 = 1`, recibo `REC-2026-000001`); `voucher_sequences` permanece vacía antes de emitir vales.
+- **Bug 1 — `RAISE` sin placeholder:** la migración `0002` y el DDL del motor usaban `RAISE EXCEPTION '...', TG_TABLE_NAME`; PostgreSQL 16 fallaba con `too many parameters specified for RAISE`. Se añadió `%` y la migración corre en base limpia.
+- **Bug 2 — seed y secuencia de recibos:** el seed insertaba `REC-2026-000001` sin avanzar `receipt_sequences`, y el primer desembolso fallaba con `duplicate key value violates unique constraint "receipts_receipt_number_key"`. Ahora usa `next_receipt_number(2026)` y `FinancialImmutabilityEngine.formatReceiptNumber`.
+- **Bug 3 — `tsx` y metadatos de NestJS:** `npm run dev:api` arrancaba con `tsx`, que no emite `design:paramtypes`; los controladores recibían dependencias `undefined` y el login devolvía 500. Nuevo runner `apps/api/scripts/dev.mjs` con `tsc` + `tsc --watch` + `node --watch dist/main.js`, sin dependencias nuevas.
+- **Bug 4 — UUID inválido devolvía 500:** se añadieron `UuidParam`/`UuidQuery` con `ParseUUIDPipe` en todos los controladores; paths y query params inválidos responden 400 con `UUID_INVALIDO`.
+- **Contrato de anulación:** `POST /causation/batches/:id/annul` responde 201 por el comportamiento por defecto de NestJS para POST. El frontend usa `response.ok`; se acepta y documenta el contrato.
+- **Verificación final:** `npm run typecheck` completo sin errores, `npm run test --workspace=@scienpay/api` con **87/87 tests** y `npm run build --workspace=@scienpay/web` exitoso.
+
 ---
 
 ## 2. Mapa y Convención de Ramas en GitHub
@@ -129,3 +142,13 @@ Para clonar y levantar el proyecto en sus máquinas locales:
 
 4. **Credenciales de Prueba:**
    - Consultar el archivo local `docs/privado-credenciales-pruebas.md` (no commiteado por seguridad) o desplegar el acordeón inferior en la pantalla de login.
+
+## Estado final
+
+- Fases 1–3 completadas (17/17 tareas).
+- Integración validada contra PostgreSQL 16 aislado (`scienpay_verify_db`, puerto 55432): **158/158 PASS** (corrida del 2026-11-08).
+- Backend: 87/87 tests; typecheck y build de API, shared y web sin errores (reverificados el 2026-11-09).
+- Documentación actualizada en `docs/HANDOFF.md`, `docs/avances.md` y `docs/bitacora_ia.md`.
+- Sin tareas pendientes ni bloqueos dentro del alcance.
+
+> Nota: el 2026-11-09 no fue posible reejecutar la suite de integración porque Docker Desktop no estaba en ejecución; la corrida 158/158 del 2026-11-08 se mantiene como evidencia válida.
