@@ -183,5 +183,18 @@
   - Documentación final actualizada en `HANDOFF.md`, `avances.md` y `bitacora_ia.md`.
   - Sin tareas pendientes ni bloqueos dentro del alcance.
 
-> Nota: el 2026-11-09 no fue posible reejecutar la suite de integración porque Docker Desktop no estaba en ejecución; la corrida 158/158 del 2026-11-08 se mantiene como evidencia válida.
+> Nota: la reejecución de la suite de integración se completó el 2026-11-09 con Docker Desktop disponible; el resultado se registra en la Sesión 7.
+
+#### Sesión 7: Reejecución de la suite de integración
+- **Fecha:** 9 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / OpenCode
+- **Objetivo:** Reejecutar la suite end-to-end contra PostgreSQL aislado con Docker Desktop disponible y confirmar que el resultado 158/158 se mantiene.
+- **Entorno:**
+  - Contenedor `scienpay_verify_db` (PostgreSQL 16 Alpine, puerto `55432`) iniciado desde el volumen de verificación existente.
+  - Las 3 migraciones se aplicaron de forma idempotente; el seed se omitió porque la base ya contenía usuarios sembrados.
+  - API compilada (`apps/api/dist/main.js`) arrancada con `DATABASE_URL` apuntando al puerto `55432`.
+- **Resultado Obtenido:**
+  - **158/158 PASS, 0 FAIL** en la suite de integración (health, autenticación/refresh/replay, RBAC, catálogos, causación, solicitudes/cuatro ojos, FIFO, recibos/PDF, anulación/regeneración, auditoría, caja chica, usuarios, rate limit, logout y UUID inválidos).
+  - El proceso de API usado para la verificación se detuvo al finalizar.
+  - Documentación actualizada para sustituir la limitación previa por la reejecución exitosa.
 

@@ -146,9 +146,9 @@ Para clonar y levantar el proyecto en sus máquinas locales:
 ## Estado final
 
 - Fases 1–3 completadas (17/17 tareas).
-- Integración validada contra PostgreSQL 16 aislado (`scienpay_verify_db`, puerto 55432): **158/158 PASS** (corrida del 2026-11-08).
+- Integración validada contra PostgreSQL 16 aislado (`scienpay_verify_db`, puerto 55432): **158/158 PASS** (corrida del 2026-11-08 y reejecución del 2026-11-09).
 - Backend: 87/87 tests; typecheck y build de API, shared y web sin errores (reverificados el 2026-11-09).
 - Documentación actualizada en `docs/HANDOFF.md`, `docs/avances.md` y `docs/bitacora_ia.md`.
 - Sin tareas pendientes ni bloqueos dentro del alcance.
 
-> Nota: el 2026-11-09 no fue posible reejecutar la suite de integración porque Docker Desktop no estaba en ejecución; la corrida 158/158 del 2026-11-08 se mantiene como evidencia válida.
+> Reejecución del 2026-11-09: Docker Desktop disponible; migraciones aplicadas de forma idempotente, seed omitido por datos existentes y **158/158 PASS, 0 FAIL** contra el mismo contenedor aislado.
