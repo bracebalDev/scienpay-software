@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
 import {
   UserRole,
   createAssignmentSchema,
@@ -11,6 +11,7 @@ import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard.js';
 import { RolesGuard } from '../../infrastructure/auth/roles.guard.js';
 import { Roles } from '../../infrastructure/auth/roles.decorator.js';
 import { ZodValidationPipe } from '../../infrastructure/validation/zod-validation.pipe.js';
+import { UuidParam, UuidQuery } from '../../infrastructure/validation/uuid-param.decorator.js';
 
 @Controller('assignments')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -19,13 +20,13 @@ export class AssignmentsController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.GENERADOR, UserRole.RECEPTOR)
-  async listAssignments(@Query('projectId') projectId?: string) {
+  async listAssignments(@UuidQuery('projectId') projectId?: string) {
     return this.assignmentsService.listAssignments(projectId);
   }
 
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.GENERADOR, UserRole.RECEPTOR)
-  async getAssignmentById(@Param('id') id: string) {
+  async getAssignmentById(@UuidParam() id: string) {
     return this.assignmentsService.getAssignmentById(id);
   }
 
@@ -40,7 +41,7 @@ export class AssignmentsController {
   @Patch(':id/terminate')
   @Roles(UserRole.GENERADOR)
   async terminateAssignment(
-    @Param('id') id: string,
+    @UuidParam() id: string,
     @Body(new ZodValidationPipe(terminateAssignmentSchema)) body: TerminateAssignmentInput,
   ) {
     return this.assignmentsService.terminateAssignment(id, body);

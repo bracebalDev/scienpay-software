@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
 import {
   UserRole,
   createPersonSchema,
@@ -11,6 +11,7 @@ import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard.js';
 import { RolesGuard } from '../../infrastructure/auth/roles.guard.js';
 import { Roles } from '../../infrastructure/auth/roles.decorator.js';
 import { ZodValidationPipe } from '../../infrastructure/validation/zod-validation.pipe.js';
+import { UuidParam } from '../../infrastructure/validation/uuid-param.decorator.js';
 
 @Controller('persons')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -25,7 +26,7 @@ export class PersonsController {
 
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.GENERADOR, UserRole.RECEPTOR)
-  async getPersonById(@Param('id') id: string) {
+  async getPersonById(@UuidParam() id: string) {
     return this.personsService.getPersonById(id);
   }
 
@@ -40,7 +41,7 @@ export class PersonsController {
   @Patch(':id')
   @Roles(UserRole.GENERADOR)
   async updatePerson(
-    @Param('id') id: string,
+    @UuidParam() id: string,
     @Body(new ZodValidationPipe(updatePersonSchema)) body: UpdatePersonInput,
   ) {
     return this.personsService.updatePerson(id, body);

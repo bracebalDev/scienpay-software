@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  Param,
   Patch,
   Post,
   Req,
@@ -24,6 +23,7 @@ import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard.js';
 import { RolesGuard } from '../../infrastructure/auth/roles.guard.js';
 import { Roles } from '../../infrastructure/auth/roles.decorator.js';
 import { ZodValidationPipe } from '../../infrastructure/validation/zod-validation.pipe.js';
+import { UuidParam } from '../../infrastructure/validation/uuid-param.decorator.js';
 
 @Controller('petty-cash')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -38,13 +38,13 @@ export class PettyCashController {
 
   @Get(':id/periods')
   @Roles(UserRole.ADMIN, UserRole.GENERADOR, UserRole.RECEPTOR)
-  async listPeriods(@Param('id') id: string) {
+  async listPeriods(@UuidParam() id: string) {
     return this.pettyCashService.listPeriods(id);
   }
 
   @Get('periods/:periodId/vouchers')
   @Roles(UserRole.ADMIN, UserRole.GENERADOR, UserRole.RECEPTOR)
-  async listVouchers(@Param('periodId') periodId: string) {
+  async listVouchers(@UuidParam('periodId') periodId: string) {
     return this.pettyCashService.listVouchers(periodId);
   }
 
@@ -59,7 +59,7 @@ export class PettyCashController {
   @Post(':id/periods')
   @Roles(UserRole.RECEPTOR)
   async openPeriod(
-    @Param('id') id: string,
+    @UuidParam() id: string,
     @Body(new ZodValidationPipe(openPettyCashPeriodSchema)) body: OpenPettyCashPeriodInput,
     @Req() req: any,
   ) {
@@ -69,7 +69,7 @@ export class PettyCashController {
   @Post('periods/:periodId/vouchers')
   @Roles(UserRole.GENERADOR, UserRole.RECEPTOR)
   async requestVoucher(
-    @Param('periodId') periodId: string,
+    @UuidParam('periodId') periodId: string,
     @Body(new ZodValidationPipe(requestPettyCashVoucherSchema)) body: RequestPettyCashVoucherInput,
     @Req() req: any,
   ) {
@@ -78,20 +78,20 @@ export class PettyCashController {
 
   @Patch('vouchers/:id/approve')
   @Roles(UserRole.RECEPTOR)
-  async approveVoucher(@Param('id') id: string, @Req() req: any) {
+  async approveVoucher(@UuidParam() id: string, @Req() req: any) {
     return this.pettyCashService.approveVoucher(id, req.user.id);
   }
 
   @Patch('vouchers/:id/disburse')
   @Roles(UserRole.RECEPTOR)
-  async disburseVoucher(@Param('id') id: string, @Req() req: any) {
+  async disburseVoucher(@UuidParam() id: string, @Req() req: any) {
     return this.pettyCashService.disburseVoucher(id, req.user.id);
   }
 
   @Patch('vouchers/:id/render')
   @Roles(UserRole.RECEPTOR)
   async renderVoucher(
-    @Param('id') id: string,
+    @UuidParam() id: string,
     @Body(new ZodValidationPipe(renderPettyCashVoucherSchema)) body: RenderPettyCashVoucherInput,
     @Req() req: any,
   ) {
@@ -100,7 +100,7 @@ export class PettyCashController {
 
   @Patch('periods/:periodId/close')
   @Roles(UserRole.RECEPTOR)
-  async closePeriod(@Param('periodId') periodId: string, @Req() req: any) {
+  async closePeriod(@UuidParam('periodId') periodId: string, @Req() req: any) {
     return this.pettyCashService.closePeriod(periodId, req.user.id);
   }
 }

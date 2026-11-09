@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import {
   UserRole,
   previewCausationSchema,
@@ -13,6 +13,7 @@ import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard.js';
 import { RolesGuard } from '../../infrastructure/auth/roles.guard.js';
 import { Roles } from '../../infrastructure/auth/roles.decorator.js';
 import { ZodValidationPipe } from '../../infrastructure/validation/zod-validation.pipe.js';
+import { UuidParam, UuidQuery } from '../../infrastructure/validation/uuid-param.decorator.js';
 
 @Controller('causation')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -38,20 +39,20 @@ export class CausationController {
 
   @Get('batches')
   @Roles(UserRole.ADMIN, UserRole.GENERADOR, UserRole.RECEPTOR)
-  async listBatches(@Query('projectId') projectId?: string) {
+  async listBatches(@UuidQuery('projectId') projectId?: string) {
     return this.causationService.listBatches(projectId);
   }
 
   @Get('batches/:id')
   @Roles(UserRole.ADMIN, UserRole.GENERADOR, UserRole.RECEPTOR)
-  async getBatchById(@Param('id') id: string) {
+  async getBatchById(@UuidParam() id: string) {
     return this.causationService.getBatchById(id);
   }
 
   @Post('batches/:id/annul')
   @Roles(UserRole.GENERADOR)
   async annulBatch(
-    @Param('id') id: string,
+    @UuidParam() id: string,
     @Body(new ZodValidationPipe(annulCausationBatchSchema)) body: AnnulCausationBatchInput,
     @Req() req: any,
   ) {

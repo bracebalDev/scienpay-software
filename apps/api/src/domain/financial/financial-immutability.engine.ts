@@ -65,7 +65,7 @@ CREATE OR REPLACE FUNCTION enforce_causation_items_immutability()
 RETURNS TRIGGER AS $$
 BEGIN
   IF TG_OP = 'DELETE' THEN
-    RAISE EXCEPTION 'VIOLACION_DE_INTEGRIDAD_FINANCIERA: La tabla "causation_items" no admite DELETE. Toda correccion debe efectuarse mediante anulacion formal justificada.', TG_TABLE_NAME
+    RAISE EXCEPTION 'VIOLACION_DE_INTEGRIDAD_FINANCIERA: La tabla % no admite DELETE. Toda correccion debe efectuarse mediante anulacion formal justificada.', TG_TABLE_NAME
       USING ERRCODE = '55000';
   END IF;
 
@@ -109,7 +109,7 @@ CREATE OR REPLACE FUNCTION enforce_causation_batches_immutability()
 RETURNS TRIGGER AS $$
 BEGIN
   IF TG_OP = 'DELETE' THEN
-    RAISE EXCEPTION 'VIOLACION_DE_INTEGRIDAD_FINANCIERA: La tabla "causation_batches" no admite DELETE. Toda correccion debe efectuarse mediante anulacion formal justificada.', TG_TABLE_NAME
+    RAISE EXCEPTION 'VIOLACION_DE_INTEGRIDAD_FINANCIERA: La tabla % no admite DELETE. Toda correccion debe efectuarse mediante anulacion formal justificada.', TG_TABLE_NAME
       USING ERRCODE = '55000';
   END IF;
 
