@@ -100,6 +100,16 @@
 - **Contrato de anulación:** `POST /causation/batches/:id/annul` responde 201 por el comportamiento por defecto de NestJS para POST. El frontend usa `response.ok`; se acepta y documenta el contrato.
 - **Verificación final:** `npm run typecheck` completo sin errores, `npm run test --workspace=@scienpay/api` con **87/87 tests** y `npm run build --workspace=@scienpay/web` exitoso.
 
+### 10 de Noviembre de 2026
+
+#### Redefinición de las Fases 4 y 5
+
+- **Motivo:** el `HANDOFF.md` versionado solo declaraba las Fases 4 y 5 como “fuera de alcance”, sin tareas ni criterios. El plan original completo existía fuera del repositorio y no se había versionado.
+- **Fase 4 — Testing y calidad (6 tareas):** suite de integración versionada y en CI, E2E con Playwright, stress test FIFO, lint/formato/typecheck bloqueantes, OpenAPI desde Zod y cierre de deuda técnica (`SOL` transaccional, `notes`, tests frontend reales).
+- **Fase 5 — Pulimiento y entrega (6 tareas):** seed alineado a los 6 escenarios con verificación automática, guía de despliegue Docker Compose + Fly.io, manuales por rol, auditoría de la bitácora IA, demo grabada y preparación de defensa.
+- **Ajustes respecto del plan original:** se parte de la suite externa 158/158 en lugar de Testcontainers; se elige Playwright en lugar de Cypress; se incorpora la deuda técnica documentada en las Fases 1–3; la guía de despliegue cubre la infraestructura real (Docker Compose + Fly.io).
+- **Estado:** 12 tareas definidas, 0 ejecutadas. No se modificó `main`.
+
 ---
 
 ## 2. Mapa y Convención de Ramas en GitHub
@@ -115,7 +125,7 @@ El equipo trabaja bajo el modelo **GitFlow Adaptado**, respetando las siguientes
 | [`chore/setup-monorepo`](https://github.com/bracebalDev/scienpay-software/tree/chore/setup-monorepo) | Workspaces, Zod, TypeScript, ADRs | Completada y subida |
 | [`chore/devops-docker-ci`](https://github.com/bracebalDev/scienpay-software/tree/chore/devops-docker-ci) | Docker multi-stage, Nginx, CI Actions | Completada y subida |
 | [`feature/frontend-responsive`](https://github.com/bracebalDev/scienpay-software/tree/feature/frontend-responsive) | Notion Workspace, Login, Timer 5 min, Vistas RBAC | Completada y subida |
-| `plan/execution-tracking` | Ejecución controlada de Fases 1–3 del plan de completitud | Completada (Fases 1–3) |
+| `plan/execution-tracking` | Ejecución de Fases 1–3 y definición de Fases 4–5 | Completada (Fases 1–3); Fases 4–5 definidas |
 
 ---
 
@@ -146,9 +156,10 @@ Para clonar y levantar el proyecto en sus máquinas locales:
 ## Estado final
 
 - Fases 1–3 completadas (17/17 tareas).
+- Fases 4–5 redefinidas en `docs/HANDOFF.md` (secciones 10 y 11): 12 tareas definidas (6 + 6), 0 ejecutadas.
 - Integración validada contra PostgreSQL 16 aislado (`scienpay_verify_db`, puerto 55432): **158/158 PASS** (corrida del 2026-11-08 y reejecución del 2026-11-09).
 - Backend: 87/87 tests; typecheck y build de API, shared y web sin errores (reverificados el 2026-11-09).
-- Documentación actualizada en `docs/HANDOFF.md`, `docs/avances.md` y `docs/bitacora_ia.md`.
-- Sin tareas pendientes ni bloqueos dentro del alcance.
+- Documentación actualizada en `docs/HANDOFF.md`, `docs/avances.md`, `docs/bitacora_ia.md` y `docs/uso-de-ia.md`.
+- Sin tareas pendientes ni bloqueos dentro del alcance de Fases 1–3. Las Fases 4–5 quedan pendientes de autorización explícita.
 
 > Reejecución del 2026-11-09: Docker Desktop disponible; migraciones aplicadas de forma idempotente, seed omitido por datos existentes y **158/158 PASS, 0 FAIL** contra el mismo contenedor aislado.

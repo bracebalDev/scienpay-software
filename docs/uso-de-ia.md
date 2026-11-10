@@ -47,6 +47,15 @@ Este documento registra los prompts utilizados, las decisiones aceptadas y recha
 - **Objetivo del Prompt:** Completar las correcciones críticas de backend (Fase 1), los módulos backend faltantes (Fase 2) y la conexión real del frontend a la API (Fase 3), con verificación de typecheck, tests y build, commits atómicos y trazabilidad documental completa.
 - **Herramientas de IA utilizadas:** Nemotron 3 Ultra (Free) para análisis/planificación y DeepSeek V4.1 Flash Free para ejecución, ambos en OpenCode.
 
+### Sesión 6: Redefinición de las Fases 4 y 5
+- **Fecha:** 10 de Noviembre de 2026
+- **Prompt de Entrada:**
+  > "Revisé el HANDOFF y no habla casi nada de lo que se tiene que hacer en las fases 4 y 5. O me equivoco?"
+  > "Redefine según el estado actual"
+- **Objetivo del Prompt:** Reemplazar la declaración de “fuera de alcance” por un plan de Fases 4 y 5 que parta del estado real del repositorio, sin atribuir trabajo no realizado ni asumir herramientas que no están instaladas.
+- **Resultado:** Se definieron 6 tareas para la Fase 4 (suite de integración versionada, E2E con Playwright, stress FIFO, lint/CI, OpenAPI desde Zod y cierre de deuda técnica) y 6 para la Fase 5 (seed verificado, despliegue Docker Compose + Fly.io, manuales por rol, bitácora IA, demo y defensa). Se normalizó la numeración de sesiones y se actualizaron `HANDOFF.md` y `avances.md`.
+- **Herramientas de IA utilizadas:** Asistente de Codificación / OpenCode.
+
 ---
 
 ## 2. Decisiones Aceptadas vs. Rechazadas
@@ -81,6 +90,7 @@ Este documento registra los prompts utilizados, las decisiones aceptadas y recha
 | **DEC-IA-26** | Renderizar las tres experiencias de rol desde un único componente monolítico. | **Rechazada** | Se separaron `AdminView`, `GeneratorView` y `ReceptorView`, cada una con sus hooks y mutaciones; `App.tsx` solo coordina la pestaña activa. |
 | **DEC-IA-27** | Añadir una librería de portales para los modales. | **Rechazada** | Se mantiene un `Modal` propio con overlay fijo, sin dependencias adicionales y coherente con el sistema visual existente. |
 | **DEC-IA-28** | Sumar los montos del desembolso con aritmética de coma flotante. | **Rechazada** | Se convierten a centavos antes de sumar y comparar para que el total coincida con la validación `Decimal` del backend y no se rechacen desembolsos válidos. |
+| **DEC-IA-29** | Mantener las Fases 4 y 5 como “fuera de alcance” sin desglose de tareas. | **Rechazada** | El HANDOFF solo tenía etiquetas; se redefinieron 12 tareas ajustadas al estado real (suite externa 158/158, CI sin lint, tests placeholder, seed incompleto). |
 
 ---
 

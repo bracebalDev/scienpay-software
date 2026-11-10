@@ -2,9 +2,9 @@
 
 > **Proyecto:** Scienpay — Sistema de Control de Pagos y Asignaciones para Proyectos Científicos
 > **Rama de trabajo:** `plan/execution-tracking` (aislada de `main`)
-> **Alcance autorizado:** únicamente **Fases 1, 2 y 3**. Las Fases 4 y 5 quedan explícitamente fuera de alcance.
+> **Alcance:** Fases 1–3 completadas (17/17). Fases 4–5 redefinidas el 2026-11-10 y pendientes de ejecución.
 > **Fecha de inicio de ejecución:** 2026-11-07
-> **Última actualización:** 2026-11-08
+> **Última actualización:** 2026-11-10
 > **Modelo de análisis y planificación:** Nemotron 3 Ultra (Free) vía OpenRouter en OpenCode.
 > **Modelo de ejecución de Fases 1–3:** DeepSeek V4.1 Flash Free vía OpenCode Zen.
 
@@ -31,8 +31,10 @@ Cada cambio de estado se registra en el historial de este documento y se acompa�
 | **Fase 1** | Correcciones críticas de backend | 🟢 Completada | 5/5 |
 | **Fase 2** | Completar módulos backend faltantes | 🟢 Completada | 5/5 |
 | **Fase 3** | Frontend real conectado a la API | 🟢 Completada | 7/7 |
-| **Fase 4** | Testing y calidad | ⚪ Fuera de alcance | — |
-| **Fase 5** | Pulimiento y entrega | ⚪ Fuera de alcance | — |
+| **Fase 4** | Testing y calidad | 🔴 Por hacer | 0/6 |
+| **Fase 5** | Pulimiento y entrega | 🔴 Por hacer | 0/6 |
+
+> Las Fases 4 y 5 se redefinieron el 2026-11-10 a partir del estado real del repositorio. El detalle está en las secciones 10 y 11. Su ejecución no está autorizada todavía.
 
 ---
 
@@ -232,14 +234,17 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 
 ## 7. Métricas de progreso
 
-| Métrica | Objetivo | Actual |
+| Métrica | Estado actual (2026-11-10) | Objetivo de las Fases 4–5 |
 |---|---|---|
-| Tareas de Fases 1–3 | 17 | 17 completadas |
-| Tests unitarios backend | 100 % pasando | 87/87 pasando |
-| Typecheck | Sin errores | API, shared y web sin errores |
-| Build | Exitoso | API, shared y web compilan |
-| Frontend conectado a API | 100 % | 100 % (sin mocks) |
-| Integración con PostgreSQL aislado | 100 % | 158/158 PASS (2026-11-08) |
+| Tareas de Fases 1–3 | 17/17 completadas | Cerradas |
+| Tareas de Fase 4 | 0/6 | 6/6 |
+| Tareas de Fase 5 | 0/6 | 6/6 |
+| Tests unitarios backend | 87/87 pasando | Mantener 100 % |
+| Integración con PostgreSQL | Script externo 158/158; no corre en CI | Suite versionada y bloqueante en CI |
+| Tests frontend | Placeholder (`exit 0`) | Unitarios/componentes + E2E |
+| Lint | Sin ESLint; `npm run lint` no-op | `npm run lint` bloqueante en CI |
+| OpenAPI | No disponible | `/api/docs` generado desde Zod |
+| Deuda técnica conocida | `SOL` con `count + 1`, `notes` no persistido, tests placeholder | Cerrada o aceptada explícitamente |
 
 ---
 
@@ -265,6 +270,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 | 2026-11-08 | 3.5 Vistas por rol | 🔴 Por hacer | 🟢 Completada | — | `AdminView`, `GeneratorView` y `ReceptorView` con datos reales y acciones de API. |
 | 2026-11-08 | 3.6 Descarga de PDF | 🔴 Por hacer | 🟢 Completada | — | `apiClient.download` + hooks de recibo y solicitud. |
 | 2026-11-08 | 3.7 Errores globales y UX | 🔴 Por hacer | 🟢 Completada | — | `ToastProvider`, intercepción 401 y estados de carga/error/vacío. |
+| 2026-11-10 | Redefinición de Fases 4–5 | ⚪ Fuera de alcance | 🔴 Por hacer (0/12) | — | Se reemplaza el alcance recortado por un plan ajustado al estado real; ver secciones 10 y 11. |
 
 ---
 
@@ -296,7 +302,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 24. **Descargas autenticadas:** `apiClient.download` reintenta una vez tras un refresh en 401 y, si el reintento vuelve a fallar, limpia la sesión. Así se evita descargar HTML de login como si fuera un PDF.
 25. **Previsualización de causación:** el botón "Generar y Congelar Lote" se deshabilita si los parámetros actuales del formulario no coinciden con la previsualización vigente. La comparación es por `projectId`, `paymentGroupId`, `periodStartDate` y `periodEndDate`.
 26. **Cierre de solicitudes entregadas:** `ReceptorView` expone `PATCH /payment-requests/:id/close` solo para solicitudes en estado `ENTREGADA`; la transición sigue validada por la máquina de estados del backend.
-27. **Verificación del frontend:** la Fase 3 se validó con `npm run typecheck --workspace=@scienpay/web` y `npm run build --workspace=@scienpay/web`. No existe suite automatizada de componentes en el workspace web; esa cobertura corresponde a la Fase 4, fuera de alcance.
+27. **Verificación del frontend:** la Fase 3 se validó con `npm run typecheck --workspace=@scienpay/web` y `npm run build --workspace=@scienpay/web`. No existe suite automatizada de componentes en el workspace web; esa cobertura corresponde a la Fase 4 (tareas 4.2 y 4.6), todavía pendiente.
 28. **Notas de solicitud:** `createPaymentRequestSchema` acepta `notes`, pero `PaymentRequestsService.createRequest` no la persiste porque el esquema de BD no tiene columna para ella. El frontend conserva el campo; queda registrado como limitación conocida.
 29. **RBAC en la interfaz:** ocultar pestañas y acciones por rol es solo una ayuda de UX. La autorización efectiva se mantiene en los guards y servicios del backend; ninguna vista asume que el ocultamiento reemplaza la validación del servidor.
 30. **Corrección de `RAISE` en triggers:** la migración `0002` y el DDL del motor usaban `RAISE EXCEPTION '...', TG_TABLE_NAME` sin placeholder `%`; PostgreSQL 16 fallaba con `too many parameters specified for RAISE`. Se añadió `%` y la migración corre en base limpia.
@@ -304,23 +310,209 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 32. **Runner de desarrollo con `tsc`:** `npm run dev:api` usaba `tsx`, que no emite `design:paramtypes`; los controladores recibían dependencias `undefined` y el login devolvía 500. El nuevo runner `apps/api/scripts/dev.mjs` usa `tsc` + `tsc --watch` + `node --watch dist/main.js`, sin dependencias nuevas. El arranque compilado y el runner se verificaron con login 200 y la corrida 158/158.
 33. **Validación de UUID en el borde HTTP:** un UUID inválido en path o query llegaba a PostgreSQL y producía `invalid input syntax for type uuid` (HTTP 500). Se añadieron `UuidParam`/`UuidQuery` con `ParseUUIDPipe` en todos los controladores; ahora responde 400 con `UUID_INVALIDO`. La verificación cubre paths y query params de proyectos, causación, solicitudes, desembolsos, asignaciones, auditoría y caja chica.
 34. **Anulación de causación responde 201:** `POST /causation/batches/:id/annul` no declara `@HttpCode`, por lo que NestJS usa 201 para POST. El frontend usa `response.ok`, de modo que el contrato funciona; se acepta y documenta en lugar de forzar 200 para no introducir un cambio innecesario. Si un consumidor exige 200, debe añadirse `@HttpCode(HttpStatus.OK)` y actualizar la prueba.
-35. **Script de integración fuera del repositorio:** la verificación end-to-end se ejecutó con un script temporal en `C:\Users\Usuario\AppData\Local\Temp\opencode\scienpay-integration.mjs` para no introducir artefactos de Fase 4 en el repositorio. El script crea datos con sufijo temporal y puede reejecutarse sobre la misma base. La suite automatizada de integración queda para Fase 4.
+35. **Script de integración fuera del repositorio:** la verificación end-to-end se ejecutó con un script temporal en `C:\Users\Usuario\AppData\Local\Temp\opencode\scienpay-integration.mjs` para no introducir artefactos de Fase 4 en el repositorio. El script crea datos con sufijo temporal y puede reejecutarse sobre la misma base. La suite automatizada de integración es la tarea 4.1 de la Fase 4, todavía pendiente.
 
 ---
 
-## 10. Reglas no negociables
+## 10. FASE 4 — Testing y calidad (redefinida el 2026-11-10)
+
+**Objetivo:** convertir la verificación manual de las Fases 1–3 en un sistema de calidad repetible y bloqueante en CI, cubrir el frontend, cerrar la deuda técnica documentada y publicar el contrato OpenAPI.
+
+**Punto de partida verificado:**
+- La suite de **158 verificaciones** existe, pero vive en `C:\Users\Usuario\AppData\Local\Temp\opencode\scienpay-integration.mjs`, fuera del repositorio, y no se ejecuta en CI.
+- `apps/api/test/` solo contiene tests de dominio y fundación; no existe `test/integration/`.
+- `apps/web` declara `test: "echo \"Frontend tests placeholder\" && exit 0"`: simula cobertura sin ejecutar tests.
+- `packages/shared` también tiene un placeholder de test; se acepta provisionalmente porque los contratos se validan por typecheck y por los tests de API, pero debe quedar documentado o sustituirse.
+- El CI ejecuta `typecheck`, `test` y `build`, pero **no ejecuta `npm run lint`**; el script raíz existe y no hace nada porque ningún workspace define `lint`.
+- `tsconfig.base.json` ya tiene `strict: true`.
+- No hay Swagger/OpenAPI ni dependencias asociadas.
+- Deuda técnica documentada: `SOL-YYYY-NNN` usa `count + 1`; `notes` se acepta pero no se persiste; el rate limiter es en memoria (aceptado para una instancia).
+
+**Orden de ejecución:** 4.1 → 4.6. Las tareas 4.2, 4.3 y 4.5 dependen de la infraestructura de 4.1.
+
+> **Esta sección define el plan, no autoriza su ejecución.** Cada tarea pasa a 🟡 En progreso solo cuando el responsable lo confirme.
+
+### 4.1 Suite de integración versionada en el repositorio
+
+| Campo | Contenido |
+|---|---|
+| **Estado** | 🔴 Por hacer |
+| **Punto de partida** | 158 checks en un script temporal; sin `test/integration/`; CI solo ejecuta tests unitarios. |
+| **Objetivo** | Mover la verificación end-to-end al repositorio y ejecutarla en CI contra PostgreSQL 16 real. |
+| **Solución** | 1. Dividir el script en suites por dominio bajo `apps/api/test/integration/`: `auth`, `catalogs`, `causation`, `payment-requests`, `disbursements`, `petty-cash`, `audit` y `security` (RBAC, rate limit, UUID inválidos).<br>2. Crear helpers reutilizables: `integration-env.ts` (BASE_URL, sufijo de corrida, login por rol, wrapper `api()`), `db.ts` (aserciones SQL con `postgres.js`) y `bootstrap.ts` (migraciones + seed).<br>3. Añadir `docker-compose.test.yml` con PostgreSQL 16 Alpine en `55432`; en CI usar un `services: postgres` equivalente.<br>4. Crear `apps/api/scripts/run-integration.mjs`: valida la BD, aplica migraciones, siembra si está vacía, arranca la API compilada, espera `/health`, ejecuta `tsx --test test/integration/**/*.test.ts`, detiene la API y propaga el código de salida.<br>5. Scripts `test:integration` en API y raíz; `test` sigue siendo solo unitario.<br>6. Job `integration` en CI con PostgreSQL 16, build de shared/API y ejecución del comando. |
+| **Aceptación** | Desde una base limpia, un solo comando aplica migraciones, siembra y ejecuta **158+ verificaciones** con exit code 0; el job de CI queda verde; un fallo produce exit code distinto de 0; no se depende de archivos temporales ni del orden entre suites; los datos usan sufijo de corrida. |
+| **Archivos** | `apps/api/test/integration/**`, `apps/api/test/helpers/**`, `apps/api/scripts/run-integration.mjs`, `docker-compose.test.yml`, `apps/api/package.json`, `package.json`, `.github/workflows/ci.yml` |
+| **Depende de** | — |
+| **Alternativa descartada** | Testcontainers: añade `@testcontainers/postgresql`, exige Docker-in-Docker en CI y arranca más lento. El contenedor de servicio reutiliza el entorno ya verificado. Se reconsidera si se necesita una base aislada por suite. |
+
+### 4.2 Tests E2E del frontend
+
+| Campo | Contenido |
+|---|---|
+| **Estado** | 🔴 Por hacer |
+| **Punto de partida** | No hay E2E; `apps/web` solo tiene el placeholder `exit 0`. |
+| **Objetivo** | Cubrir los tres flujos críticos de usuario contra la aplicación real. |
+| **Solución** | 1. Adoptar **Playwright** (no hay configuración previa de Cypress que preservar; ofrece `webServer`, trazas, capturas y ejecución paralela sin servicio externo).<br>2. Configurar `apps/web/playwright.config.ts` con `webServer` para API y web, `baseURL` `http://localhost:5173` y base de datos dedicada `scienpay_e2e`.<br>3. Implementar tres specs: **ADMIN** (login → usuarios → desbloquear/reset → auditoría → logout), **GENERADOR** (login → proyecto → persona → asignación → causación → solicitud → enviar) y **RECEPTOR** (login → bandeja → aprobar con cuatro ojos → desembolso parcial FIFO → PDF → caja chica → rendir → cerrar).<br>4. Ejecutar migraciones + seed antes de la corrida; usar sufijo temporal para no chocar con datos existentes.<br>5. Job `e2e` en CI con PostgreSQL 16; trazas y capturas como artefactos en fallo. |
+| **Aceptación** | `npm run test:e2e` desde una base limpia ejecuta los tres flujos y pasa; los fallos dejan traza/captura; la corrida completa tarda menos de 10 minutos; el job de CI queda verde en PR hacia `main`/`develop`. |
+| **Archivos** | `apps/web/playwright.config.ts`, `apps/web/e2e/**`, `apps/web/package.json`, `package.json`, `.github/workflows/ci.yml` |
+| **Depende de** | 4.1 (infraestructura de BD y arranque) |
+| **Alternativa** | Cypress (elección original): válida si el equipo prefiere su DX; los flujos y criterios de aceptación no cambian. |
+
+### 4.3 Test de concurrencia FIFO
+
+| Campo | Contenido |
+|---|---|
+| **Estado** | 🔴 Por hacer |
+| **Punto de partida** | `registerDisbursement` ya usa transacción y `FOR UPDATE`; hay tests unitarios de orden determinista, pero no una prueba de estrés real. |
+| **Objetivo** | Demostrar que N desembolsos concurrentes no producen sobrepago, saldo negativo ni deadlocks. |
+| **Solución** | Test de integración que lanza **20 desembolsos concurrentes** (`Promise.all`) para el mismo `personId` + `projectId`, con montos aleatorios que en conjunto no superen la deuda. Verificar por SQL: suma de `receipt_allocations` = suma desembolsada; `causation_items.paid_amount <= calculated_amount`; `remaining_debt = calculated_amount - paid_amount`; ningún `remaining_debt` negativo; cero errores `40P01` (deadlock). Repetir 10 veces. |
+| **Aceptación** | 10/10 corridas pasan; no hay sobrepago ni saldos negativos; no hay deadlocks; el test termina en menos de 60 s. |
+| **Archivos** | `apps/api/test/integration/fifo-concurrency.test.ts` |
+| **Depende de** | 4.1 |
+
+### 4.4 Lint, formato y typecheck estricto en CI
+
+| Campo | Contenido |
+|---|---|
+| **Estado** | 🔴 Por hacer |
+| **Punto de partida** | `strict: true` ya está activo; el CI corre typecheck/test/build; no hay ESLint y `npm run lint` no hace nada. |
+| **Objetivo** | Hacer que lint y formato sean bloqueantes y consistentes en todo el monorepo. |
+| **Solución** | 1. Añadir ESLint flat config en la raíz con `typescript-eslint`, reglas de React Hooks para `apps/web` y Prettier.<br>2. Definir `lint` en cada workspace y hacer que el script raíz falle si algún workspace no lo define.<br>3. Corregir las violaciones existentes o justificar excepciones puntuales.<br>4. Añadir `npm run lint` y `prettier --check` al CI como pasos bloqueantes.<br>5. Revisar la política de los escaneos de seguridad: Gitleaks bloqueante; Semgrep y `npm audit` con baseline documentado o bloqueantes tras triage.<br>6. Registrar la política en `docs/decisiones/ADR-008-calidad-y-ci.md`. |
+| **Aceptación** | `npm run lint` y `prettier --check` pasan localmente y en CI; el pipeline falla ante un error de lint, typecheck o test; la política de escaneos queda documentada. |
+| **Archivos** | `eslint.config.js`, `package.json`, `apps/*/package.json`, `packages/shared/package.json`, `.github/workflows/ci.yml`, `docs/decisiones/ADR-008-calidad-y-ci.md` |
+| **Depende de** | — (puede ejecutarse en paralelo con 4.1) |
+
+### 4.5 OpenAPI/Swagger generado desde Zod
+
+| Campo | Contenido |
+|---|---|
+| **Estado** | 🔴 Por hacer |
+| **Punto de partida** | No hay Swagger/OpenAPI; los schemas Zod de `@scienpay/shared` son la fuente única de validación. |
+| **Objetivo** | Publicar `/api/docs` con todos los endpoints, schemas de request/response y autenticación, sin duplicar DTOs. |
+| **Solución** | 1. Añadir `@nestjs/swagger`, `swagger-ui-express` y un conversor Zod → JSON Schema (`zod-to-json-schema` o `@asteasolutions/zod-to-openapi`).<br>2. Anotar controladores con `@ApiTags`, `@ApiOperation`, `@ApiResponse` y `@ApiBearerAuth`; registrar el esquema de cookie de refresh.<br>3. Generar los componentes desde los schemas compartidos y montar `SwaggerModule` en `main.ts` (`/api/docs` y `/api/docs-json`).<br>4. Controlar la exposición con `ENABLE_SWAGGER` (activo en desarrollo/demo; desactivable en producción).<br>5. Añadir un test que compare las rutas registradas por Nest con los paths del documento. |
+| **Aceptación** | `/api/docs` lista todos los endpoints; "Try it out" funciona para health, login y un endpoint protegido con bearer/cookie; el test de cobertura de rutas pasa; no hay schemas duplicados. |
+| **Archivos** | `apps/api/src/main.ts`, `apps/api/src/infrastructure/openapi/**`, controladores, `apps/api/package.json`, tests |
+| **Depende de** | 4.1 (para el test de cobertura de rutas) |
+
+### 4.6 Cierre de deuda técnica documentada
+
+| Campo | Contenido |
+|---|---|
+| **Estado** | 🔴 Por hacer |
+| **Punto de partida** | Tres deudas registradas en la sección 9: numeración de solicitudes no transaccional, `notes` no persistido y tests frontend placeholder. |
+| **Objetivo** | Cerrar las deudas que afectan correctitud o calidad; dejar las aceptadas explícitamente documentadas. |
+| **Solución** | **4.6.1 — `SOL-YYYY-NNN` transaccional:** migración `0004` con `request_sequences(year, last_number)` y `next_request_number(year)`, siembra desde solicitudes existentes, uso dentro de la transacción de `createRequest` y test de concurrencia (10 solicitudes paralelas → códigos únicos, sin huecos en rollback).<br>**4.6.2 — Persistir `notes`:** añadir columna `notes` a `payment_requests` (nullable), actualizar el schema Drizzle, persistir en `createRequest`, exponer en la respuesta y mostrar en el detalle; test de ida y vuelta.<br>**4.6.3 — Tests frontend reales:** añadir Vitest + React Testing Library + jsdom; cubrir `apiClient` (refresh en 401, normalización de errores), `AuthContext` (login/logout/deduplicación de refresh), `zodResolver` y al menos un formulario/vista crítico (`DisbursementForm` en centavos, guardas por rol); eliminar el placeholder `exit 0` de `apps/web` y justificar o sustituir el de `packages/shared`.<br>**4.6.4 — Limitaciones aceptadas:** mantener el rate limiter en memoria para una instancia y documentar la migración a un almacén compartido si se escala. |
+| **Aceptación** | La numeración de solicitudes es transaccional y pasa la prueba de concurrencia; `notes` se persiste y se recupera; `npm run test --workspace=@scienpay/web` ejecuta tests reales y falla ante regresiones; no quedan placeholders sin justificar; la sección 9 se actualiza. |
+| **Archivos** | `apps/api/src/infrastructure/database/migrations/0004_*.sql`, `payment-requests.service.ts`, schema Drizzle, `seed.ts`, tests de integración, `apps/web/src/**/*.test.tsx`, `apps/web/package.json`, `packages/shared/package.json` |
+| **Depende de** | 4.1 (integración), 4.2 y 4.4 (infraestructura de tests y lint) |
+
+---
+
+## 11. FASE 5 — Pulimiento y entrega (redefinida el 2026-11-10)
+
+**Objetivo:** dejar el proyecto listo para demo, defensa y entrega, usando la infraestructura real ya existente (Docker Compose + Fly.io) y la documentación acumulada.
+
+**Punto de partida verificado:**
+- El seed declara cubrir los escenarios de la especificación, pero no hay verificación automatizada; la caja chica sembrada tiene apertura y período, pero no un vale con ciclo completo.
+- El README ya documenta Docker Compose, backups/restore y proxy Nginx; `fly.toml` y `Dockerfile` existen; falta una guía de despliegue de producción consolidada.
+- No existen manuales por rol, guía de demo ni preparación de defensa.
+- `docs/bitacora_ia.md` tiene sesiones hasta la 15 y luego dos entradas duplicadas como “Sesión 6” y “Sesión 7”; `docs/uso-de-ia.md` solo llega a la sesión 5.
+- El PR #1 está abierto, con CI verde y 6 commits de `AngBan2x`; se usa como evidencia.
+
+**Orden de ejecución:** 5.1 → 5.6. 5.2 puede ejecutarse en paralelo con 5.3 y 5.4; 5.5 depende de 5.1 y 5.2; 5.6 depende de 5.5.
+
+> **Esta sección define el plan, no autoriza su ejecución.**
+
+### 5.1 Seed alineado a los 6 escenarios + verificación automatizada
+
+| Campo | Contenido |
+|---|---|
+| **Estado** | 🔴 Por hacer |
+| **Punto de partida** | El seed cubre asignación completa, parcial, cambio de monto, lote con pago parcial/FIFO y solicitud rechazada; la numeración de escenarios no coincide con la especificación y la caja chica no tiene vale completo. |
+| **Objetivo** | Que el seed reproduzca los 6 escenarios exigidos y que una prueba automática lo verifique. |
+| **Solución** | 1. Renumerar y completar los escenarios según la especificación: (1) asignación completa, (2) asignación parcial, (3) cambio de monto a mitad de período, (4) lote causado + pago parcial + prevención de exceso FIFO, (5) solicitud rechazada formalmente con justificación, (6) caja chica con apertura, vale solicitado → aprobado → desembolsado → rendido, cierre y arrastre.<br>2. Añadir el vale y los movimientos faltantes; crear un segundo período para demostrar el arrastre.<br>3. Añadir datos demo realistas (más proyectos, personas y períodos) sin romper la idempotencia.<br>4. Crear `test/seed/seed-scenarios.test.ts` o `scripts/verify-seed.mjs` con aserciones SQL por escenario. |
+| **Aceptación** | `npm run db:seed` sobre base limpia + `npm run test:seed` pasan; los 6 escenarios son verificables por consulta; la segunda siembra se omite sin duplicar; los conteos esperados quedan documentados. |
+| **Archivos** | `apps/api/src/infrastructure/database/seed.ts`, `apps/api/test/seed/**` o `apps/api/scripts/verify-seed.mjs`, `apps/api/package.json`, `docs/HANDOFF.md` |
+| **Depende de** | 4.1 (infraestructura de BD) |
+
+### 5.2 Guía de despliegue a producción (Docker Compose + Fly.io)
+
+| Campo | Contenido |
+|---|---|
+| **Estado** | 🔴 Por hacer |
+| **Punto de partida** | README con Docker Compose, backups/restore y Nginx; `fly.toml` y `Dockerfile` presentes; sin guía de producción consolidada. |
+| **Objetivo** | Permitir que un tercero despliegue, opere y recupere el sistema sin adivinanzas. |
+| **Solución** | Crear `docs/deployment.md` con dos rutas: **Docker Compose en VPS** (variables y secretos, `docker compose up -d --build`, Nginx/TLS con Let's Encrypt, health checks, límites de recursos, logs, backups/restore con los scripts existentes, rollback con imagen anterior + backup de BD) y **Fly.io** (`fly launch/deploy`, `fly secrets set`, Postgres de Fly o externo, release command para migraciones/seed, health checks, escalado, `fly releases`/rollback, logs). Añadir checklist de seguridad: rotar secretos por defecto, JWT de 64+ caracteres, cookies `Secure` en producción, CORS restringido, TLS, rate limit y `.env` fuera del repositorio. Crear `docker-compose.prod.yml` si hace falta para límites/logging. |
+| **Aceptación** | Un tercero puede desplegar desde cero siguiendo la guía; la ruta Docker Compose se prueba localmente; `.env.example` está completo; no se commitean secretos; el rollback y el restore están documentados y probados al menos una vez. |
+| **Archivos** | `docs/deployment.md`, `README.md`, `.env.example`, `docker-compose.prod.yml` (opcional), `fly.toml` (revisión) |
+| **Depende de** | 4.1 (suite estable para validar el despliegue) |
+
+### 5.3 Manuales de usuario por rol
+
+| Campo | Contenido |
+|---|---|
+| **Estado** | 🔴 Por hacer |
+| **Punto de partida** | No existen manuales por rol. |
+| **Objetivo** | Documentar los flujos completos de ADMIN, GENERADOR y RECEPTOR con el vocabulario real de la interfaz. |
+| **Solución** | Crear `docs/manual-admin.md` (usuarios, desbloqueo/reset, parámetros, auditoría con filtros), `docs/manual-generador.md` (proyectos, beneficiarios, asignaciones, causación, solicitudes) y `docs/manual-receptor.md` (bandeja, cuatro ojos, desembolsos FIFO, recibos/PDF, caja chica). Incluir pasos, capturas o placeholders, errores frecuentes y límites de cada rol. |
+| **Aceptación** | Los tres manuales cubren el flujo completo; los nombres de botones y pestañas coinciden con la app; cada paso se verificó en la aplicación en ejecución. |
+| **Archivos** | `docs/manual-admin.md`, `docs/manual-generador.md`, `docs/manual-receptor.md` |
+| **Depende de** | 5.1 (datos demo) |
+
+### 5.4 Auditoría y cierre de la bitácora IA
+
+| Campo | Contenido |
+|---|---|
+| **Estado** | 🔴 Por hacer |
+| **Punto de partida** | `bitacora_ia.md` llega a la sesión 15 y tiene dos entradas duplicadas como 6 y 7; `uso-de-ia.md` solo llega a la sesión 5. |
+| **Objetivo** | Cumplir el requisito académico de registrar las indicaciones a la IA, las decisiones y las validaciones humanas. |
+| **Solución** | 1. Normalizar la numeración: sesiones 1–15 originales, 16 verificación final, 17 reejecución de integración, 18 redefinición de Fases 4–5 y siguientes.<br>2. Completar `uso-de-ia.md` con las sesiones faltantes, prompts representativos, decisiones aceptadas/rechazadas, limitaciones y lecciones aprendidas.<br>3. Añadir una tabla de evidencia que relacione sesión → commit/PR/run de CI.<br>4. Revisar que ambos documentos sean consistentes entre sí. |
+| **Aceptación** | No hay numeración duplicada; ambos documentos cubren todas las fases; cada decisión relevante tiene evidencia; el paquete está listo para la defensa. |
+| **Archivos** | `docs/bitacora_ia.md`, `docs/uso-de-ia.md` |
+| **Depende de** | 5.3 (flujos documentados) |
+
+### 5.5 Demo end-to-end grabada
+
+| Campo | Contenido |
+|---|---|
+| **Estado** | 🔴 Por hacer |
+| **Punto de partida** | No hay guía de demo ni video. |
+| **Objetivo** | Tener una demostración reproducible de 5–10 minutos que muestre el sistema completo. |
+| **Solución** | Crear `docs/demo-guide.md` con guion y tiempos: `docker compose up` → health → login ADMIN → usuarios/auditoría → login GENERADOR → proyecto/persona/asignación → causación → solicitud → login RECEPTOR → aprobación cuatro ojos → desembolso parcial FIFO → recibo PDF → caja chica (apertura, vale, rendición, cierre) → auditoría → logout. Grabar el video y publicarlo como enlace no listado; incluir plan B con capturas y la salida 158/158 si la demo en vivo falla. |
+| **Aceptación** | El video sigue el guion, usa datos reales y no tiene cortes confusos; el enlace es accesible para el evaluador; el plan B está documentado. |
+| **Archivos** | `docs/demo-guide.md`, enlace al video, `README.md` |
+| **Depende de** | 5.1 y 5.2 |
+
+### 5.6 Preparación de la defensa
+
+| Campo | Contenido |
+|---|---|
+| **Estado** | 🔴 Por hacer |
+| **Punto de partida** | No hay documento de preparación. |
+| **Objetivo** | Tener un guion de defensa con arquitectura, ADRs, reglas críticas, decisiones de IA y evidencia verificable. |
+| **Solución** | Crear `docs/defense-prep.md` con: resumen de 1 minuto; arquitectura (Clean Architecture/DDD, monorepo); síntesis de ADRs 001–008; reglas críticas (inmutabilidad, FIFO, prorrateo, cuatro ojos, secuencias sin huecos); decisiones asistidas por IA (qué se aceptó, qué se rechazó, qué se validó a mano); checklist de demo; preguntas anticipadas y respuestas; anexo de evidencia (PR #1, runs de CI, commits de `AngBan2x`, salida 158/158, 87/87 tests). |
+| **Aceptación** | Cada afirmación está respaldada por un commit, PR, run de CI o salida de tests; el documento se ensayó al menos una vez; el anexo distingue claramente el aporte propio del trabajo del equipo. |
+| **Archivos** | `docs/defense-prep.md` |
+| **Depende de** | 5.5 |
+
+---
+
+## 12. Reglas no negociables
 
 1. Todo el trabajo se realiza en `plan/execution-tracking`; no se toca `main`.
-2. Solo se ejecutan las Fases 1, 2 y 3. Las Fases 4 y 5 no se inician.
+2. Las Fases 1–3 están cerradas. Las Fases 4–5 están definidas pero **no iniciadas**; su ejecución requiere autorización explícita y sigue el orden de dependencias de las secciones 10 y 11.
 3. Cada decisión no trivial se documenta en este archivo o en un ADR.
-4. Cada tarea completada actualiza este documento y los archivos de avance.
-5. `npm run typecheck`, `npm run test` y `npm run build` deben pasar antes de cerrar cada fase.
+4. Cada tarea completada actualiza este documento, `avances.md` y `bitacora_ia.md`.
+5. `npm run typecheck`, `npm run test` y `npm run build` deben pasar antes de cerrar cada tarea. Desde 4.1, `npm run test:integration` también debe pasar.
 6. No se introducen mocks en el código de producción del frontend.
 7. Los secretos no se hardcodean; se documentan en `.env.example`.
+8. Los tests placeholder (`echo ... && exit 0`) no cuentan como cobertura; deben sustituirse o justificarse explícitamente.
+9. Las suites de integración y E2E deben ser repetibles sobre una base limpia y no depender de estado manual.
+10. Cada cierre de fase incluye commit, run de CI y salida de tests como evidencia.
 
 ---
 
-## 11. Estado final
+## 13. Estado actual y próximo paso
 
 - **Fases 1–3:** completadas (17/17 tareas).
 - **Backend:** 87/87 tests unitarios pasando.
@@ -328,6 +520,8 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 - **Build:** API, shared y web compilan correctamente.
 - **Integración:** 158/158 verificaciones PASS contra PostgreSQL 16 aislado (`scienpay_verify_db`, puerto `55432`), ejecutadas el 2026-11-08 y **reejecutadas con éxito el 2026-11-09**.
 - **Frontend:** conectado a la API real, sin mocks de producción.
-- **Documentación:** `HANDOFF.md`, `avances.md` y `bitacora_ia.md` actualizados.
-- **Tareas pendientes:** ninguna dentro del alcance de Fases 1–3.
-- **Bloqueos:** ninguno. La reejecución del 2026-11-09 se hizo con Docker Desktop disponible, migraciones idempotentes y el mismo contenedor aislado; resultado **158/158 PASS, 0 FAIL**.
+- **Fases 4–5:** 12 tareas definidas (6 + 6), 0 ejecutadas.
+- **Deuda técnica a cerrar en 4.6:** numeración transaccional de `SOL`, persistencia de `notes` y tests frontend reales.
+- **Evidencia disponible:** PR #1 (https://github.com/bracebalDev/scienpay-software/pull/1), CI verde y 6 commits de `AngBan2x`.
+- **Próximo paso:** autorizar **4.1** y mover la suite de 158 verificaciones al repositorio con un job de CI.
+- **Bloqueos:** ninguno. Docker Desktop es necesario para integración/E2E locales; en CI se usa un servicio PostgreSQL 16.

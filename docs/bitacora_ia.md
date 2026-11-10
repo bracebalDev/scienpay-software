@@ -170,9 +170,9 @@
   - Se usó `initializedUserId` (ref) en `App.tsx` para que el refresco de `/auth/me` no reinicie la pestaña activa del usuario.
   - Se calculan los montos del desembolso en centavos para que la suma coincida exactamente con la validación `Decimal` del backend.
   - Se documentó que la deuda mostrada en el desembolso corresponde solo al lote de la solicitud, mientras el FIFO del backend abarca todas las causaciones pendientes del proyecto.
-  - En la sesión de Fase 3 no se ejecutaron pruebas automatizadas de componentes; la integración con PostgreSQL se verificó después, en la Sesión 6 (158/158 PASS).
+  - En la sesión de Fase 3 no se ejecutaron pruebas automatizadas de componentes; la integración con PostgreSQL se verificó después, en la Sesión 16 (158/158 PASS).
 
-#### Sesión 6: Verificación final de Fases 1-3
+#### Sesión 16: Verificación final de Fases 1-3
 - **Fecha:** 9 de Noviembre de 2026
 - **Herramienta:** Asistente de Codificación / OpenCode
 - **Objetivo:** Verificar que las Fases 1-3 estén completas, confirmar la integración con PostgreSQL aislado y dejar constancia del estado final.
@@ -183,9 +183,9 @@
   - Documentación final actualizada en `HANDOFF.md`, `avances.md` y `bitacora_ia.md`.
   - Sin tareas pendientes ni bloqueos dentro del alcance.
 
-> Nota: la reejecución de la suite de integración se completó el 2026-11-09 con Docker Desktop disponible; el resultado se registra en la Sesión 7.
+> Nota: la reejecución de la suite de integración se completó el 2026-11-09 con Docker Desktop disponible; el resultado se registra en la Sesión 17.
 
-#### Sesión 7: Reejecución de la suite de integración
+#### Sesión 17: Reejecución de la suite de integración
 - **Fecha:** 9 de Noviembre de 2026
 - **Herramienta:** Asistente de Codificación / OpenCode
 - **Objetivo:** Reejecutar la suite end-to-end contra PostgreSQL aislado con Docker Desktop disponible y confirmar que el resultado 158/158 se mantiene.
@@ -197,4 +197,22 @@
   - **158/158 PASS, 0 FAIL** en la suite de integración (health, autenticación/refresh/replay, RBAC, catálogos, causación, solicitudes/cuatro ojos, FIFO, recibos/PDF, anulación/regeneración, auditoría, caja chica, usuarios, rate limit, logout y UUID inválidos).
   - El proceso de API usado para la verificación se detuvo al finalizar.
   - Documentación actualizada para sustituir la limitación previa por la reejecución exitosa.
+
+#### Sesión 18: Redefinición de las Fases 4 y 5
+- **Fecha:** 10 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / OpenCode
+- **Objetivo:** Reemplazar la declaración de “fuera de alcance” por un plan de Fases 4 y 5 ajustado al estado real del repositorio.
+- **Hallazgos:**
+  - El `HANDOFF.md` versionado solo contenía las etiquetas de Fase 4 y 5, sin tareas ni criterios.
+  - El plan original completo existía en `C:\Users\Usuario\.opencode\plan\HANDOFF.md`, fuera del repositorio.
+  - La suite de 158 verificaciones vive en un script temporal fuera del repositorio y no corre en CI.
+  - `apps/web` y `packages/shared` tienen tests placeholder (`exit 0`).
+  - El CI no ejecuta `npm run lint` y ningún workspace define `lint`.
+  - El seed declara los escenarios de la especificación, pero la caja chica no tiene un vale completo y no hay verificación automática.
+  - `bitacora_ia.md` tenía dos sesiones duplicadas como 6 y 7; `uso-de-ia.md` solo llegaba a la sesión 5.
+- **Resultado:**
+  - Fase 4 redefinida en 6 tareas: suite de integración versionada, E2E con Playwright, stress FIFO, lint/CI, OpenAPI desde Zod y cierre de deuda técnica.
+  - Fase 5 redefinida en 6 tareas: seed verificado, despliegue Docker Compose + Fly.io, manuales, bitácora IA, demo y defensa.
+  - Se normalizó la numeración de sesiones (16 y 17) y se añadió la sesión 18.
+  - Se actualizaron `HANDOFF.md`, `avances.md` y `uso-de-ia.md`; no se modificó `main`.
 
