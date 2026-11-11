@@ -25,9 +25,23 @@ const REFRESH_COOKIE_NAME = 'scienpay_refresh';
 const REFRESH_COOKIE_PATH = '/api/v1/auth';
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+/**
+ * Lee un entero positivo del entorno. Se usa para que la suite de integración
+ * pueda elevar el límite de login sin tocar código (ver HANDOFF 4.1).
+ */
+function readPositiveInt(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 @Controller('auth')
 export class AuthController {
-  private readonly loginRateLimiter = new LoginRateLimiter(60_000, 5);
+  private readonly loginRateLimiter = new LoginRateLimiter(
+    readPositiveInt('AUTH_RATE_LIMIT_WINDOW_MS', 60_000),
+    readPositiveInt('AUTH_RATE_LIMIT_MAX', 5),
+  );
 
   constructor(
     private readonly authService: AuthService,

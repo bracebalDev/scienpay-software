@@ -11,9 +11,10 @@
     "dev": "node scripts/dev.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --config ../../eslint.config.mjs",
-    "test": "tsx --test test/**/*.test.ts",
+    "test": "tsx --test test/domain/**/*.test.ts test/foundation/**/*.test.ts",
     "db:migrate": "tsx src/infrastructure/database/migrate.ts",
-    "db:seed": "tsx src/infrastructure/database/seed.ts"
+    "db:seed": "tsx src/infrastructure/database/seed.ts",
+    "test:integration": "node scripts/run-integration.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.4",

@@ -30,6 +30,19 @@ import { Decimal } from 'decimal.js';
 export class PaymentRequestsService {
   constructor(private readonly databaseService: DatabaseService) {}
 
+  /**
+   * Traduce una transición inválida de la máquina de estados a un 409.
+   * `PaymentRequestStateMachine` es dominio puro y lanza un `Error` genérico;
+   * sin esta traducción el borde HTTP devolvía 500 en lugar de 409.
+   */
+  private assertTransition(current: PaymentRequestStatus, target: PaymentRequestStatus): void {
+    if (!PaymentRequestStateMachine.canTransition(current, target)) {
+      throw new ConflictException(
+        `TRANSICION_ESTADO_INVALIDA: No es posible transicionar la solicitud desde '${current}' hacia '${target}'`,
+      );
+    }
+  }
+
   async listRequests(projectId?: string) {
     if (projectId) {
       return this.databaseService.db
@@ -208,10 +221,7 @@ export class PaymentRequestsService {
   async sendRequest(id: string, _userId: string) {
     const request = await this.getRequestById(id);
 
-    PaymentRequestStateMachine.assertValidTransition(
-      request.status as PaymentRequestStatus,
-      PaymentRequestStatus.ENVIADA,
-    );
+    this.assertTransition(request.status as PaymentRequestStatus, PaymentRequestStatus.ENVIADA);
 
     const [updated] = await this.databaseService.db
       .update(paymentRequests)
@@ -242,10 +252,7 @@ export class PaymentRequestsService {
     }
 
     // 2. Transición válida
-    PaymentRequestStateMachine.assertValidTransition(
-      request.status as PaymentRequestStatus,
-      PaymentRequestStatus.APROBADA,
-    );
+    this.assertTransition(request.status as PaymentRequestStatus, PaymentRequestStatus.APROBADA);
 
     const [updated] = await this.databaseService.db
       .update(paymentRequests)
@@ -273,10 +280,7 @@ export class PaymentRequestsService {
       throw new ForbiddenException('ACCESO_DENEGADO: Solo el Receptor puede rechazar solicitudes');
     }
 
-    PaymentRequestStateMachine.assertValidTransition(
-      request.status as PaymentRequestStatus,
-      PaymentRequestStatus.RECHAZADA,
-    );
+    this.assertTransition(request.status as PaymentRequestStatus, PaymentRequestStatus.RECHAZADA);
 
     const [updated] = await this.databaseService.db
       .update(paymentRequests)
@@ -296,10 +300,7 @@ export class PaymentRequestsService {
   async closeRequest(id: string) {
     const request = await this.getRequestById(id);
 
-    PaymentRequestStateMachine.assertValidTransition(
-      request.status as PaymentRequestStatus,
-      PaymentRequestStatus.CERRADA,
-    );
+    this.assertTransition(request.status as PaymentRequestStatus, PaymentRequestStatus.CERRADA);
 
     const [updated] = await this.databaseService.db
       .update(paymentRequests)

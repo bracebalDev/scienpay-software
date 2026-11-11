@@ -234,3 +234,18 @@
 - **Validación humana:** se revisó que los cambios de lint no alteraran comportamiento; `typecheck` y **87/87 tests** siguen pasando.
 - **Resultado:** tarea 4.4 completada; CI ahora falla ante errores de lint, formato, tipos o tests.
 
+#### Sesión 20: Reconstrucción de la suite de integración (4.1)
+- **Fecha:** 11 de Noviembre de 2026
+- **Herramienta:** DeepSeek V4.1 Flash Free vía OpenCode
+- **Objetivo:** Reemplazar la suite externa de 158 checks por una suite versionada, repetible y ejecutada en CI contra PostgreSQL 16.
+- **Decisión de alcance:** la suite original no existe en la máquina, así que se reconstruyó desde los 57 endpoints reales en lugar de “moverla”. Se descartó Testcontainers por costo de Docker-in-Docker en CI.
+- **Implementación:**
+  - `docker-compose.test.yml` (PostgreSQL 16 Alpine, puerto 55432) y helpers de entorno, base y bootstrap.
+  - Runner con dos instancias de API (4100 y 4101) para separar la suite general del test de rate limit; rate limiter de login configurable por entorno.
+  - 8 suites y 170 verificaciones con datos sufijados por corrida; sin dependencia de orden entre archivos.
+  - Job `integration` en CI con servicio PostgreSQL 16.
+- **Hallazgo y corrección:** las transiciones inválidas de solicitudes de pago devolvían 500 porque el dominio lanzaba un `Error` genérico; se tradujo a `409 TRANSICION_ESTADO_INVALIDA` en el servicio y se cubrió con tests.
+- **Ajustes de contrato detectados por la suite:** el preview de causación usa `totalCausationAmount`, `itemsCount` y `activeDays` (no `totalAmount`/`daysCount`); un período sin días activos devuelve monto cero en lugar de error; `terminateAssignmentSchema` exige `reason` de al menos 5 caracteres; el replay de refresh devuelve `TOKEN_REPLAY_DETECTADO`.
+- **Validación:** 170/170 en dos corridas (base limpia y base sembrada), `lint` 0 errores, `format:check`, `typecheck`, 87/87 unitarios y `build` en verde.
+- **Resultado:** tarea 4.1 completada; la verificación de las Fases 1–3 queda dentro del repositorio y es bloqueante en CI.
+

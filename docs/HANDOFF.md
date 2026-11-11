@@ -31,7 +31,7 @@ Cada cambio de estado se registra en el historial de este documento y se acompa�
 | **Fase 1** | Correcciones críticas de backend | 🟢 Completada | 5/5 |
 | **Fase 2** | Completar módulos backend faltantes | 🟢 Completada | 5/5 |
 | **Fase 3** | Frontend real conectado a la API | 🟢 Completada | 7/7 |
-| **Fase 4** | Testing y calidad | 🟡 En progreso | 1/6 |
+| **Fase 4** | Testing y calidad | 🟡 En progreso | 2/6 |
 | **Fase 5** | Pulimiento y entrega | 🔴 Por hacer | 0/6 |
 
 > Las Fases 4 y 5 se redefinieron el 2026-11-10 a partir del estado real del repositorio. La Fase 4 está autorizada el 2026-11-11; la Fase 5 sigue sin autorizar. El detalle está en las secciones 10 y 11.
@@ -234,15 +234,15 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 
 ## 7. Métricas de progreso
 
-| Métrica | Estado actual (2026-11-10) | Objetivo de las Fases 4–5 |
+| Métrica | Estado actual (2026-11-11) | Objetivo de las Fases 4–5 |
 |---|---|---|
 | Tareas de Fases 1–3 | 17/17 completadas | Cerradas |
-| Tareas de Fase 4 | 0/6 | 6/6 |
+| Tareas de Fase 4 | 2/6 (4.1, 4.4) | 6/6 |
 | Tareas de Fase 5 | 0/6 | 6/6 |
 | Tests unitarios backend | 87/87 pasando | Mantener 100 % |
-| Integración con PostgreSQL | Script externo 158/158; no corre en CI | Suite versionada y bloqueante en CI |
+| Integración con PostgreSQL | **170/170 en 8 suites**, versionada y con job de CI | Bloqueante en CI |
 | Tests frontend | Placeholder (`exit 0`) | Unitarios/componentes + E2E |
-| Lint | Sin ESLint; `npm run lint` no-op | `npm run lint` bloqueante en CI |
+| Lint | ESLint + Prettier bloqueantes en CI; 0 errores, 25 warnings de `any` | Sin warnings nuevos |
 | OpenAPI | No disponible | `/api/docs` generado desde Zod |
 | Deuda técnica conocida | `SOL` con `count + 1`, `notes` no persistido, tests placeholder | Cerrada o aceptada explícitamente |
 
@@ -274,6 +274,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 | 2026-11-11 | Corrección del punto de partida de Fase 4 | Premisas desactualizadas | Revisado | — | El script de 158 checks no existe en la máquina; 4.1 pasa de "mover" a "reconstruir". Se documentan 57 endpoints, rate limiter hardcodeado, runner de migraciones sin ledger y reparto de 170 verificaciones. |
 | 2026-11-11 | Autorización de Fase 4 | 🔴 Por hacer | 🟡 En progreso | — | Se autoriza el alcance completo 4.1 → 4.6; Fase 5 permanece sin autorizar. |
 | 2026-11-11 | 4.4 Lint, formato y CI | 🔴 Por hacer | 🟢 Completada | — | ESLint flat + Prettier, guard de workspaces, `format:check` y `lint` bloqueantes, Gitleaks bloqueante y ADR-008. 0 errores de lint, 87/87 tests. |
+| 2026-11-11 | 4.1 Suite de integración | 🔴 Por hacer | 🟢 Completada | — | 170/170 checks en 8 suites contra PostgreSQL 16; runner con dos instancias, bootstrap idempotente, `docker-compose.test.yml` y job `integration` en CI. Se corrigió un defecto: transiciones inválidas de solicitudes devolvían 500 en lugar de 409. |
 
 ---
 
@@ -286,7 +287,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 5. **Monto de la solicitud:** `createRequest` usa `input.requestedAmount` como `totalAmountUSD` y rechaza montos superiores al total causado del lote. Antes se ignoraba el monto enviado y se usaba siempre el total del lote; la decisión se tomó para que el contrato Zod y la persistencia coincidan.
 6. **Código de solicitud:** `SOL-YYYY-NNN` sigue calculándose con `count + 1`. No se corrigió en Fase 1 porque el plan solo exige numeración transaccional para recibos (2.5); queda registrado como limitación para una tarea posterior.
 7. **Rate limiter en memoria:** es suficiente para una instancia única. Si se escala horizontalmente, debe sustituirse por un almacén compartido sin cambiar el contrato del controlador.
-8. **Tests de integración con PostgreSQL:** se ejecutaron el 2026-11-08 contra un contenedor aislado `scienpay_verify_db` (PostgreSQL 16 Alpine, puerto `55432`), separado del volumen de desarrollo. El script temporal `scienpay-integration.mjs` (fuera del repositorio) ejecutó **158/158 verificaciones PASS** sobre health, autenticación/refresh/replay, RBAC, catálogos, causación, solicitudes/cuatro ojos, FIFO, recibos/PDF, anulación/regeneración, auditoría, caja chica, usuarios, rate limit, logout y validación de UUID. Las migraciones se aplicaron dos veces y el seed se ejecutó dos veces con idempotencia confirmada. La suite se **reejecutó el 2026-11-09** con Docker Desktop disponible sobre el mismo contenedor aislado: **158/158 PASS, 0 FAIL**, con migraciones idempotentes y seed omitido por datos existentes.
+8. **Suite de integración versionada:** desde el 2026-11-11 la verificación end-to-end vive en `apps/api/test/integration/` (8 suites, **170 verificaciones**) y corre contra PostgreSQL 16 aislado (`docker-compose.test.yml`, puerto `55432`; en CI, `services: postgres`). `apps/api/scripts/run-integration.mjs` aplica migraciones, siembra si la base está vacía, compila, arranca dos instancias (4100 con límite de login alto y 4101 con límite 2) y ejecuta `tsx --test --test-concurrency=1`. Los datos llevan sufijo `RUN_SUFFIX`, los archivos no dependen entre sí y la suite se verificó sobre base limpia y sobre base ya sembrada.
 9. **Login conserva `safeParse`:** a diferencia del resto de controladores, el login mantiene `safeParse` para responder 401 con semántica de credenciales inválidas en lugar de 400 genérico. Es la excepción explícita admitida en 1.4.
 10. **Numeración de vales:** se usa `voucher_sequences` + `next_voucher_number(year)` con `INSERT ... ON CONFLICT DO UPDATE ... RETURNING` dentro de la transacción del vale. La siembra toma el máximo histórico con formato `VAL-YYYY-NNNN`; si el formato no coincide, el vale no se cuenta y queda documentado.
 11. **Cierre de período con vales pendientes:** se consideran pendientes los estados `SOLICITADO`, `APROBADO` y `DESEMBOLSADO`; solo `RENDIDO` permite cerrar. El mensaje incluye la lista de vales que bloquean el cierre.
@@ -313,7 +314,10 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 32. **Runner de desarrollo con `tsc`:** `npm run dev:api` usaba `tsx`, que no emite `design:paramtypes`; los controladores recibían dependencias `undefined` y el login devolvía 500. El nuevo runner `apps/api/scripts/dev.mjs` usa `tsc` + `tsc --watch` + `node --watch dist/main.js`, sin dependencias nuevas. El arranque compilado y el runner se verificaron con login 200 y la corrida 158/158.
 33. **Validación de UUID en el borde HTTP:** un UUID inválido en path o query llegaba a PostgreSQL y producía `invalid input syntax for type uuid` (HTTP 500). Se añadieron `UuidParam`/`UuidQuery` con `ParseUUIDPipe` en todos los controladores; ahora responde 400 con `UUID_INVALIDO`. La verificación cubre paths y query params de proyectos, causación, solicitudes, desembolsos, asignaciones, auditoría y caja chica.
 34. **Anulación de causación responde 201:** `POST /causation/batches/:id/annul` no declara `@HttpCode`, por lo que NestJS usa 201 para POST. El frontend usa `response.ok`, de modo que el contrato funciona; se acepta y documenta en lugar de forzar 200 para no introducir un cambio innecesario. Si un consumidor exige 200, debe añadirse `@HttpCode(HttpStatus.OK)` y actualizar la prueba.
-35. **Script de integración fuera del repositorio:** la verificación end-to-end se ejecutó con un script temporal en `C:\Users\Usuario\AppData\Local\Temp\opencode\scienpay-integration.mjs` para no introducir artefactos de Fase 4 en el repositorio. El script crea datos con sufijo temporal y puede reejecutarse sobre la misma base. La suite automatizada de integración es la tarea 4.1 de la Fase 4, todavía pendiente.
+35. **Suite de integración en el repositorio:** la antigua verificación externa (`C:\Users\Usuario\...\scienpay-integration.mjs`) no existe en la máquina de ejecución y no se versionó. La tarea 4.1 la reemplazó por la suite descrita en el punto 8; el runner es reproducible localmente (`npm run db:test:up` + `npm run test:integration`) y en CI.
+36. **Transiciones inválidas responden 409:** `PaymentRequestStateMachine` es dominio puro y lanzaba `Error`; NestJS lo traducía a **500**. `PaymentRequestsService` ahora valida con `canTransition` y lanza `ConflictException` con `TRANSICION_ESTADO_INVALIDA`. La suite cubre envío duplicado, aprobación duplicada, rechazo de una solicitud aprobada y cierre fuera de `ENTREGADA`.
+37. **Separación de comandos de test:** `npm test` en la API ejecuta solo `test/domain` y `test/foundation`; `test:integration` es explícito. Antes, el glob `test/**/*.test.ts` habría intentado ejecutar las suites de integración sin API ni base levantadas.
+38. **Migraciones idempotentes (recordatorio para 4.6):** `migrate.ts` reaplica todos los `.sql` ordenados en cada corrida; la migración `0004` (`notes` y numeración de `SOL`) debe usar `IF NOT EXISTS`/`CREATE OR REPLACE` para poder ejecutarse sobre bases ya migradas.
 
 ---
 
@@ -342,27 +346,28 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🟡 En progreso |
+| **Estado** | 🟢 Completada |
 | **Punto de partida** | El script de 158 checks **no existe en la máquina de ejecución**; sin `test/integration/`; CI solo ejecuta tests unitarios. Se reconstruye la suite contra los 57 endpoints reales. |
 | **Objetivo** | Reconstruir la verificación end-to-end dentro del repositorio y ejecutarla en CI contra PostgreSQL 16 real. |
 | **Solución** | 1. Dividir en suites por dominio bajo `apps/api/test/integration/`: `auth`, `catalogs`, `causation`, `payment-requests`, `disbursements`, `petty-cash`, `audit` y `security` (RBAC, rate limit, UUID inválidos).<br>2. Crear helpers reutilizables: `integration-env.ts` (BASE_URL, sufijo de corrida, login por rol, wrapper `api()`), `db.ts` (aserciones SQL con `postgres.js`) y `bootstrap.ts` (migraciones + seed).<br>3. Añadir `docker-compose.test.yml` con PostgreSQL 16 Alpine en `55432`; en CI usar un `services: postgres` equivalente.<br>4. Crear `apps/api/scripts/run-integration.mjs`: valida la BD, aplica migraciones, siembra si no hay datos, compila, arranca la API, espera `/health`, ejecuta `tsx --test test/integration/**/*.test.ts`, detiene la API y propaga el código de salida.<br>5. Hacer configurable el rate limiter de login (`AUTH_RATE_LIMIT_WINDOW_MS` / `AUTH_RATE_LIMIT_MAX`) y arrancar la API de integración con un límite alto; la suite `security` verifica el 429 en un proceso con límite bajo.<br>6. Scripts `test:integration` en API y raíz; `test` sigue siendo solo unitario.<br>7. Job `integration` en CI con PostgreSQL 16, build de shared/API y ejecución del comando. |
 | **Aceptación** | Desde una base limpia, un solo comando aplica migraciones, siembra y ejecuta **158+ verificaciones** con exit code 0; el job de CI queda verde; un fallo produce exit code distinto de 0; no se depende de archivos temporales ni del orden entre suites; los datos usan sufijo de corrida. |
+| **Verificación** | `npm run build --workspace=@scienpay/api` + `npm run test:integration --workspace=@scienpay/api`: **170/170 checks, 8 suites, 0 fallos**, ejecutado el 2026-11-11 dos veces (base reseteada con `INTEGRATION_FRESH=1` y reejecución sobre la base ya sembrada). El runner arranca dos instancias (4100 con límite alto y 4101 con límite 2 para el 429). |
 | **Archivos** | `apps/api/test/integration/**`, `apps/api/test/helpers/**`, `apps/api/scripts/run-integration.mjs`, `docker-compose.test.yml`, `apps/api/package.json`, `package.json`, `.github/workflows/ci.yml` |
 | **Depende de** | — |
 | **Alternativa descartada** | Testcontainers: añade `@testcontainers/postgresql`, exige Docker-in-Docker en CI y arranca más lento. El contenedor de servicio reutiliza el entorno ya verificado. Se reconsidera si se necesita una base aislada por suite. |
 
-**Reparto objetivo de verificaciones (meta ≥ 158):**
+**Reparto real de verificaciones (ejecutado el 2026-11-11):**
 
-| Suite | Cobertura | Verificaciones objetivo |
+| Suite | Cobertura | Verificaciones |
 |---|---|---|
-| `auth` | health, login usuario/email, `me`, refresh rotativo, replay, logout, cookie `HttpOnly` | 25 |
-| `security` | RBAC por rol, prohibiciones, cuatro ojos, 429 de rate limit, UUID inválidos en path/query | 30 |
-| `catalogs` | proyectos, personas, grupos de pago, asignaciones y solapamientos | 25 |
-| `causation` | preview, generate, idempotencia, prorrateo, anulación con motivo, inmutabilidad SQL | 25 |
-| `payment-requests` | estados, envío, aprobación, rechazo, cierre, PDF | 20 |
-| `disbursements` | FIFO, pagos parciales, recibos, correlatividad sin huecos, PDF de recibo | 20 |
-| `petty-cash` | caja, períodos, vales, aprobación, desembolso, rendición, cierre y arrastre | 15 |
-| `audit` | filtros combinados, paginación, límite máximo, acceso solo ADMIN | 10 |
+| `auth` | health, login usuario/email, `me`, refresh rotativo, replay, logout, cookie `HttpOnly` | 23 |
+| `security` | RBAC por rol, prohibiciones, cuatro ojos, 429 de rate limit, UUID inválidos en path/query | 23 |
+| `catalogs` | proyectos, personas, grupos de pago, asignaciones y solapamientos | 20 |
+| `causation` | preview, generate, idempotencia, prorrateo, anulación con motivo, inmutabilidad SQL | 22 |
+| `payment-requests` | estados, envío, aprobación, rechazo, cierre, PDF | 21 |
+| `disbursements` | FIFO, pagos parciales, recibos, correlatividad sin huecos, PDF de recibo | 18 |
+| `petty-cash` | caja, períodos, vales, aprobación, desembolso, rendición, cierre y arrastre | 24 |
+| `audit` | filtros combinados, paginación, límite máximo, acceso solo ADMIN | 19 |
 | **Total** | | **170** |
 
 ### 4.2 Tests E2E del frontend
@@ -539,11 +544,11 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 - **Typecheck:** API, shared y web sin errores.
 - **Build:** API, shared y web compilan correctamente.
 - **Stack local:** `docker compose up --build -d` levanta `db`, `api`, `web` y `proxy`; `/api/v1/health` y login responden 200 (verificado el 2026-11-11).
-- **Integración:** las 158/158 verificaciones de las Fases 1–3 se ejecutaron el 2026-11-08 y el 2026-11-09, pero el script **no está versionado ni disponible** en la máquina actual; la suite debe reconstruirse (tarea 4.1).
+- **Integración:** **170/170 checks en 8 suites**, versionada en `apps/api/test/integration/`, con runner de dos instancias y job `integration` en CI (verificado el 2026-11-11 con base limpia y con reejecución).
 - **Frontend:** conectado a la API real, sin mocks de producción.
-- **Fase 4:** **autorizada el 2026-11-11**; 0/6 tareas ejecutadas al inicio. Meta ≥ 170 verificaciones de integración repartidas en 8 suites.
+- **Fase 4:** **2/6** tareas completadas (4.1 y 4.4).
 - **Fase 5:** 6 tareas definidas, **no autorizada**.
 - **Deuda técnica a cerrar en 4.6:** numeración transaccional de `SOL`, persistencia de `notes` y tests frontend reales.
 - **Evidencia disponible:** PR #1 (https://github.com/bracebalDev/scienpay-software/pull/1), CI verde y 6 commits de `AngBan2x`.
-- **Próximo paso:** ejecutar **4.1** (infraestructura + suite de integración + job de CI) en paralelo con **4.4** (lint).
+- **Próximo paso:** **4.3** (prueba de estrés de concurrencia FIFO), **4.5** (OpenAPI), **4.2** (Playwright) y **4.6** (migración `0004`, `notes`, Vitest/RTL).
 - **Bloqueos:** ninguno. Docker Desktop es necesario para integración/E2E locales; en CI se usa un servicio PostgreSQL 16.

@@ -48,6 +48,54 @@ jobs:
         run: npm audit --audit-level=high
         continue-on-error: true
 
+  integration:
+    name: Integración (PostgreSQL 16)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: scienpay_test
+          POSTGRES_USER: scienpay_app
+          POSTGRES_PASSWORD: scienpay_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U scienpay_app -d scienpay_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://scienpay_app:scienpay_test_password@127.0.0.1:5432/scienpay_test
+      DATABASE_HOST: 127.0.0.1
+      DATABASE_PORT: 5432
+      INTEGRATION_DB_PORT: 5432
+      NODE_ENV: test
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalación limpia con lockfile (npm ci)
+        run: npm ci
+
+      - name: Compilar contratos compartidos (@scienpay/shared)
+        run: npm run build --workspace=@scienpay/shared
+
+      - name: Compilar la API
+        run: npm run build --workspace=@scienpay/api
+
+      - name: Ejecución de la suite de integración
+        run: npm run test:integration --workspace=@scienpay/api
+
   security-scan:
     name: Escaneo de Secretos y SAST
     runs-on: ubuntu-latest

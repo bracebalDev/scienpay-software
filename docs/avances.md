@@ -127,6 +127,17 @@
 - **Defectos reales corregidos por el lint:** asignación inútil en `ThemeContext`, variables sin uso en el motor FIFO, imports muertos en `causation.service` y `seed.ts`, y parámetro sin uso en `sendRequest`.
 - **Verificación:** `npm run lint` exit 0 (0 errores, 25 warnings de `any`), `typecheck` sin errores, **87/87 tests** pasando.
 
+#### 4.1 Suite de integración versionada en el repositorio — completada
+
+- **Infraestructura:** `docker-compose.test.yml` con PostgreSQL 16 Alpine en `55432` y `apps/api/test/helpers/` (`integration-env.ts`, `db.ts`, `bootstrap.ts`). El bootstrap resetea el esquema con `INTEGRATION_FRESH=1`, reaplica migraciones y siembra solo si no hay usuarios.
+- **Runner:** `apps/api/scripts/run-integration.mjs` valida la base, migra, siembra, compila y arranca dos instancias: `4100` con límite de login alto y `4101` con límite `2` para probar el 429. Después ejecuta `tsx --test --test-concurrency=1` y propaga el código de salida.
+- **Rate limiter configurable:** `AUTH_RATE_LIMIT_WINDOW_MS` y `AUTH_RATE_LIMIT_MAX` sustituyen el valor hardcodeado de 5/min.
+- **8 suites, 170 verificaciones:** `auth` (23), `security` (23), `catalogs` (20), `causation` (22), `payment-requests` (21), `disbursements` (18), `petty-cash` (24) y `audit` (19). Todas usan datos con sufijo `RUN_SUFFIX` y son independientes entre sí.
+- **Cobertura destacada:** refresh rotativo y detección de replay, RBAC por rol, UUID inválidos, prorrateo por días activos, inmutabilidad SQL de causaciones, FIFO entre períodos con pagos parciales, correlatividad de recibos y vales, rendición con vuelto, arrastre de caja chica, PDFs de solicitud y recibo, y filtros/paginación de auditoría.
+- **CI:** job `integration` con `services: postgres:16` que compila shared y API y ejecuta la suite.
+- **Defecto real corregido:** una transición de estado inválida de solicitudes lanzaba un `Error` genérico y el borde HTTP devolvía **500**; ahora se traduce a **409** con `TRANSICION_ESTADO_INVALIDA` (cubierto por tests).
+- **Verificación:** `npm run test:integration` → **170/170, 0 fallos**, ejecutado con base limpia (`INTEGRATION_FRESH=1`) y nuevamente sobre la base ya sembrada. `lint`, `format:check`, `typecheck`, 87/87 unitarios y `build` en verde.
+
 ---
 
 ## 2. Mapa y Convención de Ramas en GitHub
