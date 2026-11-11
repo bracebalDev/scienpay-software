@@ -26,6 +26,12 @@ jobs:
       - name: Instalación limpia con lockfile (npm ci)
         run: npm ci
 
+      - name: Verificación de estilo (Prettier)
+        run: npm run format:check
+
+      - name: Análisis estático (ESLint)
+        run: npm run lint
+
       - name: Compilar contratos compartidos (@scienpay/shared)
         run: npm run build --workspace=@scienpay/shared
 
@@ -56,7 +62,6 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true
 
       - name: SAST con Semgrep
         run: |

@@ -27,7 +27,10 @@ export type RejectPaymentRequestInput = z.infer<typeof rejectPaymentRequestSchem
 
 export const registerDisbursementSchema = z.object({
   paymentRequestId: z.string().uuid('ID de solicitud de pago inválido').optional(),
-  disbursementDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)').optional(),
+  disbursementDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)')
+    .optional(),
   totalDeliveredAmount: z
     .number()
     .min(FINANCIAL_RULES.MIN_AMOUNT, `El monto mínimo es ${FINANCIAL_RULES.MIN_AMOUNT}`)

@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../../infrastructure/database/database.service.js';
 import {
   pettyCash,
@@ -128,7 +124,9 @@ export class PettyCashService {
       }
 
       if (cash.status !== PettyCashStatus.ACTIVA) {
-        throw new ConflictException('CAJA_INACTIVA: No se pueden abrir períodos en una caja chica inactiva');
+        throw new ConflictException(
+          'CAJA_INACTIVA: No se pueden abrir períodos en una caja chica inactiva',
+        );
       }
 
       const existing = await tx
@@ -144,7 +142,9 @@ export class PettyCashService {
         .limit(1);
 
       if (existing.length > 0) {
-        throw new ConflictException('PERIODO_EXISTENTE: Ya existe un período registrado para este mes y año');
+        throw new ConflictException(
+          'PERIODO_EXISTENTE: Ya existe un período registrado para este mes y año',
+        );
       }
 
       // El arrastre solo puede provenir del período inmediatamente anterior y cerrado.
@@ -250,7 +250,9 @@ export class PettyCashService {
       const nextNumber = Number((sequenceResult as any)[0]?.next_number ?? 0);
 
       if (!Number.isFinite(nextNumber) || nextNumber <= 0) {
-        throw new ConflictException('SECUENCIA_VALE_INVALIDA: No se pudo reservar el número de vale');
+        throw new ConflictException(
+          'SECUENCIA_VALE_INVALIDA: No se pudo reservar el número de vale',
+        );
       }
 
       const voucherNumber = `VAL-${year}-${nextNumber.toString().padStart(4, '0')}`;
@@ -282,7 +284,9 @@ export class PettyCashService {
         .for('update');
 
       if (!voucher || voucher.status !== PettyCashVoucherStatus.SOLICITADO) {
-        throw new ConflictException('ESTADO_INVALIDO: Solo se pueden aprobar vales en estado SOLICITADO');
+        throw new ConflictException(
+          'ESTADO_INVALIDO: Solo se pueden aprobar vales en estado SOLICITADO',
+        );
       }
 
       const [approved] = await tx
@@ -332,7 +336,9 @@ export class PettyCashService {
         .for('update');
 
       if (!voucher || voucher.status !== PettyCashVoucherStatus.APROBADO) {
-        throw new ConflictException('ESTADO_INVALIDO: Solo se pueden desembolsar vales en estado APROBADO');
+        throw new ConflictException(
+          'ESTADO_INVALIDO: Solo se pueden desembolsar vales en estado APROBADO',
+        );
       }
 
       const canDisburse = PettyCashLedgerEngine.canDisburse(
@@ -421,7 +427,9 @@ export class PettyCashService {
         .for('update');
 
       if (!voucher || voucher.status !== PettyCashVoucherStatus.DESEMBOLSADO) {
-        throw new ConflictException('ESTADO_INVALIDO: Solo se pueden rendir vales que hayan sido desembolsados');
+        throw new ConflictException(
+          'ESTADO_INVALIDO: Solo se pueden rendir vales que hayan sido desembolsados',
+        );
       }
 
       const isBalanced = PettyCashLedgerEngine.isReconciliationBalanced({

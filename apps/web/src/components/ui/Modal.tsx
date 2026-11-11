@@ -50,7 +50,9 @@ export const Modal: React.FC<ModalProps> = ({
       >
         <div className="flex items-start justify-between p-5 pb-3 border-b border-[#EDEDEB] dark:border-[#2F2F2F]">
           <div>
-            <h2 className="text-base font-bold text-[#37352F] dark:text-white leading-tight">{title}</h2>
+            <h2 className="text-base font-bold text-[#37352F] dark:text-white leading-tight">
+              {title}
+            </h2>
             {subtitle && (
               <p className="text-[11px] text-[#787774] dark:text-[#9B9A97] mt-0.5">{subtitle}</p>
             )}

@@ -110,6 +110,23 @@
 - **Ajustes respecto del plan original:** se parte de la suite externa 158/158 en lugar de Testcontainers; se elige Playwright en lugar de Cypress; se incorpora la deuda técnica documentada en las Fases 1–3; la guía de despliegue cubre la infraestructura real (Docker Compose + Fly.io).
 - **Estado:** 12 tareas definidas, 0 ejecutadas. No se modificó `main`.
 
+### 11 de Noviembre de 2026
+
+#### Fase 4 autorizada y corrección del punto de partida
+
+- **Autorización:** se autoriza la Fase 4 completa (4.1 → 4.6); la Fase 5 permanece sin autorizar.
+- **Correcciones al HANDOFF:** el script de 158 verificaciones **no existe** en la máquina de ejecución, por lo que la tarea 4.1 pasa de “mover” a **reconstruir** la suite. Se documentaron además: 57 endpoints reales, rate limiter de login hardcodeado, runner de migraciones sin ledger (migraciones nuevas deben ser idempotentes), ausencia de la columna `notes` y reparto objetivo de 170 verificaciones en 8 suites.
+- **Stack local verificado:** `docker compose up --build -d` levanta `db`, `api`, `web` y `proxy`; `/api/v1/health` y login responden 200 contra PostgreSQL 16.
+
+#### 4.4 Lint, formato y CI bloqueante — completada
+
+- **ESLint 10 con flat config** (`eslint.config.mjs`): `@eslint/js` + `typescript-eslint` (`recommended`), reglas clásicas de React Hooks y guarnición de Prettier al final.
+- **Prettier** adoptado como fuente única de estilo; el primer `--write` reformateó 70 archivos sin cambios semánticos.
+- **Guard de workspaces:** `scripts/check-lint-workspaces.mjs` falla si un workspace no declara `lint`; los tres workspaces ya lo declaran.
+- **CI:** `npm run format:check` y `npm run lint` pasan a ser pasos bloqueantes; Gitleaks también. Semgrep y `npm audit` quedan con baseline documentado en `ADR-008`.
+- **Defectos reales corregidos por el lint:** asignación inútil en `ThemeContext`, variables sin uso en el motor FIFO, imports muertos en `causation.service` y `seed.ts`, y parámetro sin uso en `sendRequest`.
+- **Verificación:** `npm run lint` exit 0 (0 errores, 25 warnings de `any`), `typecheck` sin errores, **87/87 tests** pasando.
+
 ---
 
 ## 2. Mapa y Convención de Ramas en GitHub

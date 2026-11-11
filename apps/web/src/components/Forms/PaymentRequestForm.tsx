@@ -1,16 +1,20 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import {
-  createPaymentRequestSchema,
-  type CreatePaymentRequestInput,
-} from '@scienpay/shared';
+import { createPaymentRequestSchema, type CreatePaymentRequestInput } from '@scienpay/shared';
 import { useCreatePaymentRequest } from '../../hooks/usePaymentRequests.js';
 import { useToast } from '../../context/ToastContext.js';
 import { getApiErrorMessage } from '../../lib/apiClient.js';
 import { zodResolver } from '../../lib/zodResolver.js';
 import { formatCurrency } from '../../lib/format.js';
 import type { CausationBatch, Project } from '../../types/api.types.js';
-import { Button, FormActions, FormField, SelectInput, TextArea, TextInput } from '../ui/FormControls.js';
+import {
+  Button,
+  FormActions,
+  FormField,
+  SelectInput,
+  TextArea,
+  TextInput,
+} from '../ui/FormControls.js';
 
 interface PaymentRequestFormProps {
   projects: Project[];
@@ -106,7 +110,8 @@ export const PaymentRequestForm: React.FC<PaymentRequestFormProps> = ({
             <option value="">Seleccione un lote…</option>
             {availableBatches.map((batch) => (
               <option key={batch.id} value={batch.id}>
-                {batch.periodStartDate} al {batch.periodEndDate} — ${formatCurrency(batch.totalCausationAmount)} ({batch.status})
+                {batch.periodStartDate} al {batch.periodEndDate} — $
+                {formatCurrency(batch.totalCausationAmount)} ({batch.status})
               </option>
             ))}
           </SelectInput>

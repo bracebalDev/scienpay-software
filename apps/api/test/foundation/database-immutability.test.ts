@@ -57,7 +57,9 @@ describe('Inmutabilidad Financiera y Secuencias Consecutivas (ADR-003 & Especifi
     assert.ok(!ddl.includes('NEW.annulment_reason IS DISTINCT FROM OLD.annulment_reason'));
     assert.ok(!ddl.includes('NEW.annulled_by_user_id IS DISTINCT FROM OLD.annulled_by_user_id'));
     assert.ok(!ddl.includes('NEW.annulled_at IS DISTINCT FROM OLD.annulled_at'));
-    assert.ok(ddl.includes('NEW.total_causation_amount IS DISTINCT FROM OLD.total_causation_amount'));
+    assert.ok(
+      ddl.includes('NEW.total_causation_amount IS DISTINCT FROM OLD.total_causation_amount'),
+    );
     assert.deepEqual(
       [...FinancialImmutabilityEngine.CAUSATION_BATCH_MUTABLE_COLUMNS],
       ['status', 'annulment_reason', 'annulled_by_user_id', 'annulled_at'],
@@ -77,9 +79,13 @@ describe('Inmutabilidad Financiera y Secuencias Consecutivas (ADR-003 & Especifi
             : 'enforce_financial_immutability()';
 
       const hasTrigger = statements.some(
-        (sql) => sql.includes(`BEFORE UPDATE OR DELETE ON ${table}`) && sql.includes(expectedFunction),
+        (sql) =>
+          sql.includes(`BEFORE UPDATE OR DELETE ON ${table}`) && sql.includes(expectedFunction),
       );
-      assert.ok(hasTrigger, `Debe existir un trigger BEFORE UPDATE OR DELETE para la tabla ${table}`);
+      assert.ok(
+        hasTrigger,
+        `Debe existir un trigger BEFORE UPDATE OR DELETE para la tabla ${table}`,
+      );
     }
   });
 
@@ -98,7 +104,9 @@ describe('Inmutabilidad Financiera y Secuencias Consecutivas (ADR-003 & Especifi
     assert.ok(tableDdl.includes('year INTEGER PRIMARY KEY'));
     assert.ok(tableDdl.includes('last_number BIGINT'));
 
-    assert.ok(functionDdl.includes('CREATE OR REPLACE FUNCTION next_receipt_number(p_year INTEGER)'));
+    assert.ok(
+      functionDdl.includes('CREATE OR REPLACE FUNCTION next_receipt_number(p_year INTEGER)'),
+    );
     assert.ok(functionDdl.includes('ON CONFLICT (year) DO UPDATE'));
     assert.ok(functionDdl.includes('receipt_sequences.last_number + 1'));
     assert.ok(functionDdl.includes('RETURNING last_number INTO v_next'));

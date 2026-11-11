@@ -9,7 +9,10 @@ export class PersonsService {
   constructor(private readonly databaseService: DatabaseService) {}
 
   async listPersons() {
-    return this.databaseService.db.select().from(persons).orderBy(persons.lastName, persons.firstName);
+    return this.databaseService.db
+      .select()
+      .from(persons)
+      .orderBy(persons.lastName, persons.firstName);
   }
 
   async getPersonById(id: string) {
@@ -38,7 +41,9 @@ export class PersonsService {
       .limit(1);
 
     if (existing.length > 0) {
-      throw new ConflictException('DOCUMENTO_DUPLICADO: Ya existe un beneficiario con este documento');
+      throw new ConflictException(
+        'DOCUMENTO_DUPLICADO: Ya existe un beneficiario con este documento',
+      );
     }
 
     const [created] = await this.databaseService.db

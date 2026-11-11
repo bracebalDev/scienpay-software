@@ -5,11 +5,7 @@ import type {
   PreviewCausationInput,
 } from '@scienpay/shared';
 import { apiClient } from '../lib/apiClient.js';
-import type {
-  CausationBatch,
-  CausationBatchDetail,
-  CausationPreview,
-} from '../types/api.types.js';
+import type { CausationBatch, CausationBatchDetail, CausationPreview } from '../types/api.types.js';
 
 export const causationKeys = {
   all: ['causation-batches'] as const,
@@ -22,7 +18,9 @@ export function useCausationBatches(projectId?: string) {
     queryKey: causationKeys.byProject(projectId),
     queryFn: () =>
       apiClient.get<CausationBatch[]>(
-        projectId ? `/causation/batches?projectId=${encodeURIComponent(projectId)}` : '/causation/batches',
+        projectId
+          ? `/causation/batches?projectId=${encodeURIComponent(projectId)}`
+          : '/causation/batches',
       ),
   });
 }

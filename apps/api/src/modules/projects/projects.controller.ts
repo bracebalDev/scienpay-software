@@ -32,9 +32,7 @@ export class ProjectsController {
 
   @Post()
   @Roles(UserRole.GENERADOR)
-  async createProject(
-    @Body(new ZodValidationPipe(createProjectSchema)) body: CreateProjectInput,
-  ) {
+  async createProject(@Body(new ZodValidationPipe(createProjectSchema)) body: CreateProjectInput) {
     return this.projectsService.createProject(body);
   }
 

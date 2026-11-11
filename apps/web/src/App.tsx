@@ -136,7 +136,9 @@ export const App: React.FC = () => {
               Moneda Base: USD ($)
             </span>
             <div className="h-3 w-px bg-slate-200 dark:bg-[#333333]" />
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${roleBadgeClass(user.role)}`}>
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded ${roleBadgeClass(user.role)}`}
+            >
               {user.role}
             </span>
             <div className="h-3 w-px bg-slate-200 dark:bg-[#333333]" />

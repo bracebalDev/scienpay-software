@@ -38,7 +38,10 @@ describe('Servicio de Autenticación y Tokens JWT (ADR-006 & OWASP ASVS)', () =>
     const token = authService.generateAccessToken(userPayload);
     const tamperedToken = token.slice(0, -5) + 'abcde';
 
-    assert.throws(() => authService.verifyAccessToken(tamperedToken), /invalid token|invalid signature/i);
+    assert.throws(
+      () => authService.verifyAccessToken(tamperedToken),
+      /invalid token|invalid signature/i,
+    );
   });
 
   it('debe generar y verificar refresh tokens con rotación por familia', () => {

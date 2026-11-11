@@ -94,7 +94,9 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ modalData, onC
                     Ámbito del Proyecto
                   </span>
                   <span className="font-semibold text-[#37352F] dark:text-white">
-                    {modalData.data.scope === 'INTERNO' ? 'Interno (Universidad)' : 'Externo (Financiado)'}
+                    {modalData.data.scope === 'INTERNO'
+                      ? 'Interno (Universidad)'
+                      : 'Externo (Financiado)'}
                   </span>
                 </div>
               </div>
@@ -127,14 +129,18 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ modalData, onC
                     </strong>
                   </div>
                   <div>
-                    <span className="text-[#787774] dark:text-[#9B9A97]">Fecha de Culminación: </span>
+                    <span className="text-[#787774] dark:text-[#9B9A97]">
+                      Fecha de Culminación:{' '}
+                    </span>
                     <strong className="text-[#37352F] dark:text-white">
                       {modalData.data.endDate ? formatDate(modalData.data.endDate) : 'Sin definir'}
                     </strong>
                   </div>
                   <div>
                     <span className="text-[#787774] dark:text-[#9B9A97]">Estado: </span>
-                    <strong className="text-[#37352F] dark:text-white">{modalData.data.status}</strong>
+                    <strong className="text-[#37352F] dark:text-white">
+                      {modalData.data.status}
+                    </strong>
                   </div>
                 </div>
               </div>
@@ -190,21 +196,26 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ modalData, onC
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-500 dark:text-[#888886]">
-                  Fórmula de prorrateo: <code>monto_causado = monto_periodo × dias_activos / dias_periodo</code>{' '}
-                  (redondeo HALF_UP a 2 decimales).
+                  Fórmula de prorrateo:{' '}
+                  <code>monto_causado = monto_periodo × dias_activos / dias_periodo</code> (redondeo
+                  HALF_UP a 2 decimales).
                 </p>
               </div>
 
               <div className="p-3 rounded-xl bg-[#F7F6F3] dark:bg-[#262626] border border-[#E9E9E7] dark:border-[#333333] space-y-1 text-[11px]">
                 <div className="flex justify-between">
-                  <span className="text-[#787774] dark:text-[#9B9A97]">Vigencia de la Asignación:</span>
+                  <span className="text-[#787774] dark:text-[#9B9A97]">
+                    Vigencia de la Asignación:
+                  </span>
                   <strong className="text-[#37352F] dark:text-white">
                     {formatDate(modalData.data.startDate)} al{' '}
                     {modalData.data.endDate ? formatDate(modalData.data.endDate) : 'indefinido'}
                   </strong>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#787774] dark:text-[#9B9A97]">Estado de la Asignación:</span>
+                  <span className="text-[#787774] dark:text-[#9B9A97]">
+                    Estado de la Asignación:
+                  </span>
                   <StatusBadge
                     label={modalData.data.status}
                     tone={statusTone(modalData.data.status)}
@@ -236,7 +247,10 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ modalData, onC
                   <span className="text-[10px] text-[#787774] dark:text-[#9B9A97] block mb-1">
                     Estado de Aprobación
                   </span>
-                  <StatusBadge label={modalData.data.status} tone={statusTone(modalData.data.status)} />
+                  <StatusBadge
+                    label={modalData.data.status}
+                    tone={statusTone(modalData.data.status)}
+                  />
                 </div>
               </div>
 

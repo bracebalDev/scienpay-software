@@ -21,8 +21,7 @@ export function useAssignments(projectId?: string) {
 export function useCreateAssignment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: CreateAssignmentInput) =>
-      apiClient.post<Assignment>('/assignments', input),
+    mutationFn: (input: CreateAssignmentInput) => apiClient.post<Assignment>('/assignments', input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: assignmentKeys.all }),
   });
 }

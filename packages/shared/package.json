@@ -9,6 +9,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint . --config ../../eslint.config.mjs",
     "test": "echo \"No unit tests required in shared contracts\" && exit 0"
   },
   "dependencies": {

@@ -4,11 +4,7 @@ import { useRegisterDisbursement } from '../../hooks/useDisbursements.js';
 import { useToast } from '../../context/ToastContext.js';
 import { getApiErrorMessage } from '../../lib/apiClient.js';
 import { formatCurrency, personFullName, todayISO } from '../../lib/format.js';
-import type {
-  CausationBatchDetail,
-  PaymentRequest,
-  Person,
-} from '../../types/api.types.js';
+import type { CausationBatchDetail, PaymentRequest, Person } from '../../types/api.types.js';
 import {
   Button,
   FormActions,
@@ -120,7 +116,8 @@ export const DisbursementForm: React.FC<DisbursementFormProps> = ({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="p-3 rounded-lg bg-[#F7F6F3] dark:bg-[#262626] border border-[#E9E9E7] dark:border-[#333333] text-[11px] flex items-center justify-between">
         <span className="text-[#787774] dark:text-[#9B9A97]">
-          Solicitud <strong className="text-[#37352F] dark:text-white">{request.requestCode}</strong> ·{' '}
+          Solicitud{' '}
+          <strong className="text-[#37352F] dark:text-white">{request.requestCode}</strong> ·{' '}
           {request.periodDescription}
         </span>
         <span className="font-mono font-bold text-[#37352F] dark:text-white">
@@ -156,7 +153,9 @@ export const DisbursementForm: React.FC<DisbursementFormProps> = ({
                 {personDebts.map((debt) => (
                   <tr key={debt.personId}>
                     <td className="py-2 px-3">
-                      <div className="font-semibold text-[#37352F] dark:text-white">{debt.name}</div>
+                      <div className="font-semibold text-[#37352F] dark:text-white">
+                        {debt.name}
+                      </div>
                       <div className="text-[10px] text-[#9B9A97]">{debt.document}</div>
                     </td>
                     <td className="py-2 px-3 font-mono text-[#787774] dark:text-[#9B9A97]">
@@ -182,7 +181,10 @@ export const DisbursementForm: React.FC<DisbursementFormProps> = ({
               </tbody>
               <tfoot className="bg-[#F7F6F3] dark:bg-[#262626]">
                 <tr>
-                  <td className="py-2 px-3 font-semibold text-[#37352F] dark:text-white" colSpan={2}>
+                  <td
+                    className="py-2 px-3 font-semibold text-[#37352F] dark:text-white"
+                    colSpan={2}
+                  >
                     Total a entregar
                   </td>
                   <td className="py-2 px-3 font-mono font-bold text-emerald-700 dark:text-emerald-400">

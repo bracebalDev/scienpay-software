@@ -4,15 +4,19 @@
 
 @layer base {
   :root {
-    --color-primario: #4752FF;
-    --color-secundario: #478CFF;
-    --color-acento: #47C6FF;
-    --color-energia: #00FFFE;
-    --color-violeta: #7947FF;
+    --color-primario: #4752ff;
+    --color-secundario: #478cff;
+    --color-acento: #47c6ff;
+    --color-energia: #00fffe;
+    --color-violeta: #7947ff;
   }
 
   body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family:
+      'Inter',
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
 }
 

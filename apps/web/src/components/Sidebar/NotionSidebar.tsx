@@ -49,14 +49,24 @@ export const NotionSidebar: React.FC<NotionSidebarProps> = ({
       case UserRole.GENERADOR:
         return [
           { id: 'proyectos', label: 'Proyectos Científicos', icon: FolderKanban },
-          { id: 'beneficiarios', label: 'Personal (Beneficiarios)', icon: UserCheck, badge: 'Sin cuenta' },
+          {
+            id: 'beneficiarios',
+            label: 'Personal (Beneficiarios)',
+            icon: UserCheck,
+            badge: 'Sin cuenta',
+          },
           { id: 'asignaciones', label: 'Asignaciones y Grupos', icon: Layers },
           { id: 'causacion', label: 'Motor de Causación', icon: FileSpreadsheet },
           { id: 'solicitudes_creadas', label: 'Mis Solicitudes', icon: FileText },
         ];
       case UserRole.RECEPTOR:
         return [
-          { id: 'solicitudes_bandeja', label: 'Bandeja de Aprobación', icon: CheckCircle2, badge: '4 Ojos' },
+          {
+            id: 'solicitudes_bandeja',
+            label: 'Bandeja de Aprobación',
+            icon: CheckCircle2,
+            badge: '4 Ojos',
+          },
           { id: 'pagos_fifo', label: 'Entregas de Fondos (FIFO)', icon: DollarSign },
           { id: 'recibos', label: 'Recibos Inmutables', icon: Receipt },
           { id: 'caja_chica', label: 'Cajas Chicas', icon: PiggyBank },
@@ -90,8 +100,12 @@ export const NotionSidebar: React.FC<NotionSidebarProps> = ({
               />
             </div>
             <div className="truncate">
-              <div className="text-xs font-bold text-[#37352F] dark:text-white truncate">Scienpay Workspace</div>
-              <div className="text-[10px] text-[#9B9A97] dark:text-[#888886] truncate">Física • Química • Biología</div>
+              <div className="text-xs font-bold text-[#37352F] dark:text-white truncate">
+                Scienpay Workspace
+              </div>
+              <div className="text-[10px] text-[#9B9A97] dark:text-[#888886] truncate">
+                Física • Química • Biología
+              </div>
             </div>
           </div>
         ) : (
@@ -126,7 +140,9 @@ export const NotionSidebar: React.FC<NotionSidebarProps> = ({
                 {currentUser.fullName.charAt(0)}
               </div>
               <div className="truncate flex-1">
-                <div className="text-xs font-semibold text-[#37352F] dark:text-white truncate">{currentUser.fullName}</div>
+                <div className="text-xs font-semibold text-[#37352F] dark:text-white truncate">
+                  {currentUser.fullName}
+                </div>
                 <div className="text-[10px] text-[#787774] dark:text-[#9B9A97] truncate">
                   {currentUser.title || currentUser.role}
                 </div>
@@ -138,8 +154,8 @@ export const NotionSidebar: React.FC<NotionSidebarProps> = ({
                   currentUser.role === UserRole.ADMIN
                     ? 'bg-violet-100 dark:bg-violet-950/60 text-violet dark:text-violet-300'
                     : currentUser.role === UserRole.GENERADOR
-                    ? 'bg-blue-100 dark:bg-blue-950/60 text-primary dark:text-blue-300'
-                    : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
+                      ? 'bg-blue-100 dark:bg-blue-950/60 text-primary dark:text-blue-300'
+                      : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
                 }`}
               >
                 {currentUser.role}
@@ -198,7 +214,9 @@ export const NotionSidebar: React.FC<NotionSidebarProps> = ({
       <div className="p-3 border-t border-[#EDEDEB] dark:border-[#2B2B2B] space-y-2">
         {!collapsed ? (
           <div className="flex items-center justify-between px-1">
-            <span className="text-[10px] text-[#787774] dark:text-[#888886] font-medium">Tema visual</span>
+            <span className="text-[10px] text-[#787774] dark:text-[#888886] font-medium">
+              Tema visual
+            </span>
             <ThemeToggle compact />
           </div>
         ) : (

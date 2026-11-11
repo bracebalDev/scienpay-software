@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../../infrastructure/database/database.service.js';
 import {
   disbursements,
@@ -138,7 +134,9 @@ export class DisbursementsService {
 
   async registerDisbursement(input: RegisterDisbursementInput, userId: string) {
     if (!input.paymentRequestId) {
-      throw new ConflictException('ID_SOLICITUD_REQUERIDO: Se debe especificar el ID de la solicitud de pago');
+      throw new ConflictException(
+        'ID_SOLICITUD_REQUERIDO: Se debe especificar el ID de la solicitud de pago',
+      );
     }
 
     const uniquePersons = new Set(input.allocations.map((allocation) => allocation.personId));
@@ -222,10 +220,7 @@ export class DisbursementsService {
         let fifoResult;
 
         try {
-          fifoResult = FIFOAllocationEngine.allocatePayment(
-            pendingItems,
-            personAlloc.amount,
-          );
+          fifoResult = FIFOAllocationEngine.allocatePayment(pendingItems, personAlloc.amount);
         } catch (error) {
           if (error instanceof Error) {
             throw new ConflictException(error.message);

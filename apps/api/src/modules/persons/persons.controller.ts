@@ -32,9 +32,7 @@ export class PersonsController {
 
   @Post()
   @Roles(UserRole.GENERADOR)
-  async createPerson(
-    @Body(new ZodValidationPipe(createPersonSchema)) body: CreatePersonInput,
-  ) {
+  async createPerson(@Body(new ZodValidationPipe(createPersonSchema)) body: CreatePersonInput) {
     return this.personsService.createPerson(body);
   }
 

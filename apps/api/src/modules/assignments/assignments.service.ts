@@ -1,7 +1,16 @@
 import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../../infrastructure/database/database.service.js';
-import { assignments, persons, projects, paymentGroups } from '../../infrastructure/database/schema.js';
-import { CreateAssignmentInput, TerminateAssignmentInput, AssignmentStatus } from '@scienpay/shared';
+import {
+  assignments,
+  persons,
+  projects,
+  paymentGroups,
+} from '../../infrastructure/database/schema.js';
+import {
+  CreateAssignmentInput,
+  TerminateAssignmentInput,
+  AssignmentStatus,
+} from '@scienpay/shared';
 import { AssignmentOverlapPolicy } from '../../domain/assignments/assignment-overlap.policy.js';
 import { eq, and } from 'drizzle-orm';
 import { Decimal } from 'decimal.js';
@@ -114,7 +123,9 @@ export class AssignmentsService {
     const existing = await this.getAssignmentById(id);
 
     if (new Date(input.endDate) < new Date(existing.startDate)) {
-      throw new ConflictException('FECHA_INVALIDA: La fecha de término no puede ser anterior a la de inicio');
+      throw new ConflictException(
+        'FECHA_INVALIDA: La fecha de término no puede ser anterior a la de inicio',
+      );
     }
 
     const [updated] = await this.databaseService.db

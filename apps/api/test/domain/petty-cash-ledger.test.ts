@@ -4,7 +4,6 @@ import {
   PettyCashLedgerEngine,
   VoucherReconciliationInput,
 } from '../../src/domain/petty-cash/petty-cash-ledger.engine.js';
-import { PettyCashVoucherStatus } from '@scienpay/shared';
 
 describe('Reglas de Negocio: Gestión y Cuadratura de Cajas Chicas', () => {
   it('valida que el desembolso de un vale no puede exceder el saldo disponible de la caja', () => {
@@ -37,10 +36,7 @@ describe('Reglas de Negocio: Gestión y Cuadratura de Cajas Chicas', () => {
       changeAmount: '14.75', // 85.25 + 14.75 = 100.00
     };
 
-    assert.equal(
-      PettyCashLedgerEngine.isReconciliationBalanced(validReconciliation),
-      true,
-    );
+    assert.equal(PettyCashLedgerEngine.isReconciliationBalanced(validReconciliation), true);
 
     const invalidReconciliation: VoucherReconciliationInput = {
       requestedAmount: '100.00',
@@ -48,10 +44,7 @@ describe('Reglas de Negocio: Gestión y Cuadratura de Cajas Chicas', () => {
       changeAmount: '10.00', // 90 != 100
     };
 
-    assert.equal(
-      PettyCashLedgerEngine.isReconciliationBalanced(invalidReconciliation),
-      false,
-    );
+    assert.equal(PettyCashLedgerEngine.isReconciliationBalanced(invalidReconciliation), false);
   });
 
   it('calcula el nuevo saldo tras la rendición con devolución de cambio', () => {

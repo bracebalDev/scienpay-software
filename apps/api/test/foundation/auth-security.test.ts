@@ -35,7 +35,7 @@ describe('Reglas de Seguridad y Autenticación (ADR-006 & Especificación)', () 
   describe('Política Anti-Fuerza Bruta y Bloqueo Escalonado', () => {
     it('primer y segundo intento fallido solo incrementan el contador de errores', () => {
       const state0 = AccountSecurityPolicy.getInitialState();
-      
+
       const state1 = AccountSecurityPolicy.recordFailedAttempt(state0, Date.now());
       assert.equal(state1.failedAttempts, 1);
       assert.equal(state1.isLocked, false);
@@ -59,7 +59,11 @@ describe('Reglas de Seguridad y Autenticación (ADR-006 & Especificación)', () 
       assert.equal(state.failedAttempts, 3);
       assert.equal(state.isLocked, true);
       assert.equal(state.permanentLock, false);
-      assert.equal(state.lockoutExpiresAt, now + 5 * 60 * 1000, 'Debe expirar exactamente en 5 minutos (300.000 ms)');
+      assert.equal(
+        state.lockoutExpiresAt,
+        now + 5 * 60 * 1000,
+        'Debe expirar exactamente en 5 minutos (300.000 ms)',
+      );
     });
 
     it('al 4to intento fallido se activa el bloqueo permanente de la cuenta', () => {

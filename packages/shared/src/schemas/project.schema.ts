@@ -7,11 +7,16 @@ export const baseProjectSchema = z.object({
     .trim()
     .min(2, 'El código debe tener al menos 2 caracteres')
     .max(20, 'El código no puede exceder 20 caracteres')
-    .regex(/^[A-Z0-9_-]+$/, 'El código solo puede contener letras mayúsculas, números, guiones y guiones bajos'),
+    .regex(
+      /^[A-Z0-9_-]+$/,
+      'El código solo puede contener letras mayúsculas, números, guiones y guiones bajos',
+    ),
   name: z.string().trim().min(3, 'El nombre debe tener al menos 3 caracteres').max(150),
   description: z.string().trim().max(1000).optional().default(''),
   area: z.nativeEnum(ProjectArea, { errorMap: () => ({ message: 'Área de proyecto inválida' }) }),
-  scope: z.nativeEnum(ProjectScope, { errorMap: () => ({ message: 'Ámbito de proyecto inválido' }) }),
+  scope: z.nativeEnum(ProjectScope, {
+    errorMap: () => ({ message: 'Ámbito de proyecto inválido' }),
+  }),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)'),
   endDate: z
     .string()

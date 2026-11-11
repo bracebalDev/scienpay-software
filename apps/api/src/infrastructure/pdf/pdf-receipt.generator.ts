@@ -59,8 +59,12 @@ export class PdfReceiptGenerator {
 
       // 1. Cabecera Institucional
       doc.fontSize(10).fillColor('#4B5563').text('UNIVERSIDAD DE CARABOBO', { align: 'center' });
-      doc.fontSize(8).text('FACULTAD EXPERIMENTAL DE CIENCIAS Y TECNOLOGÍA (FACyT)', { align: 'center' });
-      doc.text('SCIENPAY - SISTEMA DE CONTROL DE PAGOS Y ASIGNACIONES CIENTÍFICAS', { align: 'center' });
+      doc
+        .fontSize(8)
+        .text('FACULTAD EXPERIMENTAL DE CIENCIAS Y TECNOLOGÍA (FACyT)', { align: 'center' });
+      doc.text('SCIENPAY - SISTEMA DE CONTROL DE PAGOS Y ASIGNACIONES CIENTÍFICAS', {
+        align: 'center',
+      });
       doc.moveDown(0.5);
 
       // Línea divisoria
@@ -68,8 +72,16 @@ export class PdfReceiptGenerator {
       doc.moveDown(0.8);
 
       // 2. Título y Número de Recibo
-      doc.fontSize(14).font('Helvetica-Bold').fillColor('#111827').text('RECIBO INDIVIDUAL DE PAGO', { align: 'center' });
-      doc.fontSize(11).font('Helvetica').fillColor('#2563EB').text(data.receiptNumber, { align: 'center' });
+      doc
+        .fontSize(14)
+        .font('Helvetica-Bold')
+        .fillColor('#111827')
+        .text('RECIBO INDIVIDUAL DE PAGO', { align: 'center' });
+      doc
+        .fontSize(11)
+        .font('Helvetica')
+        .fillColor('#2563EB')
+        .text(data.receiptNumber, { align: 'center' });
       doc.moveDown(1);
 
       // 3. Ficha de Datos del Pago
@@ -84,7 +96,11 @@ export class PdfReceiptGenerator {
       doc.moveDown(1);
 
       // 4. Desglose de Imputaciones FIFO
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#374151').text('DESGLOSE DE AMORTIZACIÓN POR FIFO:');
+      doc
+        .fontSize(9)
+        .font('Helvetica-Bold')
+        .fillColor('#374151')
+        .text('DESGLOSE DE AMORTIZACIÓN POR FIFO:');
       doc.moveDown(0.5);
 
       // Cabecera de Tabla
@@ -119,8 +135,18 @@ export class PdfReceiptGenerator {
 
       // 5. Firma y Validez Legal
       const signY = doc.y;
-      doc.strokeColor('#9CA3AF').lineWidth(0.8).moveTo(60, signY + 30).lineTo(220, signY + 30).stroke();
-      doc.strokeColor('#9CA3AF').lineWidth(0.8).moveTo(330, signY + 30).lineTo(490, signY + 30).stroke();
+      doc
+        .strokeColor('#9CA3AF')
+        .lineWidth(0.8)
+        .moveTo(60, signY + 30)
+        .lineTo(220, signY + 30)
+        .stroke();
+      doc
+        .strokeColor('#9CA3AF')
+        .lineWidth(0.8)
+        .moveTo(330, signY + 30)
+        .lineTo(490, signY + 30)
+        .stroke();
 
       doc.fontSize(8).font('Helvetica').fillColor('#4B5563');
       doc.text('Firma del Beneficiario', 60, signY + 35, { width: 160, align: 'center' });
@@ -130,12 +156,15 @@ export class PdfReceiptGenerator {
       doc.text(data.issuerName, 330, signY + 45, { width: 160, align: 'center' });
 
       doc.moveDown(3);
-      doc.fontSize(7).fillColor('#9CA3AF').text(
-        'Este recibo constituye un comprobante financiero inmutable emitido por el sistema Scienpay bajo norma contable institucional sin deducciones legales. Toda anulación debe estar formalmente justificada en acta de auditoría.',
-        40,
-        signY + 80,
-        { width: 475, align: 'center' },
-      );
+      doc
+        .fontSize(7)
+        .fillColor('#9CA3AF')
+        .text(
+          'Este recibo constituye un comprobante financiero inmutable emitido por el sistema Scienpay bajo norma contable institucional sin deducciones legales. Toda anulación debe estar formalmente justificada en acta de auditoría.',
+          40,
+          signY + 80,
+          { width: 475, align: 'center' },
+        );
 
       doc.end();
     });
@@ -157,16 +186,28 @@ export class PdfReceiptGenerator {
 
       // 1. Cabecera Institucional
       doc.fontSize(10).fillColor('#4B5563').text('UNIVERSIDAD DE CARABOBO', { align: 'center' });
-      doc.fontSize(8).text('FACULTAD EXPERIMENTAL DE CIENCIAS Y TECNOLOGÍA (FACyT)', { align: 'center' });
-      doc.text('SCIENPAY - SISTEMA DE CONTROL DE PAGOS Y ASIGNACIONES CIENTÍFICAS', { align: 'center' });
+      doc
+        .fontSize(8)
+        .text('FACULTAD EXPERIMENTAL DE CIENCIAS Y TECNOLOGÍA (FACyT)', { align: 'center' });
+      doc.text('SCIENPAY - SISTEMA DE CONTROL DE PAGOS Y ASIGNACIONES CIENTÍFICAS', {
+        align: 'center',
+      });
       doc.moveDown(0.5);
 
       doc.strokeColor('#D1D5DB').lineWidth(1).moveTo(40, doc.y).lineTo(555, doc.y).stroke();
       doc.moveDown(0.8);
 
       // 2. Título y Código
-      doc.fontSize(14).font('Helvetica-Bold').fillColor('#111827').text('SOLICITUD CONSOLIDADA DE PAGO', { align: 'center' });
-      doc.fontSize(11).font('Helvetica').fillColor('#2563EB').text(data.requestCode, { align: 'center' });
+      doc
+        .fontSize(14)
+        .font('Helvetica-Bold')
+        .fillColor('#111827')
+        .text('SOLICITUD CONSOLIDADA DE PAGO', { align: 'center' });
+      doc
+        .fontSize(11)
+        .font('Helvetica')
+        .fillColor('#2563EB')
+        .text(data.requestCode, { align: 'center' });
       doc.moveDown(1);
 
       // 3. Ficha de la Solicitud
@@ -182,7 +223,11 @@ export class PdfReceiptGenerator {
       doc.moveDown(1);
 
       // 4. Desglose por Beneficiario
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#374151').text('DESGLOSE POR BENEFICIARIO:');
+      doc
+        .fontSize(9)
+        .font('Helvetica-Bold')
+        .fillColor('#374151')
+        .text('DESGLOSE POR BENEFICIARIO:');
       doc.moveDown(0.5);
 
       const startX = 40;
@@ -227,27 +272,48 @@ export class PdfReceiptGenerator {
 
       // 6. Firmas
       const signY = doc.y;
-      doc.strokeColor('#9CA3AF').lineWidth(0.8).moveTo(50, signY + 30).lineTo(210, signY + 30).stroke();
-      doc.strokeColor('#9CA3AF').lineWidth(0.8).moveTo(230, signY + 30).lineTo(390, signY + 30).stroke();
-      doc.strokeColor('#9CA3AF').lineWidth(0.8).moveTo(410, signY + 30).lineTo(555, signY + 30).stroke();
+      doc
+        .strokeColor('#9CA3AF')
+        .lineWidth(0.8)
+        .moveTo(50, signY + 30)
+        .lineTo(210, signY + 30)
+        .stroke();
+      doc
+        .strokeColor('#9CA3AF')
+        .lineWidth(0.8)
+        .moveTo(230, signY + 30)
+        .lineTo(390, signY + 30)
+        .stroke();
+      doc
+        .strokeColor('#9CA3AF')
+        .lineWidth(0.8)
+        .moveTo(410, signY + 30)
+        .lineTo(555, signY + 30)
+        .stroke();
 
       doc.fontSize(8).font('Helvetica').fillColor('#4B5563');
       doc.text('Generador de Nómina', 50, signY + 35, { width: 160, align: 'center' });
       doc.text(data.createdByName, 50, signY + 45, { width: 160, align: 'center' });
 
       doc.text('Receptor de Nómina', 230, signY + 35, { width: 160, align: 'center' });
-      doc.text(data.reviewedByName || '____________________', 230, signY + 45, { width: 160, align: 'center' });
+      doc.text(data.reviewedByName || '____________________', 230, signY + 45, {
+        width: 160,
+        align: 'center',
+      });
 
       doc.text('Administración Scienpay', 410, signY + 35, { width: 145, align: 'center' });
       doc.text('Sello Institucional', 410, signY + 45, { width: 145, align: 'center' });
 
       doc.moveDown(3);
-      doc.fontSize(7).fillColor('#9CA3AF').text(
-        'Documento consolidado generado por Scienpay. Las cifras corresponden al lote de causación asociado y son inmutables una vez emitido el pago. Toda corrección requiere anulación formal justificada.',
-        40,
-        signY + 80,
-        { width: 475, align: 'center' },
-      );
+      doc
+        .fontSize(7)
+        .fillColor('#9CA3AF')
+        .text(
+          'Documento consolidado generado por Scienpay. Las cifras corresponden al lote de causación asociado y son inmutables una vez emitido el pago. Toda corrección requiere anulación formal justificada.',
+          40,
+          signY + 80,
+          { width: 475, align: 'center' },
+        );
 
       doc.end();
     });

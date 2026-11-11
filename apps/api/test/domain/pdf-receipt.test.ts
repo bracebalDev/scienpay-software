@@ -1,6 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { PdfReceiptGenerator, ReceiptPdfData } from '../../src/infrastructure/pdf/pdf-receipt.generator.js';
+import {
+  PdfReceiptGenerator,
+  ReceiptPdfData,
+} from '../../src/infrastructure/pdf/pdf-receipt.generator.js';
 
 describe('Reglas de Negocio y Formato de Documentos: Generación de PDFs', () => {
   it('debe generar un buffer binario de PDF válido que comience con %PDF-', async () => {
@@ -39,6 +42,10 @@ describe('Reglas de Negocio y Formato de Documentos: Generación de PDFs', () =>
     assert.ok(pdfBuffer.length > 500, 'El PDF debe contener contenido renderizado');
 
     const header = pdfBuffer.subarray(0, 5).toString('ascii');
-    assert.equal(header, '%PDF-', 'El documento generado debe tener la firma estándar de cabecera PDF (%PDF-)');
+    assert.equal(
+      header,
+      '%PDF-',
+      'El documento generado debe tener la firma estándar de cabecera PDF (%PDF-)',
+    );
   });
 });

@@ -120,7 +120,9 @@ export class AuthController {
         {
           failedAttempts: user.failedAttempts,
           isLocked: user.isLocked,
-          lockoutExpiresAt: user.lockoutExpiresAt ? new Date(user.lockoutExpiresAt).getTime() : null,
+          lockoutExpiresAt: user.lockoutExpiresAt
+            ? new Date(user.lockoutExpiresAt).getTime()
+            : null,
           permanentLock: user.permanentLock,
         },
         now,
@@ -236,9 +238,7 @@ export class AuthController {
         await tx
           .update(refreshTokens)
           .set({ revokedAt: now })
-          .where(
-            and(eq(refreshTokens.familyId, claims.familyId), isNull(refreshTokens.revokedAt)),
-          );
+          .where(and(eq(refreshTokens.familyId, claims.familyId), isNull(refreshTokens.revokedAt)));
         return { status: 'not_found' as const };
       }
 
@@ -247,9 +247,7 @@ export class AuthController {
         await tx
           .update(refreshTokens)
           .set({ revokedAt: now })
-          .where(
-            and(eq(refreshTokens.familyId, record.familyId), isNull(refreshTokens.revokedAt)),
-          );
+          .where(and(eq(refreshTokens.familyId, record.familyId), isNull(refreshTokens.revokedAt)));
         return { status: 'replay' as const };
       }
 
@@ -270,10 +268,7 @@ export class AuthController {
       );
       const newTokenHash = this.authService.hashRefreshToken(newRefreshToken);
 
-      await tx
-        .update(refreshTokens)
-        .set({ revokedAt: now })
-        .where(eq(refreshTokens.id, record.id));
+      await tx.update(refreshTokens).set({ revokedAt: now }).where(eq(refreshTokens.id, record.id));
 
       await tx.insert(refreshTokens).values({
         userId: record.userId,

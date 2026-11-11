@@ -1,9 +1,6 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import {
-  previewCausationSchema,
-  type PreviewCausationInput,
-} from '@scienpay/shared';
+import { previewCausationSchema, type PreviewCausationInput } from '@scienpay/shared';
 import { useGenerateCausationBatch, usePreviewCausation } from '../../hooks/useCausation.js';
 import { useToast } from '../../context/ToastContext.js';
 import { getApiErrorMessage } from '../../lib/apiClient.js';
@@ -42,10 +39,10 @@ export const CausationForm: React.FC<CausationFormProps> = ({
   const watchedValues = form.watch();
   const previewMatches = Boolean(
     preview.data &&
-      preview.data.projectId === watchedValues.projectId &&
-      preview.data.paymentGroupId === watchedValues.paymentGroupId &&
-      preview.data.periodStartDate === watchedValues.periodStartDate &&
-      preview.data.periodEndDate === watchedValues.periodEndDate,
+    preview.data.projectId === watchedValues.projectId &&
+    preview.data.paymentGroupId === watchedValues.paymentGroupId &&
+    preview.data.periodStartDate === watchedValues.periodStartDate &&
+    preview.data.periodEndDate === watchedValues.periodEndDate,
   );
 
   const handlePreview = form.handleSubmit(async (values) => {
@@ -89,7 +86,10 @@ export const CausationForm: React.FC<CausationFormProps> = ({
         </FormField>
 
         <FormField label="Grupo de pago" required error={errors.paymentGroupId?.message}>
-          <SelectInput hasError={Boolean(errors.paymentGroupId)} {...form.register('paymentGroupId')}>
+          <SelectInput
+            hasError={Boolean(errors.paymentGroupId)}
+            {...form.register('paymentGroupId')}
+          >
             <option value="">Seleccione un grupo…</option>
             {paymentGroups.map((group) => (
               <option key={group.id} value={group.id}>
@@ -184,7 +184,9 @@ export const CausationForm: React.FC<CausationFormProps> = ({
                           <div className="font-semibold text-[#37352F] dark:text-white">
                             {item.beneficiaryName}
                           </div>
-                          <div className="text-[10px] text-[#9B9A97]">{item.beneficiaryDocument}</div>
+                          <div className="text-[10px] text-[#9B9A97]">
+                            {item.beneficiaryDocument}
+                          </div>
                         </td>
                         <td className="py-2 px-3 text-[#787774] dark:text-[#9B9A97]">
                           {item.activeDays}/{item.totalDaysInPeriod}

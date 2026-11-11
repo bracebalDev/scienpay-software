@@ -7,7 +7,14 @@ import { getApiErrorMessage } from '../../lib/apiClient.js';
 import { zodResolver } from '../../lib/zodResolver.js';
 import { todayISO } from '../../lib/format.js';
 import type { PaymentGroup, Person, Project } from '../../types/api.types.js';
-import { Button, FormActions, FormField, SelectInput, TextArea, TextInput } from '../ui/FormControls.js';
+import {
+  Button,
+  FormActions,
+  FormField,
+  SelectInput,
+  TextArea,
+  TextInput,
+} from '../ui/FormControls.js';
 
 interface AssignmentFormProps {
   persons: Person[];
@@ -77,7 +84,10 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({
         </FormField>
 
         <FormField label="Grupo de pago" required error={errors.paymentGroupId?.message}>
-          <SelectInput hasError={Boolean(errors.paymentGroupId)} {...form.register('paymentGroupId')}>
+          <SelectInput
+            hasError={Boolean(errors.paymentGroupId)}
+            {...form.register('paymentGroupId')}
+          >
             <option value="">Seleccione un grupo…</option>
             {paymentGroups.map((group) => (
               <option key={group.id} value={group.id}>
@@ -98,7 +108,11 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({
         </FormField>
 
         <FormField label="Fecha de inicio" required error={errors.startDate?.message}>
-          <TextInput type="date" hasError={Boolean(errors.startDate)} {...form.register('startDate')} />
+          <TextInput
+            type="date"
+            hasError={Boolean(errors.startDate)}
+            {...form.register('startDate')}
+          />
         </FormField>
 
         <FormField label="Fecha de fin" error={errors.endDate?.message} hint="Opcional">

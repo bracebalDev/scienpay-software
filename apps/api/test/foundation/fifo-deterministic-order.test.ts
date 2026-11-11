@@ -48,10 +48,7 @@ describe('FIFO determinista y validación de desembolsos (Fase 2.4/2.5)', () => 
   });
 
   it('debe rechazar un pago sobre una persona sin causaciones pendientes', () => {
-    assert.throws(
-      () => FIFOAllocationEngine.allocatePayment([], '10.00'),
-      /PAGO_EXCEDE_DEUDA/,
-    );
+    assert.throws(() => FIFOAllocationEngine.allocatePayment([], '10.00'), /PAGO_EXCEDE_DEUDA/);
   });
 
   it('debe amortizar la deuda más antigua primero y dejar saldo exacto', () => {

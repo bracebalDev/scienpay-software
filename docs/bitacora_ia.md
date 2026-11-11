@@ -216,3 +216,21 @@
   - Se normalizó la numeración de sesiones (16 y 17) y se añadió la sesión 18.
   - Se actualizaron `HANDOFF.md`, `avances.md` y `uso-de-ia.md`; no se modificó `main`.
 
+#### Sesión 19: Autorización de la Fase 4 y establecimiento de lint/CI
+- **Fecha:** 11 de Noviembre de 2026
+- **Herramienta:** DeepSeek V4.1 Flash Free vía OpenCode
+- **Objetivo:** Verificar el estado real del repositorio antes de ejecutar la Fase 4 y convertir lint/formato en pasos bloqueantes de CI (tarea 4.4).
+- **Hallazgos:**
+  - El script de 158 verificaciones (`C:\Users\Usuario\...\scienpay-integration.mjs`) **no existe** en esta máquina; 4.1 exige reconstruir la suite.
+  - La API expone 57 endpoints en 11 módulos, base para dimensionar la suite y el futuro OpenAPI.
+  - El rate limiter de login está fijado a 5/min por IP, lo que bloquearía cualquier suite de integración.
+  - `migrate.ts` reaplica todos los `.sql` en cada corrida y no lleva ledger: las migraciones nuevas deben ser idempotentes.
+  - `payment_requests` no tiene columna `notes` y `SOL-YYYY-NNN` se calcula con `count + 1`.
+- **Cambios aceptados:**
+  - `eslint.config.mjs` con `typescript-eslint` en preset `recommended` y solo dos reglas de React Hooks (se rechazó el preset completo de la v7 porque incluye reglas del React Compiler incompatibles con `react-hook-form`).
+  - Prettier como fuente única de estilo y reformateo de 70 archivos sin cambios semánticos.
+  - Guard `scripts/check-lint-workspaces.mjs` para que ningún workspace quede sin `lint`.
+  - `ADR-008` con la política de escaneos: Gitleaks bloqueante; Semgrep y `npm audit` con baseline y fecha de revisión.
+- **Validación humana:** se revisó que los cambios de lint no alteraran comportamiento; `typecheck` y **87/87 tests** siguen pasando.
+- **Resultado:** tarea 4.4 completada; CI ahora falla ante errores de lint, formato, tipos o tests.
+

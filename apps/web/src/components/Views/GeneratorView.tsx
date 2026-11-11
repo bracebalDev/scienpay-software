@@ -152,7 +152,10 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({ activeTab }) => {
 
   return (
     <div className="space-y-6">
-      <SectionBanner tone="blue" title="Segregación de Funciones: Perfil Generador (Coordinador General)">
+      <SectionBanner
+        tone="blue"
+        title="Segregación de Funciones: Perfil Generador (Coordinador General)"
+      >
         Gestiona proyectos científicos, beneficiarios, asignaciones y genera causaciones y
         solicitudes de pago. <strong>Regla de Cuatro Ojos:</strong> tiene terminantemente prohibido
         aprobar solicitudes y registrar entrega de fondos.
@@ -202,7 +205,9 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({ activeTab }) => {
                       <div className="text-[11px] text-[#787774] dark:text-[#9B9A97] space-y-0.5 mt-2">
                         <div>
                           Ámbito:{' '}
-                          <strong className="text-[#37352F] dark:text-white">{project.scope}</strong>
+                          <strong className="text-[#37352F] dark:text-white">
+                            {project.scope}
+                          </strong>
                         </div>
                         <div>
                           Vigencia: {formatDate(project.startDate)} al{' '}
@@ -210,7 +215,9 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({ activeTab }) => {
                         </div>
                         <div>
                           Estado:{' '}
-                          <strong className="text-[#37352F] dark:text-white">{project.status}</strong>
+                          <strong className="text-[#37352F] dark:text-white">
+                            {project.status}
+                          </strong>
                         </div>
                       </div>
                     </div>
@@ -255,7 +262,9 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({ activeTab }) => {
           />
 
           <div className="p-3.5 rounded-xl bg-slate-100/80 dark:bg-[#252525] border border-[#E9E9E7] dark:border-[#2F2F2F] text-xs text-[#5A5A58] dark:text-[#A4A4A2] flex items-center space-x-2">
-            <span className="font-bold text-primary dark:text-primary-light">📌 Regla de Negocio:</span>
+            <span className="font-bold text-primary dark:text-primary-light">
+              📌 Regla de Negocio:
+            </span>
             <span>
               Los beneficiarios <strong>NO tienen usuario en el sistema</strong>. Son personas
               registradas exclusivamente como datos de pago y no tienen credenciales de acceso.
@@ -285,7 +294,10 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({ activeTab }) => {
                 </thead>
                 <tbody className="divide-y divide-[#EDEDEB] dark:divide-[#2F2F2F]">
                   {persons.map((person) => (
-                    <tr key={person.id} className="hover:bg-[#FBFBFA] dark:hover:bg-[#262626] transition">
+                    <tr
+                      key={person.id}
+                      className="hover:bg-[#FBFBFA] dark:hover:bg-[#262626] transition"
+                    >
                       <td className="py-3 px-4 font-mono font-medium text-[#37352F] dark:text-white">
                         {person.documentType}-{person.documentNumber}
                       </td>
@@ -402,7 +414,10 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({ activeTab }) => {
                             tone={statusTone(assignment.status)}
                           />
                         </td>
-                        <td className="py-3 px-4 text-right" onClick={(event) => event.stopPropagation()}>
+                        <td
+                          className="py-3 px-4 text-right"
+                          onClick={(event) => event.stopPropagation()}
+                        >
                           {assignment.status === 'ACTIVO' ? (
                             <Button
                               size="sm"
@@ -425,7 +440,9 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({ activeTab }) => {
                   })}
                 </tbody>
               </table>
-              {assignments.length === 0 && <EmptyState message="No hay asignaciones registradas." />}
+              {assignments.length === 0 && (
+                <EmptyState message="No hay asignaciones registradas." />
+              )}
             </div>
           )}
         </div>
@@ -541,7 +558,11 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({ activeTab }) => {
             subtitle="Ciclo de estados: BORRADOR → ENVIADA → APROBADA/RECHAZADA → ENTREGADA → CERRADA."
             icon={<FileText className="w-5 h-5 text-accent dark:text-accent-light" />}
             actions={
-              <Button size="sm" onClick={() => setShowRequestForm(true)} disabled={batches.length === 0}>
+              <Button
+                size="sm"
+                onClick={() => setShowRequestForm(true)}
+                disabled={batches.length === 0}
+              >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Crear Solicitud de Pago</span>
               </Button>
@@ -744,7 +765,9 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({ activeTab }) => {
                       <td className="py-2 px-3 text-[#787774] dark:text-[#9B9A97]">
                         {item.activeDays}/{item.totalDaysInPeriod}
                       </td>
-                      <td className="py-2 px-3 font-mono">${formatCurrency(item.calculatedAmount)}</td>
+                      <td className="py-2 px-3 font-mono">
+                        ${formatCurrency(item.calculatedAmount)}
+                      </td>
                       <td className="py-2 px-3 font-mono">${formatCurrency(item.paidAmount)}</td>
                       <td className="py-2 px-3 font-mono font-bold">
                         ${formatCurrency(item.remainingDebt)}
@@ -771,7 +794,9 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({ activeTab }) => {
           <p className="text-[11px] text-[#787774] dark:text-[#9B9A97]">
             Se anulará el lote del período{' '}
             <strong className="text-[#37352F] dark:text-white">
-              {batchToAnnul ? `${formatDate(batchToAnnul.periodStartDate)} → ${formatDate(batchToAnnul.periodEndDate)}` : ''}
+              {batchToAnnul
+                ? `${formatDate(batchToAnnul.periodStartDate)} → ${formatDate(batchToAnnul.periodEndDate)}`
+                : ''}
             </strong>
             . La operación se rechaza si el lote tiene solicitudes o pagos asociados.
           </p>
@@ -789,7 +814,11 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({ activeTab }) => {
             <Button variant="secondary" onClick={() => setBatchToAnnul(null)}>
               Cancelar
             </Button>
-            <Button variant="danger" onClick={() => void handleAnnul()} disabled={annulBatch.isPending}>
+            <Button
+              variant="danger"
+              onClick={() => void handleAnnul()}
+              disabled={annulBatch.isPending}
+            >
               {annulBatch.isPending ? 'Anulando…' : 'Confirmar Anulación'}
             </Button>
           </div>

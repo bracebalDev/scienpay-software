@@ -24,11 +24,10 @@ if (initialBuild.status !== 0) {
   process.exit(initialBuild.status ?? 1);
 }
 
-const compiler = spawn(
-  process.execPath,
-  [tscBin, '--watch', '--preserveWatchOutput'],
-  { cwd: apiRoot, stdio: 'inherit' },
-);
+const compiler = spawn(process.execPath, [tscBin, '--watch', '--preserveWatchOutput'], {
+  cwd: apiRoot,
+  stdio: 'inherit',
+});
 
 const server = spawn(process.execPath, ['--watch', 'dist/main.js'], {
   cwd: apiRoot,

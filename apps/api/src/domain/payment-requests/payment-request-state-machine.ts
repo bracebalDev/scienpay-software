@@ -27,13 +27,9 @@ export class PaymentRequestStateMachine {
       PaymentRequestStatus.ANULADA,
     ]),
 
-    [PaymentRequestStatus.RECHAZADA]: new Set([
-      PaymentRequestStatus.ANULADA,
-    ]),
+    [PaymentRequestStatus.RECHAZADA]: new Set([PaymentRequestStatus.ANULADA]),
 
-    [PaymentRequestStatus.ENTREGADA]: new Set([
-      PaymentRequestStatus.CERRADA,
-    ]),
+    [PaymentRequestStatus.ENTREGADA]: new Set([PaymentRequestStatus.CERRADA]),
 
     [PaymentRequestStatus.CERRADA]: new Set([]), // Estado final
     [PaymentRequestStatus.ANULADA]: new Set([]), // Estado final

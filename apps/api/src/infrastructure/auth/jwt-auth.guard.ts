@@ -1,9 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
 
 @Injectable()
@@ -15,7 +10,9 @@ export class JwtAuthGuard implements CanActivate {
     const authHeader = request.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('NO_AUTORIZADO: Se requiere token de autorización Bearer válido');
+      throw new UnauthorizedException(
+        'NO_AUTORIZADO: Se requiere token de autorización Bearer válido',
+      );
     }
 
     const token = authHeader.substring(7);
@@ -24,7 +21,9 @@ export class JwtAuthGuard implements CanActivate {
       request.user = decoded;
       return true;
     } catch {
-      throw new UnauthorizedException('TOKEN_INVALIDO: El token de acceso ha expirado o es inválido');
+      throw new UnauthorizedException(
+        'TOKEN_INVALIDO: El token de acceso ha expirado o es inválido',
+      );
     }
   }
 }

@@ -31,10 +31,10 @@ Cada cambio de estado se registra en el historial de este documento y se acompa�
 | **Fase 1** | Correcciones críticas de backend | 🟢 Completada | 5/5 |
 | **Fase 2** | Completar módulos backend faltantes | 🟢 Completada | 5/5 |
 | **Fase 3** | Frontend real conectado a la API | 🟢 Completada | 7/7 |
-| **Fase 4** | Testing y calidad | 🔴 Por hacer | 0/6 |
+| **Fase 4** | Testing y calidad | 🟡 En progreso | 1/6 |
 | **Fase 5** | Pulimiento y entrega | 🔴 Por hacer | 0/6 |
 
-> Las Fases 4 y 5 se redefinieron el 2026-11-10 a partir del estado real del repositorio. El detalle está en las secciones 10 y 11. Su ejecución no está autorizada todavía.
+> Las Fases 4 y 5 se redefinieron el 2026-11-10 a partir del estado real del repositorio. La Fase 4 está autorizada el 2026-11-11; la Fase 5 sigue sin autorizar. El detalle está en las secciones 10 y 11.
 
 ---
 
@@ -273,6 +273,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 | 2026-11-10 | Redefinición de Fases 4–5 | ⚪ Fuera de alcance | 🔴 Por hacer (0/12) | — | Se reemplaza el alcance recortado por un plan ajustado al estado real; ver secciones 10 y 11. |
 | 2026-11-11 | Corrección del punto de partida de Fase 4 | Premisas desactualizadas | Revisado | — | El script de 158 checks no existe en la máquina; 4.1 pasa de "mover" a "reconstruir". Se documentan 57 endpoints, rate limiter hardcodeado, runner de migraciones sin ledger y reparto de 170 verificaciones. |
 | 2026-11-11 | Autorización de Fase 4 | 🔴 Por hacer | 🟡 En progreso | — | Se autoriza el alcance completo 4.1 → 4.6; Fase 5 permanece sin autorizar. |
+| 2026-11-11 | 4.4 Lint, formato y CI | 🔴 Por hacer | 🟢 Completada | — | ESLint flat + Prettier, guard de workspaces, `format:check` y `lint` bloqueantes, Gitleaks bloqueante y ADR-008. 0 errores de lint, 87/87 tests. |
 
 ---
 
@@ -393,7 +394,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🔴 Por hacer |
+| **Estado** | 🟢 Completada |
 | **Punto de partida** | `strict: true` ya está activo; el CI corre typecheck/test/build; no hay ESLint y `npm run lint` no hace nada. |
 | **Objetivo** | Hacer que lint y formato sean bloqueantes y consistentes en todo el monorepo. |
 | **Solución** | 1. Añadir ESLint flat config en la raíz con `typescript-eslint`, reglas de React Hooks para `apps/web` y Prettier.<br>2. Definir `lint` en cada workspace y hacer que el script raíz falle si algún workspace no lo define.<br>3. Corregir las violaciones existentes o justificar excepciones puntuales.<br>4. Añadir `npm run lint` y `prettier --check` al CI como pasos bloqueantes.<br>5. Revisar la política de los escaneos de seguridad: Gitleaks bloqueante; Semgrep y `npm audit` con baseline documentado o bloqueantes tras triage.<br>6. Registrar la política en `docs/decisiones/ADR-008-calidad-y-ci.md`. |

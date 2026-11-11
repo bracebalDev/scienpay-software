@@ -1,6 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { CausationCalculator, CausationInput } from '../../src/domain/causation/causation-calculator.js';
+import {
+  CausationCalculator,
+  CausationInput,
+} from '../../src/domain/causation/causation-calculator.js';
 import { Decimal } from 'decimal.js';
 
 describe('Reglas de Negocio: Motor de Causación y Prorrateo (Especificación de Referencia)', () => {
@@ -19,7 +22,11 @@ describe('Reglas de Negocio: Motor de Causación y Prorrateo (Especificación de
 
       assert.equal(result.totalDaysInPeriod, 31, 'Octubre tiene 31 días inclusivos');
       assert.equal(result.activeDays, 31, 'Días activos deben ser 31');
-      assert.equal(result.calculatedAmount, '850.00', 'Período completo debe ser exactamente igual al monto base');
+      assert.equal(
+        result.calculatedAmount,
+        '850.00',
+        'Período completo debe ser exactamente igual al monto base',
+      );
     });
 
     it('debe causar el monto completo en quincena de 15 días', () => {
@@ -97,7 +104,11 @@ describe('Reglas de Negocio: Motor de Causación y Prorrateo (Especificación de
         amountPerPeriod: '81.00',
       };
       const result2 = CausationCalculator.calculateProration(input2);
-      assert.equal(result2.calculatedAmount, '10.13', '81 / 8 = 10.125 debe redondearse a 10.13 con HALF_UP');
+      assert.equal(
+        result2.calculatedAmount,
+        '10.13',
+        '81 / 8 = 10.125 debe redondearse a 10.13 con HALF_UP',
+      );
     });
 
     it('debe retornar 0.00 si la asignación no intersecta el período de corte', () => {

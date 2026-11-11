@@ -14,7 +14,10 @@ export interface VoucherReconciliationInput {
  * - Arrastre inmutable de saldos de cierre al mes siguiente.
  */
 export class PettyCashLedgerEngine {
-  public static canDisburse(currentBalance: string | number, requestedAmount: string | number): boolean {
+  public static canDisburse(
+    currentBalance: string | number,
+    requestedAmount: string | number,
+  ): boolean {
     const bal = new Decimal(currentBalance);
     const req = new Decimal(requestedAmount);
     return req.greaterThan(0) && bal.greaterThanOrEqualTo(req);
@@ -28,7 +31,9 @@ export class PettyCashLedgerEngine {
     const dis = new Decimal(disbursedAmount);
 
     if (dis.greaterThan(bal)) {
-      throw new Error('FONDOS_INSUFICIENTES: El monto a desembolsar excede el saldo de caja disponible');
+      throw new Error(
+        'FONDOS_INSUFICIENTES: El monto a desembolsar excede el saldo de caja disponible',
+      );
     }
 
     return bal.minus(dis).toFixed(2);

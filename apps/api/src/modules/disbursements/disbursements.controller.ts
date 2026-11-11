@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Req,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import {
   UserRole,
   registerDisbursementSchema,
@@ -44,10 +36,7 @@ export class DisbursementsController {
 
   @Get('receipts/:id/pdf')
   @Roles(UserRole.ADMIN, UserRole.GENERADOR, UserRole.RECEPTOR)
-  async downloadReceiptPdf(
-    @UuidParam() id: string,
-    @Res() res: any,
-  ) {
+  async downloadReceiptPdf(@UuidParam() id: string, @Res() res: any) {
     const { buffer, filename } = await this.disbursementsService.generateReceiptPdfBuffer(id);
     res.set({
       'Content-Type': 'application/pdf',

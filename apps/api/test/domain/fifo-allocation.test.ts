@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import {
   FIFOAllocationEngine,
   PendingDebtItem,
-  PaymentAllocationResult,
 } from '../../src/domain/payments/fifo-allocation.engine.js';
 import { CausationItemStatus } from '@scienpay/shared';
 import { Decimal } from 'decimal.js';

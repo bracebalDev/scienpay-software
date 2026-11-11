@@ -1,11 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { RegisterDisbursementInput } from '@scienpay/shared';
 import { apiClient, saveBlob } from '../lib/apiClient.js';
-import type {
-  Disbursement,
-  Receipt,
-  RegisterDisbursementResponse,
-} from '../types/api.types.js';
+import type { Disbursement, Receipt, RegisterDisbursementResponse } from '../types/api.types.js';
 import { causationKeys } from './useCausation.js';
 import { paymentRequestKeys } from './usePaymentRequests.js';
 
@@ -30,7 +26,9 @@ export function useReceipts(personId?: string) {
     queryKey: [...disbursementKeys.receipts, personId ?? 'todos'],
     queryFn: () =>
       apiClient.get<Receipt[]>(
-        personId ? `/disbursements/receipts?personId=${encodeURIComponent(personId)}` : '/disbursements/receipts',
+        personId
+          ? `/disbursements/receipts?personId=${encodeURIComponent(personId)}`
+          : '/disbursements/receipts',
       ),
   });
 }

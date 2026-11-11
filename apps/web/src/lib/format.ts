@@ -37,9 +37,7 @@ export function todayISO(): string {
 
 export function firstDayOfMonthISO(): string {
   const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
-    .toISOString()
-    .slice(0, 10);
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0, 10);
 }
 
 export function lastDayOfMonthISO(): string {

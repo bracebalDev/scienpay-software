@@ -1,9 +1,5 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
-import {
-  UserRole,
-  createPaymentGroupSchema,
-  type CreatePaymentGroupInput,
-} from '@scienpay/shared';
+import { UserRole, createPaymentGroupSchema, type CreatePaymentGroupInput } from '@scienpay/shared';
 import { PaymentGroupsService } from './payment-groups.service.js';
 import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard.js';
 import { RolesGuard } from '../../infrastructure/auth/roles.guard.js';

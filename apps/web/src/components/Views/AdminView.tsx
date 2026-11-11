@@ -82,8 +82,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ activeTab }) => {
         title="Segregación de Funciones: Perfil Administrador del Sistema"
       >
         El Administrador gestiona usuarios, parámetros y catálogos globales. Por norma de seguridad
-        financiera, <strong>no participa en operaciones de dinero</strong> (no formula causaciones, no
-        crea solicitudes, no aprueba ni desembolsa fondos).
+        financiera, <strong>no participa en operaciones de dinero</strong> (no formula causaciones,
+        no crea solicitudes, no aprueba ni desembolsa fondos).
       </SectionBanner>
 
       {activeTab === 'usuarios' && (
@@ -135,7 +135,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ activeTab }) => {
                     const isBlocked = user.permanentLock;
 
                     return (
-                      <tr key={user.id} className="hover:bg-[#FBFBFA] dark:hover:bg-[#252525] transition">
+                      <tr
+                        key={user.id}
+                        className="hover:bg-[#FBFBFA] dark:hover:bg-[#252525] transition"
+                      >
                         <td className="py-3 px-4 font-medium text-[#37352F] dark:text-white">
                           <div className="flex items-center space-x-2">
                             <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-[#2A2A2A] text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-[10px]">
@@ -157,8 +160,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ activeTab }) => {
                               user.role === 'ADMIN'
                                 ? 'violet'
                                 : user.role === 'GENERADOR'
-                                ? 'blue'
-                                : 'green'
+                                  ? 'blue'
+                                  : 'green'
                             }
                           />
                         </td>
@@ -168,8 +171,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ activeTab }) => {
                               user.failedAttempts === 0
                                 ? 'bg-slate-100 dark:bg-[#2A2A2A] text-slate-600 dark:text-slate-300'
                                 : user.failedAttempts < 3
-                                ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300'
-                                : 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 font-bold'
+                                  ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300'
+                                  : 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 font-bold'
                             }`}
                           >
                             {user.failedAttempts} / 4
@@ -225,7 +228,9 @@ export const AdminView: React.FC<AdminViewProps> = ({ activeTab }) => {
                   })}
                 </tbody>
               </table>
-              {usersQuery.data.length === 0 && <EmptyState message="No hay usuarios registrados." />}
+              {usersQuery.data.length === 0 && (
+                <EmptyState message="No hay usuarios registrados." />
+              )}
             </div>
           )}
         </div>
@@ -266,7 +271,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ activeTab }) => {
               <div className="text-lg font-bold text-[#37352F] dark:text-white">HALF_UP</div>
               <p className="text-[11px] text-[#787774] dark:text-[#9B9A97] mt-1">
                 Redondeo a 2 decimales con desempate hacia arriba, aplicado por{' '}
-                <code className="bg-slate-100 dark:bg-[#2C2C2C] px-1 rounded">CausationCalculator</code>.
+                <code className="bg-slate-100 dark:bg-[#2C2C2C] px-1 rounded">
+                  CausationCalculator
+                </code>
+                .
               </p>
             </div>
 
@@ -282,8 +290,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ activeTab }) => {
               </div>
               <p className="text-[11px] text-[#787774] dark:text-[#9B9A97] mt-1">
                 Refresh tokens rotativos con banderas{' '}
-                <code className="bg-slate-100 dark:bg-[#2C2C2C] px-1 rounded">HttpOnly, SameSite</code> y
-                detección de replay.
+                <code className="bg-slate-100 dark:bg-[#2C2C2C] px-1 rounded">
+                  HttpOnly, SameSite
+                </code>{' '}
+                y detección de replay.
               </p>
             </div>
           </div>
@@ -393,7 +403,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ activeTab }) => {
                   </thead>
                   <tbody className="divide-y divide-[#EDEDEB] dark:divide-[#2F2F2F]">
                     {auditQuery.data.data.map((log) => (
-                      <tr key={log.id} className="hover:bg-[#FBFBFA] dark:hover:bg-[#252525] transition">
+                      <tr
+                        key={log.id}
+                        className="hover:bg-[#FBFBFA] dark:hover:bg-[#252525] transition"
+                      >
                         <td className="py-2.5 px-4 font-mono text-[11px] text-[#787774] dark:text-[#9B9A97]">
                           {formatDateTime(log.createdAt)}
                         </td>
@@ -401,7 +414,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ activeTab }) => {
                           {log.userEmail || 'Sistema'}
                         </td>
                         <td className="py-2.5 px-4">
-                          <StatusBadge label={log.userRole || 'N/A'} tone={statusTone(log.userRole)} />
+                          <StatusBadge
+                            label={log.userRole || 'N/A'}
+                            tone={statusTone(log.userRole)}
+                          />
                         </td>
                         <td className="py-2.5 px-4 font-mono text-[11px] font-semibold text-[#37352F] dark:text-white">
                           {log.action}

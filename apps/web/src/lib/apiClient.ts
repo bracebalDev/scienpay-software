@@ -83,7 +83,11 @@ async function parseError(response: Response): Promise<ApiError> {
   return new ApiError(response.status, message, details);
 }
 
-async function request<T>(path: string, options: RequestOptions = {}, allowRetry = true): Promise<T> {
+async function request<T>(
+  path: string,
+  options: RequestOptions = {},
+  allowRetry = true,
+): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     method: options.method ?? 'GET',
     headers: buildHeaders(options),
@@ -116,7 +120,10 @@ async function request<T>(path: string, options: RequestOptions = {}, allowRetry
   return (await response.text()) as T;
 }
 
-async function download(path: string, allowRetry = true): Promise<{ blob: Blob; filename: string }> {
+async function download(
+  path: string,
+  allowRetry = true,
+): Promise<{ blob: Blob; filename: string }> {
   const response = await fetch(`${API_BASE}${path}`, {
     method: 'GET',
     headers: buildHeaders({}),

@@ -8,8 +8,8 @@ export class PasswordService {
   private readonly options: argon2.Options = {
     type: argon2.argon2id,
     memoryCost: 65536, // 64 MB
-    timeCost: 3,       // 3 iteraciones
-    parallelism: 4,    // 4 hilos paralelos
+    timeCost: 3, // 3 iteraciones
+    parallelism: 4, // 4 hilos paralelos
   };
 
   /**
@@ -17,7 +17,9 @@ export class PasswordService {
    */
   async hash(plainPassword: string): Promise<string> {
     if (!plainPassword || plainPassword.length < 8) {
-      throw new Error('PASSWORD_INVALIDA: La contraseña no cumple con la longitud mínima requerida');
+      throw new Error(
+        'PASSWORD_INVALIDA: La contraseña no cumple con la longitud mínima requerida',
+      );
     }
     return argon2.hash(plainPassword, this.options);
   }

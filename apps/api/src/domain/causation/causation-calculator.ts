@@ -2,7 +2,7 @@ import { Decimal } from 'decimal.js';
 
 export interface CausationInput {
   periodStartDate: string; // YYYY-MM-DD
-  periodEndDate: string;   // YYYY-MM-DD
+  periodEndDate: string; // YYYY-MM-DD
   assignmentStartDate: string; // YYYY-MM-DD
   assignmentEndDate?: string | null; // YYYY-MM-DD o null
   amountPerPeriod: string | number; // USD
@@ -29,7 +29,9 @@ export class CausationCalculator {
     const periodEnd = this.parseDate(input.periodEndDate);
 
     if (periodEnd < periodStart) {
-      throw new Error('PERIODO_INVALIDO: La fecha de fin del período no puede ser anterior a la de inicio');
+      throw new Error(
+        'PERIODO_INVALIDO: La fecha de fin del período no puede ser anterior a la de inicio',
+      );
     }
 
     const totalDaysInPeriod = this.diffInDaysInclusive(periodStart, periodEnd);

@@ -17,7 +17,12 @@ export const auditQuerySchema = z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)')
       .optional(),
-    page: z.coerce.number().int().min(1, 'La página debe ser mayor o igual a 1').optional().default(1),
+    page: z.coerce
+      .number()
+      .int()
+      .min(1, 'La página debe ser mayor o igual a 1')
+      .optional()
+      .default(1),
     limit: z.coerce
       .number()
       .int()

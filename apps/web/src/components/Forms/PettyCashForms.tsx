@@ -20,7 +20,14 @@ import { useToast } from '../../context/ToastContext.js';
 import { getApiErrorMessage } from '../../lib/apiClient.js';
 import { zodResolver } from '../../lib/zodResolver.js';
 import type { Project } from '../../types/api.types.js';
-import { Button, FormActions, FormField, SelectInput, TextArea, TextInput } from '../ui/FormControls.js';
+import {
+  Button,
+  FormActions,
+  FormField,
+  SelectInput,
+  TextArea,
+  TextInput,
+} from '../ui/FormControls.js';
 
 const MONTHS = [
   'Enero',
@@ -199,11 +206,7 @@ export const OpenPeriodForm: React.FC<OpenPeriodFormProps> = ({ cashId, onSucces
           </SelectInput>
         </FormField>
 
-        <FormField
-          label="Saldo de apertura (USD)"
-          required
-          error={errors.openingBalance?.message}
-        >
+        <FormField label="Saldo de apertura (USD)" required error={errors.openingBalance?.message}>
           <TextInput
             type="number"
             min={0}
@@ -312,10 +315,7 @@ interface RenderVoucherFormProps {
   onSuccess: () => void;
 }
 
-export const RenderVoucherForm: React.FC<RenderVoucherFormProps> = ({
-  voucherId,
-  onSuccess,
-}) => {
+export const RenderVoucherForm: React.FC<RenderVoucherFormProps> = ({ voucherId, onSuccess }) => {
   const { showToast } = useToast();
   const renderVoucher = useRenderPettyCashVoucher();
 
@@ -377,7 +377,11 @@ export const RenderVoucherForm: React.FC<RenderVoucherFormProps> = ({
         />
       </FormField>
 
-      <FormField label="URL del documento" error={errors.voucherDocumentUrl?.message} hint="Opcional">
+      <FormField
+        label="URL del documento"
+        error={errors.voucherDocumentUrl?.message}
+        hint="Opcional"
+      >
         <TextInput
           placeholder="https://…"
           hasError={Boolean(errors.voucherDocumentUrl)}

@@ -189,10 +189,7 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({ activeTab }) => {
     }
   };
 
-  const handleVoucherAction = async (
-    action: 'approve' | 'disburse',
-    voucher: PettyCashVoucher,
-  ) => {
+  const handleVoucherAction = async (action: 'approve' | 'disburse', voucher: PettyCashVoucher) => {
     try {
       if (action === 'approve') {
         await approveVoucher.mutateAsync({ id: voucher.id });
@@ -218,7 +215,10 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({ activeTab }) => {
 
   return (
     <div className="space-y-6">
-      <SectionBanner tone="green" title="Segregación de Funciones: Perfil Receptor (Gerente de Administración)">
+      <SectionBanner
+        tone="green"
+        title="Segregación de Funciones: Perfil Receptor (Gerente de Administración)"
+      >
         Recibe, evalúa, aprueba o rechaza solicitudes de pago, registra entregas de fondos por FIFO,
         emite recibos y administra cajas chicas. <strong>Restricción:</strong> no puede crear
         proyectos, personas ni originar causaciones.
@@ -412,7 +412,9 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({ activeTab }) => {
                   </div>
                 </div>
 
-                {batchDetailQuery.isLoading && <LoadingState message="Cargando lote de causación…" />}
+                {batchDetailQuery.isLoading && (
+                  <LoadingState message="Cargando lote de causación…" />
+                )}
                 {batchDetailQuery.isError && (
                   <ErrorState
                     message={getApiErrorMessage(batchDetailQuery.error)}
@@ -465,8 +467,8 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({ activeTab }) => {
                       3. Secuencia sin Huecos:
                     </span>
                     <span>
-                      El recibo consume el siguiente número de la secuencia PostgreSQL atómica dentro
-                      de la misma transacción.
+                      El recibo consume el siguiente número de la secuencia PostgreSQL atómica
+                      dentro de la misma transacción.
                     </span>
                   </div>
                 </div>
@@ -719,8 +721,8 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({ activeTab }) => {
                           <StatusBadge label={period.status} tone={statusTone(period.status)} />
                         </div>
                         <div className="text-[10px] text-[#9B9A97] mt-0.5">
-                          Apertura: ${formatCurrency(period.openingBalance)} · Saldo:{' '}
-                          ${formatCurrency(period.closingBalance)}
+                          Apertura: ${formatCurrency(period.openingBalance)} · Saldo: $
+                          {formatCurrency(period.closingBalance)}
                         </div>
                       </button>
                     ))}
@@ -832,7 +834,10 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({ activeTab }) => {
                                 ${formatCurrency(voucher.renderedAmount)}
                               </td>
                               <td className="py-2.5 px-4">
-                                <StatusBadge label={voucher.status} tone={statusTone(voucher.status)} />
+                                <StatusBadge
+                                  label={voucher.status}
+                                  tone={statusTone(voucher.status)}
+                                />
                               </td>
                               <td className="py-2.5 px-4 text-right">
                                 {voucher.status === 'SOLICITADO' && (
@@ -919,7 +924,11 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({ activeTab }) => {
             <Button variant="secondary" onClick={() => setRejectingRequest(null)}>
               Cancelar
             </Button>
-            <Button variant="danger" onClick={() => void handleReject()} disabled={rejectRequest.isPending}>
+            <Button
+              variant="danger"
+              onClick={() => void handleReject()}
+              disabled={rejectRequest.isPending}
+            >
               {rejectRequest.isPending ? 'Rechazando…' : 'Confirmar Rechazo'}
             </Button>
           </div>

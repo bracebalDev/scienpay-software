@@ -5,8 +5,6 @@ import {
   causationItems,
   assignments,
   persons,
-  projects,
-  paymentGroups,
   paymentRequests,
 } from '../../infrastructure/database/schema.js';
 import {
@@ -114,7 +112,9 @@ export class CausationService {
     const preview = await this.previewCausation(input);
 
     if (preview.items.length === 0) {
-      throw new ConflictException('SIN_ASIGNACIONES: No existen asignaciones activas para generar la causación');
+      throw new ConflictException(
+        'SIN_ASIGNACIONES: No existen asignaciones activas para generar la causación',
+      );
     }
 
     // 3. Insertar lote
@@ -164,7 +164,10 @@ export class CausationService {
         .where(eq(causationBatches.projectId, projectId))
         .orderBy(causationBatches.periodStartDate);
     }
-    return this.databaseService.db.select().from(causationBatches).orderBy(causationBatches.periodStartDate);
+    return this.databaseService.db
+      .select()
+      .from(causationBatches)
+      .orderBy(causationBatches.periodStartDate);
   }
 
   async getBatchById(id: string) {
@@ -223,12 +226,7 @@ export class CausationService {
       const paidItems = await tx
         .select({ id: causationItems.id })
         .from(causationItems)
-        .where(
-          and(
-            eq(causationItems.batchId, id),
-            gt(causationItems.paidAmount, '0.00'),
-          ),
-        )
+        .where(and(eq(causationItems.batchId, id), gt(causationItems.paidAmount, '0.00')))
         .limit(1);
 
       const blocker = CausationAnnulmentPolicy.evaluate({

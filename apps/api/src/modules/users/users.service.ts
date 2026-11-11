@@ -39,7 +39,9 @@ export class UsersService {
       .limit(1);
 
     if (existing.length > 0) {
-      throw new ConflictException('CORREO_DUPLICADO: Ya existe un usuario con este correo electrónico');
+      throw new ConflictException(
+        'CORREO_DUPLICADO: Ya existe un usuario con este correo electrónico',
+      );
     }
 
     const passwordHash = await this.passwordService.hash(input.password);

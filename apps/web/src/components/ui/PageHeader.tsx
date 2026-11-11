@@ -31,8 +31,7 @@ interface SectionBannerProps {
 const bannerTones = {
   amber:
     'bg-amber-50/70 dark:bg-amber-950/40 border-amber-200/80 dark:border-amber-900/50 text-amber-900 dark:text-amber-200',
-  blue:
-    'bg-blue-50/70 dark:bg-blue-950/40 border-blue-200/80 dark:border-blue-900/50 text-blue-950 dark:text-blue-200',
+  blue: 'bg-blue-50/70 dark:bg-blue-950/40 border-blue-200/80 dark:border-blue-900/50 text-blue-950 dark:text-blue-200',
   green:
     'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200/80 dark:border-emerald-900/50 text-emerald-950 dark:text-emerald-200',
 };

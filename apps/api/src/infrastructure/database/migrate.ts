@@ -25,7 +25,9 @@ export async function runMigrations(maxRetries = 6, delayMs = 3000) {
   while (attempt < maxRetries) {
     attempt++;
     const { client } = createDatabaseConnection();
-    console.log(`[Scienpay Migration] (Intento ${attempt}/${maxRetries}) Conectando y aplicando migraciones...`);
+    console.log(
+      `[Scienpay Migration] (Intento ${attempt}/${maxRetries}) Conectando y aplicando migraciones...`,
+    );
 
     try {
       const migrationsDirectory = resolveMigrationsDirectory();

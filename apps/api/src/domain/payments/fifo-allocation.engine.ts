@@ -75,7 +75,6 @@ export class FIFOAllocationEngine {
 
       const debtRemaining = new Decimal(item.remainingDebt);
       const currentPaid = new Decimal(item.paidAmount);
-      const calculated = new Decimal(item.calculatedAmount);
 
       if (debtRemaining.isZero()) {
         continue;
@@ -85,7 +84,6 @@ export class FIFOAllocationEngine {
         // Amortización al 100% de esta cuota
         const allocated = debtRemaining;
         const newPaid = currentPaid.plus(allocated);
-        const newRemaining = new Decimal(0);
 
         allocations.push({
           causationItemId: item.id,

@@ -1,8 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type {
-  CreatePaymentRequestInput,
-  RejectPaymentRequestInput,
-} from '@scienpay/shared';
+import type { CreatePaymentRequestInput, RejectPaymentRequestInput } from '@scienpay/shared';
 import { apiClient, saveBlob } from '../lib/apiClient.js';
 import type { PaymentRequest } from '../types/api.types.js';
 import { causationKeys } from './useCausation.js';
@@ -17,7 +14,9 @@ export function usePaymentRequests(projectId?: string) {
     queryKey: paymentRequestKeys.byProject(projectId),
     queryFn: () =>
       apiClient.get<PaymentRequest[]>(
-        projectId ? `/payment-requests?projectId=${encodeURIComponent(projectId)}` : '/payment-requests',
+        projectId
+          ? `/payment-requests?projectId=${encodeURIComponent(projectId)}`
+          : '/payment-requests',
       ),
   });
 }

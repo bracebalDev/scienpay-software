@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Patch,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
 import { UserRole, createUserSchema, type CreateUserInput } from '@scienpay/shared';
 import { UsersService } from './users.service.js';
 import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard.js';
@@ -26,9 +19,7 @@ export class UsersController {
   }
 
   @Post()
-  async createUser(
-    @Body(new ZodValidationPipe(createUserSchema)) body: CreateUserInput,
-  ) {
+  async createUser(@Body(new ZodValidationPipe(createUserSchema)) body: CreateUserInput) {
     const username = body.email.split('@')[0];
     return this.usersService.createUser({ ...body, username });
   }

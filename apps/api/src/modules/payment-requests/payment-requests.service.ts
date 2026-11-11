@@ -194,7 +194,8 @@ export class PaymentRequestsService {
         requestCode,
         projectId: input.projectId,
         causationBatchId: input.causationBatchId,
-        periodDescription: input.periodDescription || `${batch.periodStartDate} al ${batch.periodEndDate}`,
+        periodDescription:
+          input.periodDescription || `${batch.periodStartDate} al ${batch.periodEndDate}`,
         totalAmountUSD: requestedAmount.toFixed(2),
         status: PaymentRequestStatus.BORRADOR,
         createdByUserId: userId,
@@ -204,7 +205,7 @@ export class PaymentRequestsService {
     return created;
   }
 
-  async sendRequest(id: string, userId: string) {
+  async sendRequest(id: string, _userId: string) {
     const request = await this.getRequestById(id);
 
     PaymentRequestStateMachine.assertValidTransition(

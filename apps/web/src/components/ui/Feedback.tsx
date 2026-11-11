@@ -5,8 +5,7 @@ import { Button } from './FormControls.js';
 export type StatusTone = 'green' | 'amber' | 'red' | 'blue' | 'slate' | 'violet';
 
 const toneClasses: Record<StatusTone, string> = {
-  green:
-    'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300',
+  green: 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300',
   amber: 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300',
   red: 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300',
   blue: 'bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300',
@@ -62,7 +61,9 @@ export function statusTone(status: string): StatusTone {
   }
 }
 
-export const LoadingState: React.FC<{ message?: string }> = ({ message = 'Cargando información…' }) => (
+export const LoadingState: React.FC<{ message?: string }> = ({
+  message = 'Cargando información…',
+}) => (
   <div className="flex items-center justify-center space-x-2 py-10 text-xs text-[#787774] dark:text-[#9B9A97]">
     <Loader2 className="w-4 h-4 animate-spin" />
     <span>{message}</span>
