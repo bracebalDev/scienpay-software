@@ -1,5 +1,7 @@
+import { sql } from 'drizzle-orm';
 import { createDatabaseConnection } from './connection.js';
 import { PasswordService } from '../../domain/security/password.service.js';
+import { FinancialImmutabilityEngine } from '../../domain/financial/financial-immutability.engine.js';
 import {
   users,
   projects,
@@ -357,10 +359,25 @@ export async function runSeed(maxRetries = 5, delayMs = 3000) {
       .onConflictDoNothing()
       .returning();
 
+    // Reservar el número con la misma secuencia transaccional que usa la API.
+    // Sin esto, el seed inserta REC-2026-000001 sin avanzar el contador y el
+    // primer desembolso real choca contra la restricción única.
+    const seedReceiptSequenceResult = await db.execute(
+      sql`SELECT next_receipt_number(2026) AS next_number`,
+    );
+    const seedReceiptSequence = Number(
+      (seedReceiptSequenceResult as unknown as Array<{ next_number: string | number }>)[0]
+        ?.next_number ?? 0,
+    );
+    const seedReceiptNumber = FinancialImmutabilityEngine.formatReceiptNumber(
+      2026,
+      seedReceiptSequence,
+    );
+
     const [reciboParcial] = await db
       .insert(receipts)
       .values({
-        receiptNumber: 'REC-2026-000001',
+        receiptNumber: seedReceiptNumber,
         disbursementId: desembolsoParcial.id,
         personId: ben1.id,
         projectId: projectFis.id,
@@ -471,7 +488,7 @@ export async function runSeed(maxRetries = 5, delayMs = 3000) {
       newValues: {
         status: 'ENTREGADA',
         amount: '500.00',
-        receiptNumber: 'REC-2026-000001',
+        receiptNumber: seedReceiptNumber,
       },
       ipAddress: '127.0.0.1',
     });

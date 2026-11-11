@@ -18,3 +18,4 @@ export * from './schemas/assignment.schema.js';
 export * from './schemas/causation.schema.js';
 export * from './schemas/payment-request.schema.js';
 export * from './schemas/petty-cash.schema.js';
+export * from './schemas/audit.schema.js';

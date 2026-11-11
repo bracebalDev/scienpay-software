@@ -3,7 +3,11 @@ import { UserRole } from '../enums/roles.enum.js';
 import { SECURITY } from '../constants/security.constants.js';
 
 export const loginSchema = z.object({
-  email: z.string().trim().email('El correo electrónico no es válido').toLowerCase(),
+  identifier: z
+    .string()
+    .trim()
+    .min(3, 'El usuario o correo electrónico debe tener al menos 3 caracteres')
+    .max(120, 'El usuario o correo electrónico excede la longitud máxima permitida'),
   password: z
     .string()
     .min(SECURITY.MIN_PASSWORD_LENGTH, `La contraseña debe contener al menos ${SECURITY.MIN_PASSWORD_LENGTH} caracteres`)

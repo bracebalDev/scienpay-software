@@ -1,9 +1,17 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { UserRole, createProjectSchema, updateProjectSchema } from '@scienpay/shared';
+import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  UserRole,
+  createProjectSchema,
+  updateProjectSchema,
+  type CreateProjectInput,
+  type UpdateProjectInput,
+} from '@scienpay/shared';
 import { ProjectsService } from './projects.service.js';
 import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard.js';
 import { RolesGuard } from '../../infrastructure/auth/roles.guard.js';
 import { Roles } from '../../infrastructure/auth/roles.decorator.js';
+import { ZodValidationPipe } from '../../infrastructure/validation/zod-validation.pipe.js';
+import { UuidParam } from '../../infrastructure/validation/uuid-param.decorator.js';
 
 @Controller('projects')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -18,21 +26,24 @@ export class ProjectsController {
 
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.GENERADOR, UserRole.RECEPTOR)
-  async getProjectById(@Param('id') id: string) {
+  async getProjectById(@UuidParam() id: string) {
     return this.projectsService.getProjectById(id);
   }
 
   @Post()
   @Roles(UserRole.GENERADOR)
-  async createProject(@Body() body: unknown) {
-    const parsed = createProjectSchema.parse(body);
-    return this.projectsService.createProject(parsed);
+  async createProject(
+    @Body(new ZodValidationPipe(createProjectSchema)) body: CreateProjectInput,
+  ) {
+    return this.projectsService.createProject(body);
   }
 
   @Patch(':id')
   @Roles(UserRole.GENERADOR)
-  async updateProject(@Param('id') id: string, @Body() body: unknown) {
-    const parsed = updateProjectSchema.parse(body);
-    return this.projectsService.updateProject(id, parsed);
+  async updateProject(
+    @UuidParam() id: string,
+    @Body(new ZodValidationPipe(updateProjectSchema)) body: UpdateProjectInput,
+  ) {
+    return this.projectsService.updateProject(id, body);
   }
 }

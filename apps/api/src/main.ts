@@ -7,6 +7,7 @@ import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module.js';
+import { ZodExceptionFilter } from './infrastructure/validation/zod-exception.filter.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -70,6 +71,9 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
+
+  // Validación global: los ZodError se traducen a HTTP 400 con detalle por campo
+  app.useGlobalFilters(new ZodExceptionFilter());
 
   // Prefijo global de API
   app.setGlobalPrefix('api/v1');

@@ -1,495 +1,840 @@
 import React, { useState } from 'react';
-import { ProjectItem, BeneficiaryItem, AssignmentItem, PaymentRequestItem } from '../../types/app.types.js';
 import {
   FolderKanban,
   UserCheck,
   Layers,
   FileSpreadsheet,
   FileText,
-  AlertCircle,
   Plus,
   Send,
-  Calculator,
   ExternalLink,
+  FileDown,
+  Ban,
+  Eye,
 } from 'lucide-react';
 import { PaymentRequestStatus } from '@scienpay/shared';
-import { ItemDetailModal, DetailModalData } from '../Modals/ItemDetailModal.js';
+import { useAuth } from '../../context/AuthContext.js';
+import { useToast } from '../../context/ToastContext.js';
+import { getApiErrorMessage } from '../../lib/apiClient.js';
+import { formatCurrency, formatDate, personFullName } from '../../lib/format.js';
+import { useAssignments, useTerminateAssignment } from '../../hooks/useAssignments.js';
+import {
+  useAnnulCausationBatch,
+  useCausationBatch,
+  useCausationBatches,
+} from '../../hooks/useCausation.js';
+import { usePaymentGroups } from '../../hooks/usePaymentGroups.js';
+import {
+  useDownloadPaymentRequestPdf,
+  usePaymentRequests,
+  useSendPaymentRequest,
+} from '../../hooks/usePaymentRequests.js';
+import { usePersons } from '../../hooks/usePersons.js';
+import { useProjects } from '../../hooks/useProjects.js';
+import type { Assignment, CausationBatch } from '../../types/api.types.js';
+import { ItemDetailModal, type DetailModalData } from '../Modals/ItemDetailModal.js';
+import { AssignmentForm } from '../Forms/AssignmentForm.js';
+import { CausationForm } from '../Forms/CausationForm.js';
+import { PaymentGroupForm } from '../Forms/PaymentGroupForm.js';
+import { PaymentRequestForm } from '../Forms/PaymentRequestForm.js';
+import { PersonForm } from '../Forms/PersonForm.js';
+import { ProjectForm } from '../Forms/ProjectForm.js';
+import { Button, FormField, TextArea, TextInput } from '../ui/FormControls.js';
+import { EmptyState, ErrorState, LoadingState, StatusBadge, statusTone } from '../ui/Feedback.js';
+import { Modal } from '../ui/Modal.js';
+import { PageHeader, SectionBanner } from '../ui/PageHeader.js';
 
 interface GeneratorViewProps {
   activeTab: string;
-  projects: ProjectItem[];
-  beneficiaries: BeneficiaryItem[];
-  assignments: AssignmentItem[];
-  requests: PaymentRequestItem[];
-  onSendRequest: (requestId: string) => void;
 }
 
-export const GeneratorView: React.FC<GeneratorViewProps> = ({
-  activeTab,
-  projects,
-  beneficiaries,
-  assignments,
-  requests,
-  onSendRequest,
-}) => {
-  // Modal de detalles expandidos
+export const GeneratorView: React.FC<GeneratorViewProps> = ({ activeTab }) => {
+  const { user } = useAuth();
+  const { showToast } = useToast();
+
+  const projectsQuery = useProjects();
+  const personsQuery = usePersons();
+  const groupsQuery = usePaymentGroups();
+  const assignmentsQuery = useAssignments();
+  const batchesQuery = useCausationBatches();
+  const requestsQuery = usePaymentRequests();
+
+  const sendRequest = useSendPaymentRequest();
+  const downloadPdf = useDownloadPaymentRequestPdf();
+  const annulBatch = useAnnulCausationBatch();
+  const terminateAssignment = useTerminateAssignment();
+
   const [selectedDetail, setSelectedDetail] = useState<DetailModalData | null>(null);
+  const [showProjectForm, setShowProjectForm] = useState(false);
+  const [showPersonForm, setShowPersonForm] = useState(false);
+  const [showGroupForm, setShowGroupForm] = useState(false);
+  const [showAssignmentForm, setShowAssignmentForm] = useState(false);
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
+  const [batchToAnnul, setBatchToAnnul] = useState<CausationBatch | null>(null);
+  const [annulReason, setAnnulReason] = useState('');
+  const [assignmentToTerminate, setAssignmentToTerminate] = useState<Assignment | null>(null);
+  const [terminateDate, setTerminateDate] = useState('');
+  const [terminateReason, setTerminateReason] = useState('');
 
-  // Estado local para simulación de causación
-  const [selectedProject, setSelectedProject] = useState(projects[0]?.code || 'FIS-01');
-  const [activeDays, setActiveDays] = useState(30);
-  const [totalDays, setTotalDays] = useState(30);
-  const [baseAmount, setBaseAmount] = useState(850.0);
-  const [calculatedAmount, setCalculatedAmount] = useState<number | null>(null);
+  const batchDetailQuery = useCausationBatch(selectedBatchId);
 
-  const handleCalculateCausation = () => {
-    // Fórmula oficial: round_bancario(Monto * (dias_activos / dias_totales), 2)
-    const factor = activeDays / totalDays;
-    const result = Math.round(baseAmount * factor * 100) / 100;
-    setCalculatedAmount(result);
+  const projects = projectsQuery.data ?? [];
+  const persons = personsQuery.data ?? [];
+  const groups = groupsQuery.data ?? [];
+  const assignments = assignmentsQuery.data ?? [];
+  const batches = batchesQuery.data ?? [];
+  const requests = (requestsQuery.data ?? []).filter(
+    (request) => !user || request.createdByUserId === user.id,
+  );
+
+  const projectById = new Map(projects.map((project) => [project.id, project]));
+  const personById = new Map(persons.map((person) => [person.id, person]));
+  const groupById = new Map(groups.map((group) => [group.id, group]));
+
+  const handleSendRequest = async (id: string) => {
+    try {
+      await sendRequest.mutateAsync(id);
+      showToast('Solicitud enviada a revisión', 'success');
+    } catch (error) {
+      showToast(getApiErrorMessage(error), 'error');
+    }
+  };
+
+  const handleDownloadPdf = async (id: string) => {
+    try {
+      await downloadPdf.mutateAsync(id);
+    } catch (error) {
+      showToast(getApiErrorMessage(error), 'error');
+    }
+  };
+
+  const handleAnnul = async () => {
+    if (!batchToAnnul) return;
+    if (annulReason.trim().length < 10) {
+      showToast('La justificación debe tener al menos 10 caracteres', 'error');
+      return;
+    }
+
+    try {
+      await annulBatch.mutateAsync({
+        id: batchToAnnul.id,
+        input: { annulmentReason: annulReason.trim() },
+      });
+      showToast('Lote de causación anulado', 'success');
+      setBatchToAnnul(null);
+      setAnnulReason('');
+    } catch (error) {
+      showToast(getApiErrorMessage(error), 'error');
+    }
+  };
+
+  const handleTerminate = async () => {
+    if (!assignmentToTerminate) return;
+    if (!terminateDate || terminateReason.trim().length < 5) {
+      showToast('Indique la fecha de fin y una justificación de al menos 5 caracteres', 'error');
+      return;
+    }
+
+    try {
+      await terminateAssignment.mutateAsync({
+        id: assignmentToTerminate.id,
+        input: { endDate: terminateDate, reason: terminateReason.trim() },
+      });
+      showToast('Asignación finalizada correctamente', 'success');
+      setAssignmentToTerminate(null);
+      setTerminateDate('');
+      setTerminateReason('');
+    } catch (error) {
+      showToast(getApiErrorMessage(error), 'error');
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Banner de Segregación de Funciones GENERADOR */}
-      <div className="p-4 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/50 text-blue-950 dark:text-blue-200 text-xs flex items-start space-x-3">
-        <AlertCircle className="w-5 h-5 text-primary dark:text-primary-light flex-shrink-0 mt-0.5" />
-        <div>
-          <span className="font-bold">Segregación de Funciones: Perfil Generador (Coordinador General)</span>
-          <p className="text-[11px] text-blue-900 dark:text-blue-300 mt-0.5">
-            Gestiona proyectos científicos, beneficiarios, asignaciones y genera causaciones y solicitudes de pago.{' '}
-            <strong>Regla de Cuatro Ojos:</strong> Tiene terminantemente prohibido aprobar solicitudes y registrar entrega de fondos.
-          </p>
-        </div>
-      </div>
+      <SectionBanner tone="blue" title="Segregación de Funciones: Perfil Generador (Coordinador General)">
+        Gestiona proyectos científicos, beneficiarios, asignaciones y genera causaciones y
+        solicitudes de pago. <strong>Regla de Cuatro Ojos:</strong> tiene terminantemente prohibido
+        aprobar solicitudes y registrar entrega de fondos.
+      </SectionBanner>
 
-      {/* PESTAÑA: PROYECTOS */}
       {activeTab === 'proyectos' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[#EDEDEB] dark:border-[#2F2F2F]">
-            <div>
-              <h2 className="text-xl font-bold text-[#37352F] dark:text-white flex items-center space-x-2">
-                <FolderKanban className="w-5 h-5 text-primary dark:text-primary-light" />
-                <span>Proyectos de Investigación Científica</span>
-              </h2>
-              <p className="text-xs text-[#787774] dark:text-[#9B9A97] mt-0.5">
-                Catálogo de proyectos clasificados por Área (Física, Química, Biología) y Ámbito (Interno/Externo). Haz clic en una tarjeta para ver sus detalles.
-              </p>
-            </div>
-            <button className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary hover:bg-primary-hover text-white shadow-sm transition">
-              <Plus className="w-3.5 h-3.5" />
-              <span>Nuevo Proyecto</span>
-            </button>
-          </div>
+          <PageHeader
+            title="Proyectos de Investigación Científica"
+            subtitle="Catálogo de proyectos clasificados por área y ámbito. Haga clic en una tarjeta para ver sus detalles."
+            icon={<FolderKanban className="w-5 h-5 text-primary dark:text-primary-light" />}
+            actions={
+              <Button size="sm" onClick={() => setShowProjectForm(true)}>
+                <Plus className="w-3.5 h-3.5" />
+                <span>Nuevo Proyecto</span>
+              </Button>
+            }
+          />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {projects.map((p) => (
-              <div
-                key={p.id}
-                onClick={() => setSelectedDetail({ type: 'project', data: p })}
-                className="bg-white dark:bg-[#202020] p-5 rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between cursor-pointer hover:border-primary/60 dark:hover:border-primary/60 hover:shadow-md transition-all duration-200 group"
-                title="Haga clic para ampliar detalles"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-[#2A2A2A] text-[#37352F] dark:text-white">
-                      {p.code}
-                    </span>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                        p.area === 'FISICA'
-                          ? 'bg-blue-100 dark:bg-blue-950/60 text-primary dark:text-blue-300'
-                          : p.area === 'QUIMICA'
-                          ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
-                          : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
-                      }`}
-                    >
-                      {p.area}
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-sm text-[#37352F] dark:text-white mb-1 group-hover:text-primary transition-colors">
-                    {p.name}
-                  </h3>
-                  <div className="text-[11px] text-[#787774] dark:text-[#9B9A97] space-y-0.5 mt-2">
+          {projectsQuery.isLoading && <LoadingState message="Cargando proyectos…" />}
+          {projectsQuery.isError && (
+            <ErrorState
+              message={getApiErrorMessage(projectsQuery.error)}
+              onRetry={() => void projectsQuery.refetch()}
+            />
+          )}
+
+          {projectsQuery.data && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {projects.map((project) => (
+                  <div
+                    key={project.id}
+                    onClick={() => setSelectedDetail({ type: 'project', data: project })}
+                    className="bg-white dark:bg-[#202020] p-5 rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between cursor-pointer hover:border-primary/60 dark:hover:border-primary/60 hover:shadow-md transition-all duration-200 group"
+                  >
                     <div>
-                      Ámbito: <strong className="text-[#37352F] dark:text-white">{p.scope}</strong>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-[#2A2A2A] text-[#37352F] dark:text-white">
+                          {project.code}
+                        </span>
+                        <StatusBadge label={project.area} tone={statusTone(project.area)} />
+                      </div>
+                      <h3 className="font-bold text-sm text-[#37352F] dark:text-white mb-1 group-hover:text-primary transition-colors">
+                        {project.name}
+                      </h3>
+                      <div className="text-[11px] text-[#787774] dark:text-[#9B9A97] space-y-0.5 mt-2">
+                        <div>
+                          Ámbito:{' '}
+                          <strong className="text-[#37352F] dark:text-white">{project.scope}</strong>
+                        </div>
+                        <div>
+                          Vigencia: {formatDate(project.startDate)} al{' '}
+                          {project.endDate ? formatDate(project.endDate) : 'sin fecha de cierre'}
+                        </div>
+                        <div>
+                          Estado:{' '}
+                          <strong className="text-[#37352F] dark:text-white">{project.status}</strong>
+                        </div>
+                      </div>
                     </div>
-                    <div>Vigencia: {p.startDate} al {p.endDate}</div>
-                  </div>
-                </div>
 
-                <div className="mt-4 pt-3 border-t border-[#EDEDEB] dark:border-[#2F2F2F] flex items-center justify-between text-xs">
-                  <div>
-                    <span className="text-[#787774] dark:text-[#9B9A97] block text-[10px]">Presupuesto Asignado:</span>
-                    <span className="font-bold text-[#37352F] dark:text-white font-mono">
-                      ${p.budgetUSD.toLocaleString('es-CO', { minimumFractionDigits: 2 })} USD
-                    </span>
+                    <div className="mt-4 pt-3 border-t border-[#EDEDEB] dark:border-[#2F2F2F] flex items-center justify-between text-xs">
+                      <div>
+                        <span className="text-[#787774] dark:text-[#9B9A97] block text-[10px]">
+                          Presupuesto Asignado:
+                        </span>
+                        <span className="font-bold text-[#37352F] dark:text-white font-mono">
+                          ${formatCurrency(project.budgetUSD)} USD
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-primary dark:text-primary-light font-medium flex items-center space-x-1 group-hover:underline">
+                        <span>Detalles</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-[10px] text-primary dark:text-primary-light font-medium flex items-center space-x-1 group-hover:underline">
-                    <span>Detalles</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </span>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+              {projects.length === 0 && (
+                <EmptyState message="No hay proyectos registrados. Cree el primero con «Nuevo Proyecto»." />
+              )}
+            </>
+          )}
         </div>
       )}
 
-      {/* PESTAÑA: BENEFICIARIOS */}
       {activeTab === 'beneficiarios' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[#EDEDEB] dark:border-[#2F2F2F]">
-            <div>
-              <h2 className="text-xl font-bold text-[#37352F] dark:text-white flex items-center space-x-2">
-                <UserCheck className="w-5 h-5 text-secondary dark:text-secondary-light" />
-                <span>Personal Beneficiario de Asignaciones</span>
-              </h2>
-              <p className="text-xs text-[#787774] dark:text-[#9B9A97] mt-0.5">
-                Investigadores y técnicos que reciben estipendios científicos en dólares (USD).
-              </p>
-            </div>
-            <button className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary hover:bg-primary-hover text-white shadow-sm transition">
-              <Plus className="w-3.5 h-3.5" />
-              <span>Registrar Beneficiario</span>
-            </button>
-          </div>
+          <PageHeader
+            title="Personal Beneficiario de Asignaciones"
+            subtitle="Investigadores y técnicos que reciben estipendios científicos en dólares (USD)."
+            icon={<UserCheck className="w-5 h-5 text-secondary dark:text-secondary-light" />}
+            actions={
+              <Button size="sm" onClick={() => setShowPersonForm(true)}>
+                <Plus className="w-3.5 h-3.5" />
+                <span>Registrar Beneficiario</span>
+              </Button>
+            }
+          />
 
-          {/* Nota clave del negocio sobre beneficiarios */}
           <div className="p-3.5 rounded-xl bg-slate-100/80 dark:bg-[#252525] border border-[#E9E9E7] dark:border-[#2F2F2F] text-xs text-[#5A5A58] dark:text-[#A4A4A2] flex items-center space-x-2">
             <span className="font-bold text-primary dark:text-primary-light">📌 Regla de Negocio:</span>
             <span>
-              Los beneficiarios <strong>NO tienen usuario en el sistema</strong>. Son personas registradas exclusivamente como datos de pago y no tienen credenciales de acceso.
+              Los beneficiarios <strong>NO tienen usuario en el sistema</strong>. Son personas
+              registradas exclusivamente como datos de pago y no tienen credenciales de acceso.
             </span>
           </div>
 
-          <div className="bg-white dark:bg-[#202020] rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#F7F6F3] dark:bg-[#262626] text-[#787774] dark:text-[#9B9A97] font-semibold border-b border-[#E9E9E7] dark:border-[#2F2F2F]">
-                <tr>
-                  <th className="py-2.5 px-4">Documento Identidad</th>
-                  <th className="py-2.5 px-4">Nombre Completo</th>
-                  <th className="py-2.5 px-4">Especialidad / Cargo Científico</th>
-                  <th className="py-2.5 px-4">Correo Contacto</th>
-                  <th className="py-2.5 px-4">Acceso al Sistema</th>
-                  <th className="py-2.5 px-4">Estado</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#EDEDEB] dark:divide-[#2F2F2F]">
-                {beneficiaries.map((b) => (
-                  <tr key={b.id} className="hover:bg-[#FBFBFA] dark:hover:bg-[#262626] transition">
-                    <td className="py-3 px-4 font-mono font-medium text-[#37352F] dark:text-white">
-                      {b.documentType}-{b.documentNumber}
-                    </td>
-                    <td className="py-3 px-4 font-semibold text-[#37352F] dark:text-white">{b.fullName}</td>
-                    <td className="py-3 px-4 text-[#787774] dark:text-[#9B9A97]">{b.specialty}</td>
-                    <td className="py-3 px-4 text-[#787774] dark:text-[#9B9A97] font-mono text-[11px]">{b.email}</td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-[#2C2C2C] text-slate-600 dark:text-slate-300">
-                        Solo Datos (Sin Usuario)
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
-                        {b.status}
-                      </span>
-                    </td>
+          {personsQuery.isLoading && <LoadingState message="Cargando beneficiarios…" />}
+          {personsQuery.isError && (
+            <ErrorState
+              message={getApiErrorMessage(personsQuery.error)}
+              onRetry={() => void personsQuery.refetch()}
+            />
+          )}
+
+          {personsQuery.data && (
+            <div className="bg-white dark:bg-[#202020] rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#F7F6F3] dark:bg-[#262626] text-[#787774] dark:text-[#9B9A97] font-semibold border-b border-[#E9E9E7] dark:border-[#2F2F2F]">
+                  <tr>
+                    <th className="py-2.5 px-4">Documento Identidad</th>
+                    <th className="py-2.5 px-4">Nombre Completo</th>
+                    <th className="py-2.5 px-4">Especialidad / Cargo</th>
+                    <th className="py-2.5 px-4">Correo Contacto</th>
+                    <th className="py-2.5 px-4">Acceso al Sistema</th>
+                    <th className="py-2.5 px-4">Estado</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-[#EDEDEB] dark:divide-[#2F2F2F]">
+                  {persons.map((person) => (
+                    <tr key={person.id} className="hover:bg-[#FBFBFA] dark:hover:bg-[#262626] transition">
+                      <td className="py-3 px-4 font-mono font-medium text-[#37352F] dark:text-white">
+                        {person.documentType}-{person.documentNumber}
+                      </td>
+                      <td className="py-3 px-4 font-semibold text-[#37352F] dark:text-white">
+                        {personFullName(person)}
+                      </td>
+                      <td className="py-3 px-4 text-[#787774] dark:text-[#9B9A97]">
+                        {person.specialty || '—'}
+                      </td>
+                      <td className="py-3 px-4 text-[#787774] dark:text-[#9B9A97] font-mono text-[11px]">
+                        {person.email || '—'}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-[#2C2C2C] text-slate-600 dark:text-slate-300">
+                          Solo Datos (Sin Usuario)
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <StatusBadge label={person.status} tone={statusTone(person.status)} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {persons.length === 0 && <EmptyState message="No hay beneficiarios registrados." />}
+            </div>
+          )}
         </div>
       )}
 
-      {/* PESTAÑA: ASIGNACIONES */}
       {activeTab === 'asignaciones' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[#EDEDEB] dark:border-[#2F2F2F]">
-            <div>
-              <h2 className="text-xl font-bold text-[#37352F] dark:text-white flex items-center space-x-2">
-                <Layers className="w-5 h-5 text-violet dark:text-violet-light" />
-                <span>Asignaciones y Grupos de Pago</span>
-              </h2>
-              <p className="text-xs text-[#787774] dark:text-[#9B9A97] mt-0.5">
-                Vínculo persona + proyecto + periodicidad con montos exactos en USD y validación de no solapamiento. Haz clic en una fila para ampliar detalles.
-              </p>
-            </div>
-            <button className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary hover:bg-primary-hover text-white shadow-sm transition">
-              <Plus className="w-3.5 h-3.5" />
-              <span>Nueva Asignación</span>
-            </button>
-          </div>
+          <PageHeader
+            title="Asignaciones y Grupos de Pago"
+            subtitle="Vínculo persona + proyecto + periodicidad con montos exactos en USD y validación de no solapamiento."
+            icon={<Layers className="w-5 h-5 text-violet dark:text-violet-light" />}
+            actions={
+              <>
+                <Button size="sm" variant="secondary" onClick={() => setShowGroupForm(true)}>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Nuevo Grupo</span>
+                </Button>
+                <Button size="sm" onClick={() => setShowAssignmentForm(true)}>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Nueva Asignación</span>
+                </Button>
+              </>
+            }
+          />
 
-          <div className="bg-white dark:bg-[#202020] rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#F7F6F3] dark:bg-[#262626] text-[#787774] dark:text-[#9B9A97] font-semibold border-b border-[#E9E9E7] dark:border-[#2F2F2F]">
-                <tr>
-                  <th className="py-2.5 px-4">Beneficiario</th>
-                  <th className="py-2.5 px-4">Proyecto</th>
-                  <th className="py-2.5 px-4">Periodicidad</th>
-                  <th className="py-2.5 px-4">Monto por Período</th>
-                  <th className="py-2.5 px-4">Vigencia</th>
-                  <th className="py-2.5 px-4">Estado</th>
-                  <th className="py-2.5 px-4 text-right">Detalles</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#EDEDEB] dark:divide-[#2F2F2F]">
-                {assignments.map((a) => (
-                  <tr
-                    key={a.id}
-                    onClick={() => setSelectedDetail({ type: 'assignment', data: a })}
-                    className="hover:bg-[#FBFBFA] dark:hover:bg-[#252525] transition cursor-pointer group"
-                    title="Haga clic para ampliar detalles"
-                  >
-                    <td className="py-3 px-4 font-semibold text-[#37352F] dark:text-white group-hover:text-primary transition-colors">
-                      {a.beneficiaryName}
-                    </td>
-                    <td className="py-3 px-4 font-mono font-medium text-primary dark:text-primary-light">{a.projectCode}</td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-[#2C2C2C] text-slate-700 dark:text-slate-300">
-                        {a.periodicity}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 font-mono font-bold text-[#37352F] dark:text-white">
-                      ${a.amountUSD.toFixed(2)} USD
-                    </td>
-                    <td className="py-3 px-4 text-[#787774] dark:text-[#9B9A97] text-[11px]">
-                      {a.startDate} al {a.endDate}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
-                        {a.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <span className="text-[10px] text-primary dark:text-primary-light opacity-0 group-hover:opacity-100 transition-opacity">
-                        Ver ➜
-                      </span>
-                    </td>
+          {assignmentsQuery.isLoading && <LoadingState message="Cargando asignaciones…" />}
+          {assignmentsQuery.isError && (
+            <ErrorState
+              message={getApiErrorMessage(assignmentsQuery.error)}
+              onRetry={() => void assignmentsQuery.refetch()}
+            />
+          )}
+
+          {assignmentsQuery.data && (
+            <div className="bg-white dark:bg-[#202020] rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#F7F6F3] dark:bg-[#262626] text-[#787774] dark:text-[#9B9A97] font-semibold border-b border-[#E9E9E7] dark:border-[#2F2F2F]">
+                  <tr>
+                    <th className="py-2.5 px-4">Beneficiario</th>
+                    <th className="py-2.5 px-4">Proyecto</th>
+                    <th className="py-2.5 px-4">Grupo / Periodicidad</th>
+                    <th className="py-2.5 px-4">Monto por Período</th>
+                    <th className="py-2.5 px-4">Vigencia</th>
+                    <th className="py-2.5 px-4">Estado</th>
+                    <th className="py-2.5 px-4 text-right">Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-[#EDEDEB] dark:divide-[#2F2F2F]">
+                  {assignments.map((assignment) => {
+                    const person = personById.get(assignment.personId);
+                    const project = projectById.get(assignment.projectId);
+                    const group = groupById.get(assignment.paymentGroupId);
+
+                    return (
+                      <tr
+                        key={assignment.id}
+                        onClick={() =>
+                          setSelectedDetail({
+                            type: 'assignment',
+                            data: assignment,
+                            personName: person ? personFullName(person) : undefined,
+                            projectCode: project?.code,
+                            groupName: group ? `${group.name} (${group.periodicity})` : undefined,
+                          })
+                        }
+                        className="hover:bg-[#FBFBFA] dark:hover:bg-[#252525] transition cursor-pointer group"
+                      >
+                        <td className="py-3 px-4 font-semibold text-[#37352F] dark:text-white group-hover:text-primary transition-colors">
+                          {person ? personFullName(person) : assignment.personId}
+                        </td>
+                        <td className="py-3 px-4 font-mono font-medium text-primary dark:text-primary-light">
+                          {project?.code ?? '—'}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-[#2C2C2C] text-slate-700 dark:text-slate-300">
+                            {group ? `${group.name} · ${group.periodicity}` : '—'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 font-mono font-bold text-[#37352F] dark:text-white">
+                          ${formatCurrency(assignment.amountPerPeriod)} USD
+                        </td>
+                        <td className="py-3 px-4 text-[#787774] dark:text-[#9B9A97] text-[11px]">
+                          {formatDate(assignment.startDate)} al{' '}
+                          {assignment.endDate ? formatDate(assignment.endDate) : 'indefinido'}
+                        </td>
+                        <td className="py-3 px-4">
+                          <StatusBadge
+                            label={assignment.status}
+                            tone={statusTone(assignment.status)}
+                          />
+                        </td>
+                        <td className="py-3 px-4 text-right" onClick={(event) => event.stopPropagation()}>
+                          {assignment.status === 'ACTIVO' ? (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => {
+                                setAssignmentToTerminate(assignment);
+                                setTerminateDate('');
+                                setTerminateReason('');
+                              }}
+                            >
+                              <Ban className="w-3 h-3" />
+                              <span>Finalizar</span>
+                            </Button>
+                          ) : (
+                            <span className="text-[11px] text-[#9B9A97]">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {assignments.length === 0 && <EmptyState message="No hay asignaciones registradas." />}
+            </div>
+          )}
         </div>
       )}
 
-      {/* PESTAÑA: MOTOR DE CAUSACIÓN */}
       {activeTab === 'causacion' && (
-        <div className="space-y-4">
-          <div className="pb-2 border-b border-[#EDEDEB] dark:border-[#2F2F2F]">
-            <h2 className="text-xl font-bold text-[#37352F] dark:text-white flex items-center space-x-2">
-              <FileSpreadsheet className="w-5 h-5 text-violet dark:text-violet-light" />
-              <span>Motor de Causación y Prorrateo por Días Activos</span>
-            </h2>
-            <p className="text-xs text-[#787774] dark:text-[#9B9A97] mt-0.5">
-              Cálculo exacto:{' '}
-              <code className="bg-slate-100 dark:bg-[#2C2C2C] px-1 py-0.5 rounded text-violet dark:text-violet-300">
-                Monto Causado = Monto Período × (Días Activos / Días Totales)
-              </code>{' '}
-              con redondeo bancario a 2 decimales.
-            </p>
-          </div>
+        <div className="space-y-6">
+          <PageHeader
+            title="Motor de Causación y Prorrateo por Días Activos"
+            subtitle="Monto causado = monto del período × (días activos / días totales), con redondeo HALF_UP a 2 decimales."
+            icon={<FileSpreadsheet className="w-5 h-5 text-violet dark:text-violet-light" />}
+          />
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            {/* Simulador de Prorrateo */}
-            <div className="md:col-span-5 bg-white dark:bg-[#202020] p-5 rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_2px_rgba(0,0,0,0.02)] space-y-4">
-              <h3 className="text-sm font-bold text-[#37352F] dark:text-white flex items-center space-x-2">
-                <Calculator className="w-4 h-4 text-violet dark:text-violet-light" />
-                <span>Simulador de Prorrateo en Tiempo Real</span>
+          {projectsQuery.isLoading || groupsQuery.isLoading ? (
+            <LoadingState message="Cargando catálogos…" />
+          ) : (
+            <CausationForm
+              projects={projects}
+              paymentGroups={groups}
+              onGenerated={() => void batchesQuery.refetch()}
+            />
+          )}
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-[#37352F] dark:text-white">
+                Lotes de Causación Registrados
               </h3>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-[#787774] dark:text-[#9B9A97] mb-1">Proyecto</label>
-                <select
-                  value={selectedProject}
-                  onChange={(e) => setSelectedProject(e.target.value)}
-                  className="w-full text-xs p-2 rounded-lg border border-[#E9E9E7] dark:border-[#383838] bg-[#F7F6F3] dark:bg-[#2A2A2A] text-[#37352F] dark:text-white focus:outline-none focus:border-primary"
-                >
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.code}>
-                      {p.code} - {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-[#787774] dark:text-[#9B9A97] mb-1">
-                  Monto Base del Período (USD)
-                </label>
-                <input
-                  type="number"
-                  value={baseAmount}
-                  onChange={(e) => setBaseAmount(parseFloat(e.target.value) || 0)}
-                  className="w-full text-xs p-2 rounded-lg border border-[#E9E9E7] dark:border-[#383838] bg-[#F7F6F3] dark:bg-[#2A2A2A] text-[#37352F] dark:text-white font-mono focus:outline-none focus:border-primary"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#787774] dark:text-[#9B9A97] mb-1">
-                    Días Activos en Período
-                  </label>
-                  <input
-                    type="number"
-                    value={activeDays}
-                    onChange={(e) => setActiveDays(parseInt(e.target.value) || 0)}
-                    className="w-full text-xs p-2 rounded-lg border border-[#E9E9E7] dark:border-[#383838] bg-[#F7F6F3] dark:bg-[#2A2A2A] text-[#37352F] dark:text-white font-mono focus:outline-none focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#787774] dark:text-[#9B9A97] mb-1">
-                    Días Totales del Período
-                  </label>
-                  <input
-                    type="number"
-                    value={totalDays}
-                    onChange={(e) => setTotalDays(parseInt(e.target.value) || 0)}
-                    className="w-full text-xs p-2 rounded-lg border border-[#E9E9E7] dark:border-[#383838] bg-[#F7F6F3] dark:bg-[#2A2A2A] text-[#37352F] dark:text-white font-mono focus:outline-none focus:border-primary"
-                  />
-                </div>
-              </div>
-
-              <button
-                onClick={handleCalculateCausation}
-                className="w-full py-2 px-3 rounded-lg bg-violet hover:bg-violet-hover text-white text-xs font-semibold shadow-sm transition"
-              >
-                Calcular Prorrateo
-              </button>
-
-              {calculatedAmount !== null && (
-                <div className="p-3 rounded-lg bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-900/50 text-violet dark:text-violet-300">
-                  <div className="text-[11px] font-medium">Monto Causado Calculado:</div>
-                  <div className="text-xl font-mono font-bold mt-0.5">
-                    ${calculatedAmount.toFixed(2)} USD
-                  </div>
-                  <div className="text-[10px] text-slate-500 dark:text-[#888886] mt-1">
-                    Factor de liquidación: {(activeDays / totalDays).toFixed(4)} • Redondeo bancario aplicado
-                  </div>
-                </div>
-              )}
+              <span className="text-[11px] text-[#9B9A97]">
+                {batches.length} lote(s) · inmutables salvo anulación auditada
+              </span>
             </div>
 
-            {/* Generación de Lote */}
-            <div className="md:col-span-7 bg-white dark:bg-[#202020] p-5 rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-[#37352F] dark:text-white mb-2">Generar Lote de Causación Masivo</h3>
-                <p className="text-xs text-[#787774] dark:text-[#9B9A97] mb-4">
-                  El motor ejecuta el prorrateo automático para todas las asignaciones vigentes del proyecto seleccionado, congelando los registros en un lote inmutable.
-                </p>
+            {batchesQuery.isLoading && <LoadingState message="Cargando lotes…" />}
+            {batchesQuery.isError && (
+              <ErrorState
+                message={getApiErrorMessage(batchesQuery.error)}
+                onRetry={() => void batchesQuery.refetch()}
+              />
+            )}
 
-                <div className="space-y-2 text-xs">
-                  <div className="p-3 rounded-lg bg-[#F7F6F3] dark:bg-[#262626] border border-[#E9E9E7] dark:border-[#333333] flex items-center justify-between text-[#37352F] dark:text-white">
-                    <span>Lote Activo de Octubre 2026:</span>
-                    <span className="font-mono font-bold text-primary dark:text-primary-light">LOT-2026-10-FIS01</span>
-                  </div>
-                  <div className="p-3 rounded-lg bg-[#F7F6F3] dark:bg-[#262626] border border-[#E9E9E7] dark:border-[#333333] flex items-center justify-between text-[#37352F] dark:text-white">
-                    <span>Total Asignaciones Incluidas:</span>
-                    <span className="font-bold">4 Investigadores</span>
-                  </div>
-                  <div className="p-3 rounded-lg bg-[#F7F6F3] dark:bg-[#262626] border border-[#E9E9E7] dark:border-[#333333] flex items-center justify-between text-[#37352F] dark:text-white">
-                    <span>Monto Total del Lote:</span>
-                    <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">$ 2,720.00 USD</span>
-                  </div>
-                </div>
+            {batchesQuery.data && (
+              <div className="bg-white dark:bg-[#202020] rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#F7F6F3] dark:bg-[#262626] text-[#787774] dark:text-[#9B9A97] font-semibold">
+                    <tr>
+                      <th className="py-2.5 px-4">Período</th>
+                      <th className="py-2.5 px-4">Proyecto</th>
+                      <th className="py-2.5 px-4">Grupo</th>
+                      <th className="py-2.5 px-4">Monto Total</th>
+                      <th className="py-2.5 px-4">Estado</th>
+                      <th className="py-2.5 px-4 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#EDEDEB] dark:divide-[#2F2F2F]">
+                    {batches.map((batch) => (
+                      <tr key={batch.id} className="hover:bg-[#FBFBFA] dark:hover:bg-[#252525]">
+                        <td className="py-2.5 px-4 font-mono text-[11px] text-[#37352F] dark:text-white">
+                          {formatDate(batch.periodStartDate)} → {formatDate(batch.periodEndDate)}
+                        </td>
+                        <td className="py-2.5 px-4 font-mono text-primary dark:text-primary-light">
+                          {projectById.get(batch.projectId)?.code ?? '—'}
+                        </td>
+                        <td className="py-2.5 px-4 text-[#787774] dark:text-[#9B9A97]">
+                          {groupById.get(batch.paymentGroupId)?.name ?? '—'}
+                        </td>
+                        <td className="py-2.5 px-4 font-mono font-bold text-[#37352F] dark:text-white">
+                          ${formatCurrency(batch.totalCausationAmount)}
+                        </td>
+                        <td className="py-2.5 px-4">
+                          <StatusBadge label={batch.status} tone={statusTone(batch.status)} />
+                        </td>
+                        <td className="py-2.5 px-4 text-right space-x-1">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => setSelectedBatchId(batch.id)}
+                          >
+                            <Eye className="w-3 h-3" />
+                            <span>Ítems</span>
+                          </Button>
+                          {batch.status !== 'ANULADO' && (
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              onClick={() => {
+                                setBatchToAnnul(batch);
+                                setAnnulReason('');
+                              }}
+                            >
+                              <Ban className="w-3 h-3" />
+                              <span>Anular</span>
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {batches.length === 0 && (
+                  <EmptyState message="No hay lotes de causación generados." />
+                )}
               </div>
-
-              <div className="mt-4 pt-3 border-t border-[#EDEDEB] dark:border-[#2F2F2F]">
-                <button className="w-full py-2.5 px-4 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-sm transition">
-                  Generar y Congelar Lote de Causación
-                </button>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* PESTAÑA: SOLICITUDES DE PAGO */}
       {activeTab === 'solicitudes_creadas' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[#EDEDEB] dark:border-[#2F2F2F]">
-            <div>
-              <h2 className="text-xl font-bold text-[#37352F] dark:text-white flex items-center space-x-2">
-                <FileText className="w-5 h-5 text-accent dark:text-accent-light" />
-                <span>Mis Solicitudes de Pago</span>
-              </h2>
-              <p className="text-xs text-[#787774] dark:text-[#9B9A97] mt-0.5">
-                Ciclo de estados: BORRADOR → ENVIADA. Las solicitudes aprobadas pasan a control del Receptor. Haz clic en una fila para ampliar detalles.
-              </p>
-            </div>
-            <button className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary hover:bg-primary-hover text-white shadow-sm transition">
-              <Plus className="w-3.5 h-3.5" />
-              <span>Crear Solicitud de Pago</span>
-            </button>
-          </div>
+          <PageHeader
+            title="Mis Solicitudes de Pago"
+            subtitle="Ciclo de estados: BORRADOR → ENVIADA → APROBADA/RECHAZADA → ENTREGADA → CERRADA."
+            icon={<FileText className="w-5 h-5 text-accent dark:text-accent-light" />}
+            actions={
+              <Button size="sm" onClick={() => setShowRequestForm(true)} disabled={batches.length === 0}>
+                <Plus className="w-3.5 h-3.5" />
+                <span>Crear Solicitud de Pago</span>
+              </Button>
+            }
+          />
 
-          <div className="bg-white dark:bg-[#202020] rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#F7F6F3] dark:bg-[#262626] text-[#787774] dark:text-[#9B9A97] font-semibold border-b border-[#E9E9E7] dark:border-[#2F2F2F]">
-                <tr>
-                  <th className="py-2.5 px-4">Código Solicitud</th>
-                  <th className="py-2.5 px-4">Proyecto</th>
-                  <th className="py-2.5 px-4">Período</th>
-                  <th className="py-2.5 px-4">Monto Total</th>
-                  <th className="py-2.5 px-4">Estado Actual</th>
-                  <th className="py-2.5 px-4 text-right">Acción</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#EDEDEB] dark:divide-[#2F2F2F]">
-                {requests.map((r) => (
-                  <tr
-                    key={r.id}
-                    onClick={() => setSelectedDetail({ type: 'request', data: r })}
-                    className="hover:bg-[#FBFBFA] dark:hover:bg-[#252525] transition cursor-pointer group"
-                    title="Haga clic para ampliar detalles"
-                  >
-                    <td className="py-3 px-4 font-mono font-bold text-[#37352F] dark:text-white group-hover:text-primary transition-colors">
-                      {r.requestCode}
-                    </td>
-                    <td className="py-3 px-4 font-mono text-primary dark:text-primary-light font-medium">{r.projectCode}</td>
-                    <td className="py-3 px-4 text-[#787774] dark:text-[#9B9A97]">{r.period}</td>
-                    <td className="py-3 px-4 font-mono font-bold text-[#37352F] dark:text-white">
-                      ${r.totalAmountUSD.toFixed(2)} USD
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          r.status === PaymentRequestStatus.BORRADOR
-                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-                            : r.status === PaymentRequestStatus.ENVIADA
-                            ? 'bg-blue-100 dark:bg-blue-950/60 text-primary dark:text-blue-300'
-                            : r.status === PaymentRequestStatus.APROBADA
-                            ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
-                            : 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300'
-                        }`}
-                      >
-                        {r.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      {r.status === PaymentRequestStatus.BORRADOR ? (
-                        <button
-                          onClick={() => onSendRequest(r.id)}
-                          className="inline-flex items-center space-x-1 px-2.5 py-1 rounded bg-primary hover:bg-primary-hover text-white text-[11px] font-semibold shadow-sm transition"
-                        >
-                          <Send className="w-3 h-3" />
-                          <span>Enviar a Revisión</span>
-                        </button>
-                      ) : (
-                        <span className="text-[11px] text-[#9B9A97] dark:text-[#787774]">Enviada para Aprobación</span>
-                      )}
-                    </td>
+          {batches.length === 0 && (
+            <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-[11px] text-amber-800 dark:text-amber-300">
+              Debe generar al menos un lote de causación antes de crear una solicitud de pago.
+            </div>
+          )}
+
+          {requestsQuery.isLoading && <LoadingState message="Cargando solicitudes…" />}
+          {requestsQuery.isError && (
+            <ErrorState
+              message={getApiErrorMessage(requestsQuery.error)}
+              onRetry={() => void requestsQuery.refetch()}
+            />
+          )}
+
+          {requestsQuery.data && (
+            <div className="bg-white dark:bg-[#202020] rounded-xl border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#F7F6F3] dark:bg-[#262626] text-[#787774] dark:text-[#9B9A97] font-semibold border-b border-[#E9E9E7] dark:border-[#2F2F2F]">
+                  <tr>
+                    <th className="py-2.5 px-4">Código Solicitud</th>
+                    <th className="py-2.5 px-4">Proyecto</th>
+                    <th className="py-2.5 px-4">Período</th>
+                    <th className="py-2.5 px-4">Monto Total</th>
+                    <th className="py-2.5 px-4">Estado Actual</th>
+                    <th className="py-2.5 px-4 text-right">Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-[#EDEDEB] dark:divide-[#2F2F2F]">
+                  {requests.map((request) => (
+                    <tr
+                      key={request.id}
+                      onClick={() =>
+                        setSelectedDetail({
+                          type: 'request',
+                          data: request,
+                          projectCode: projectById.get(request.projectId)?.code,
+                          createdByName: user?.fullName,
+                        })
+                      }
+                      className="hover:bg-[#FBFBFA] dark:hover:bg-[#252525] transition cursor-pointer group"
+                    >
+                      <td className="py-3 px-4 font-mono font-bold text-[#37352F] dark:text-white group-hover:text-primary transition-colors">
+                        {request.requestCode}
+                      </td>
+                      <td className="py-3 px-4 font-mono text-primary dark:text-primary-light font-medium">
+                        {projectById.get(request.projectId)?.code ?? '—'}
+                      </td>
+                      <td className="py-3 px-4 text-[#787774] dark:text-[#9B9A97]">
+                        {request.periodDescription}
+                      </td>
+                      <td className="py-3 px-4 font-mono font-bold text-[#37352F] dark:text-white">
+                        ${formatCurrency(request.totalAmountUSD)} USD
+                      </td>
+                      <td className="py-3 px-4">
+                        <StatusBadge label={request.status} tone={statusTone(request.status)} />
+                      </td>
+                      <td
+                        className="py-3 px-4 text-right space-x-1"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        {request.status === PaymentRequestStatus.BORRADOR && (
+                          <Button
+                            size="sm"
+                            onClick={() => void handleSendRequest(request.id)}
+                            disabled={sendRequest.isPending}
+                          >
+                            <Send className="w-3 h-3" />
+                            <span>Enviar</span>
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => void handleDownloadPdf(request.id)}
+                          disabled={downloadPdf.isPending}
+                        >
+                          <FileDown className="w-3 h-3" />
+                          <span>PDF</span>
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {requests.length === 0 && (
+                <EmptyState message="No ha creado solicitudes de pago todavía." />
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Modal de Detalles Expandidos */}
+      <Modal
+        open={showProjectForm}
+        title="Registrar Nuevo Proyecto"
+        subtitle="Código único, área científica y ámbito institucional."
+        onClose={() => setShowProjectForm(false)}
+      >
+        <ProjectForm onSuccess={() => setShowProjectForm(false)} />
+      </Modal>
+
+      <Modal
+        open={showPersonForm}
+        title="Registrar Beneficiario"
+        subtitle="Persona que recibirá estipendios; no posee credenciales de acceso."
+        onClose={() => setShowPersonForm(false)}
+      >
+        <PersonForm onSuccess={() => setShowPersonForm(false)} />
+      </Modal>
+
+      <Modal
+        open={showGroupForm}
+        title="Nuevo Grupo de Pago"
+        subtitle="Define la periodicidad y la configuración de corte."
+        onClose={() => setShowGroupForm(false)}
+      >
+        <PaymentGroupForm onSuccess={() => setShowGroupForm(false)} />
+      </Modal>
+
+      <Modal
+        open={showAssignmentForm}
+        title="Nueva Asignación"
+        subtitle="Vincule una persona, un proyecto y un grupo de pago."
+        onClose={() => setShowAssignmentForm(false)}
+        maxWidth="max-w-2xl"
+      >
+        <AssignmentForm
+          persons={persons}
+          projects={projects}
+          paymentGroups={groups}
+          onSuccess={() => setShowAssignmentForm(false)}
+        />
+      </Modal>
+
+      <Modal
+        open={showRequestForm}
+        title="Crear Solicitud de Pago"
+        subtitle="Seleccione un lote de causación activo y el monto a solicitar."
+        onClose={() => setShowRequestForm(false)}
+      >
+        <PaymentRequestForm
+          projects={projects}
+          batches={batches}
+          onSuccess={() => setShowRequestForm(false)}
+        />
+      </Modal>
+
+      <Modal
+        open={Boolean(selectedBatchId)}
+        title="Ítems del Lote de Causación"
+        subtitle={
+          batchDetailQuery.data
+            ? `${formatDate(batchDetailQuery.data.periodStartDate)} → ${formatDate(
+                batchDetailQuery.data.periodEndDate,
+              )}`
+            : undefined
+        }
+        onClose={() => setSelectedBatchId(null)}
+        maxWidth="max-w-3xl"
+      >
+        {batchDetailQuery.isLoading && <LoadingState message="Cargando ítems…" />}
+        {batchDetailQuery.isError && (
+          <ErrorState
+            message={getApiErrorMessage(batchDetailQuery.error)}
+            onRetry={() => void batchDetailQuery.refetch()}
+          />
+        )}
+        {batchDetailQuery.data && (
+          <div className="overflow-x-auto rounded-lg border border-[#E9E9E7] dark:border-[#2F2F2F]">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#F7F6F3] dark:bg-[#262626] text-[#787774] dark:text-[#9B9A97] font-semibold">
+                <tr>
+                  <th className="py-2 px-3">Beneficiario</th>
+                  <th className="py-2 px-3">Días</th>
+                  <th className="py-2 px-3">Causado</th>
+                  <th className="py-2 px-3">Pagado</th>
+                  <th className="py-2 px-3">Pendiente</th>
+                  <th className="py-2 px-3">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#EDEDEB] dark:divide-[#2F2F2F]">
+                {batchDetailQuery.data.items.map((item) => {
+                  const person = personById.get(item.personId);
+                  return (
+                    <tr key={item.id}>
+                      <td className="py-2 px-3">
+                        <div className="font-semibold text-[#37352F] dark:text-white">
+                          {person ? personFullName(person) : item.personId}
+                        </div>
+                        <div className="text-[10px] text-[#9B9A97]">
+                          {person ? `${person.documentType}-${person.documentNumber}` : ''}
+                        </div>
+                      </td>
+                      <td className="py-2 px-3 text-[#787774] dark:text-[#9B9A97]">
+                        {item.activeDays}/{item.totalDaysInPeriod}
+                      </td>
+                      <td className="py-2 px-3 font-mono">${formatCurrency(item.calculatedAmount)}</td>
+                      <td className="py-2 px-3 font-mono">${formatCurrency(item.paidAmount)}</td>
+                      <td className="py-2 px-3 font-mono font-bold">
+                        ${formatCurrency(item.remainingDebt)}
+                      </td>
+                      <td className="py-2 px-3">
+                        <StatusBadge label={item.status} tone={statusTone(item.status)} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={Boolean(batchToAnnul)}
+        title="Anular Lote de Causación"
+        subtitle="La anulación conserva el lote como registro histórico y audita la operación."
+        onClose={() => setBatchToAnnul(null)}
+      >
+        <div className="space-y-4">
+          <p className="text-[11px] text-[#787774] dark:text-[#9B9A97]">
+            Se anulará el lote del período{' '}
+            <strong className="text-[#37352F] dark:text-white">
+              {batchToAnnul ? `${formatDate(batchToAnnul.periodStartDate)} → ${formatDate(batchToAnnul.periodEndDate)}` : ''}
+            </strong>
+            . La operación se rechaza si el lote tiene solicitudes o pagos asociados.
+          </p>
+
+          <FormField label="Justificación de la anulación" required>
+            <TextArea
+              rows={3}
+              value={annulReason}
+              onChange={(event) => setAnnulReason(event.target.value)}
+              placeholder="Explique el motivo de la anulación (mínimo 10 caracteres)…"
+            />
+          </FormField>
+
+          <div className="flex items-center justify-end space-x-2">
+            <Button variant="secondary" onClick={() => setBatchToAnnul(null)}>
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={() => void handleAnnul()} disabled={annulBatch.isPending}>
+              {annulBatch.isPending ? 'Anulando…' : 'Confirmar Anulación'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={Boolean(assignmentToTerminate)}
+        title="Finalizar Asignación"
+        subtitle="La asignación quedará inactiva desde la fecha indicada."
+        onClose={() => setAssignmentToTerminate(null)}
+      >
+        <div className="space-y-4">
+          <FormField label="Fecha de finalización" required>
+            <TextInput
+              type="date"
+              value={terminateDate}
+              onChange={(event) => setTerminateDate(event.target.value)}
+            />
+          </FormField>
+
+          <FormField label="Justificación" required>
+            <TextArea
+              rows={3}
+              value={terminateReason}
+              onChange={(event) => setTerminateReason(event.target.value)}
+              placeholder="Motivo de la finalización (mínimo 5 caracteres)…"
+            />
+          </FormField>
+
+          <div className="flex items-center justify-end space-x-2">
+            <Button variant="secondary" onClick={() => setAssignmentToTerminate(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => void handleTerminate()}
+              disabled={terminateAssignment.isPending}
+            >
+              {terminateAssignment.isPending ? 'Finalizando…' : 'Finalizar Asignación'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
       <ItemDetailModal modalData={selectedDetail} onClose={() => setSelectedDetail(null)} />
     </div>
   );

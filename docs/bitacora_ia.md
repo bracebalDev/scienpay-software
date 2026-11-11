@@ -127,3 +127,92 @@
   - Despliegue exitoso verificado en vivo en `https://scienpay-app.fly.dev` con endpoint de salud `https://scienpay-app.fly.dev/api/v1/health` retornando estado `ok`.
 - **Cambios Manuales Realizados y Motivo:**
   - Se unificó el servicio de la SPA dentro de NestJS para no requerir un segundo servicio o máquina virtual separada en la nube, optimizando recursos y garantizando latencia cero entre cliente y servidor.
+
+#### Sesión 15: Ejecución Controlada de Fases 1–3 del Plan de Completitud (rama `plan/execution-tracking`)
+- **Fecha:** 7 de Noviembre de 2026
+- **Herramienta de análisis y planificación:** Nemotron 3 Ultra (Free) vía OpenRouter, ejecutado en OpenCode.
+- **Herramienta de ejecución:** DeepSeek V4.1 Flash Free vía OpenCode Zen.
+- **Objetivo del Prompt:** Ejecutar únicamente las Fases 1, 2 y 3 del plan de completitud de Scienpay, sin tocar `main` ni iniciar las Fases 4 y 5. Mantener `docs/HANDOFF.md` como especificación viva y registrar cada decisión, hallazgo y validación en `docs/avances.md`, `docs/bitacora_ia.md`, `docs/uso-de-ia.md` y `docs/decisiones/`.
+- **Resultado Obtenido (Fase 1):**
+  - Migración `0002` con triggers de inmutabilidad por columna y contador transaccional de recibos `receipt_sequences` / `next_receipt_number(year)`.
+  - Motor `FinancialImmutabilityEngine` ampliado con `CAUSATION_ITEM_MUTABLE_COLUMNS`, `CAUSATION_BATCH_MUTABLE_COLUMNS` y DDL de la secuencia transaccional.
+  - Autenticación con identificador único (`username` o `email`), refresh rotativo con `jti`, detección de replay, revocación de familia y rate limiting de 5 intentos/minuto por IP.
+  - `ZodExceptionFilter` global y `ZodValidationPipe` reutilizable aplicados a 9 controladores; el login conserva `safeParse` para responder 401.
+  - Anulación formal de causación con `CausationAnnulmentPolicy`, endpoint `POST /causation/batches/:id/annul`, auditoría transaccional y validaciones de lote/proyecto/monto en la creación de solicitudes.
+  - Suite backend: **72/72 tests** pasando; `typecheck` sin errores en `@scienpay/shared` y `@scienpay/api`.
+- **Cambios Manuales Realizados y Motivo:**
+  - Se añadió `jwtid` aleatorio a los refresh tokens porque dos emisiones en el mismo segundo generaban tokens idénticos y la rotación no invalidaba el anterior.
+  - Se ajustaron los tests de inmutabilidad para verificar la lista negra de columnas (inmutables presentes, mutables ausentes), que es el mecanismo real del trigger.
+  - Se extrajo la política de anulación a una clase pura de dominio para poder probarla sin PostgreSQL, dado que Docker no está disponible en el entorno de ejecución.
+  - No se ejecutaron tests de integración contra PostgreSQL por ausencia de Docker; la limitación quedó registrada en `docs/HANDOFF.md`.
+- **Resultado Obtenido (Fase 2):**
+  - `PettyCashService` reescrito con consultas GET, validaciones de existencia y pertenencia, transacciones, bloqueo `FOR UPDATE` y numeración de vales `next_voucher_number(year)`; cierre bloqueado con vales pendientes.
+  - Migración `0003` con `voucher_sequences` y el índice parcial de idempotencia que permite regenerar lotes anulados.
+  - `AuditService.listLogs` con filtros combinados, paginación y contrato `auditQuerySchema`.
+  - `PdfReceiptGenerator.generatePaymentRequestPdf` y endpoint `GET /payment-requests/:id/pdf`.
+  - `FIFOAllocationEngine` con desempate determinista por ID y `registerDisbursement` transaccional con bloqueo, filtro por proyecto y validación de total.
+  - Suite backend: **87/87 tests** pasando; typecheck de API/shared/web y build de API correctos.
+- **Cambios Manuales Realizados y Motivo (Fase 2):**
+  - Se corrigió la nota previa de HANDOFF sobre el índice de idempotencia: la restricción sí existía en `0001`; la migración `0003` la reemplaza por un índice parcial para permitir regenerar períodos anulados sin perder idempotencia entre lotes activos.
+  - Se ordenó el bloqueo período→vale en desembolso y rendición para evitar interbloqueos entre transacciones concurrentes.
+  - Se recalculan las cifras del PDF de solicitud desde la BD al generar el documento, para reflejar el estado real y no una foto potencialmente desactualizada.
+- **Resultado Obtenido (Fase 3):**
+  - Frontend conectado a la API real: `apiClient` con token en memoria, `credentials: 'include'`, refresh/retry en 401 y descargas autenticadas; `queryClient` de TanStack Query.
+  - `AuthContext` con restauración de sesión, refresh programado, deduplicación de refresh concurrente y logout; `App.tsx` con pantalla de carga, navegación por rol e historial.
+  - 10 módulos de hooks por dominio y 12 formularios de dominio RHF+Zod (más el login) que reutilizan los schemas de `@scienpay/shared`.
+  - `AdminView`, `GeneratorView` y `ReceptorView` operativas con datos reales, mutaciones, toasts y estados de carga/error/vacío.
+  - Descarga real de PDF de solicitud y de recibo; cierre de solicitudes entregadas desde la bandeja del receptor.
+  - Eliminación de `apps/web/src/data/mockData.ts` y `apps/web/src/types/app.types.ts`; no quedan mocks en producción.
+  - Verificación: `npm run typecheck --workspace=@scienpay/web` sin errores, `npm run build --workspace=@scienpay/web` exitoso y **87/87 tests** de API pasando.
+- **Cambios Manuales Realizados y Motivo (Fase 3):**
+  - Se implementó `lib/zodResolver.ts` en lugar de instalar `@hookform/resolvers`, que no está disponible en el workspace; se mantiene la misma interfaz para poder sustituirlo sin tocar los formularios.
+  - Se deduplicó el refresh con una promesa module-level porque React StrictMode monta el efecto dos veces y el segundo refresh con el mismo token era interpretado como replay por el backend.
+  - Se usó `initializedUserId` (ref) en `App.tsx` para que el refresco de `/auth/me` no reinicie la pestaña activa del usuario.
+  - Se calculan los montos del desembolso en centavos para que la suma coincida exactamente con la validación `Decimal` del backend.
+  - Se documentó que la deuda mostrada en el desembolso corresponde solo al lote de la solicitud, mientras el FIFO del backend abarca todas las causaciones pendientes del proyecto.
+  - En la sesión de Fase 3 no se ejecutaron pruebas automatizadas de componentes; la integración con PostgreSQL se verificó después, en la Sesión 16 (158/158 PASS).
+
+#### Sesión 16: Verificación final de Fases 1-3
+- **Fecha:** 9 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / OpenCode
+- **Objetivo:** Verificar que las Fases 1-3 estén completas, confirmar la integración con PostgreSQL aislado y dejar constancia del estado final.
+- **Resultado Obtenido:**
+  - Fases 1-3 completadas y verificadas (17/17 tareas).
+  - Integración con el contenedor aislado `scienpay_verify_db` (puerto 55432): **158/158 PASS** (corrida del 2026-11-08).
+  - Backend: 87/87 tests; typecheck y build de API, shared y web sin errores (reverificados el 2026-11-09).
+  - Documentación final actualizada en `HANDOFF.md`, `avances.md` y `bitacora_ia.md`.
+  - Sin tareas pendientes ni bloqueos dentro del alcance.
+
+> Nota: la reejecución de la suite de integración se completó el 2026-11-09 con Docker Desktop disponible; el resultado se registra en la Sesión 17.
+
+#### Sesión 17: Reejecución de la suite de integración
+- **Fecha:** 9 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / OpenCode
+- **Objetivo:** Reejecutar la suite end-to-end contra PostgreSQL aislado con Docker Desktop disponible y confirmar que el resultado 158/158 se mantiene.
+- **Entorno:**
+  - Contenedor `scienpay_verify_db` (PostgreSQL 16 Alpine, puerto `55432`) iniciado desde el volumen de verificación existente.
+  - Las 3 migraciones se aplicaron de forma idempotente; el seed se omitió porque la base ya contenía usuarios sembrados.
+  - API compilada (`apps/api/dist/main.js`) arrancada con `DATABASE_URL` apuntando al puerto `55432`.
+- **Resultado Obtenido:**
+  - **158/158 PASS, 0 FAIL** en la suite de integración (health, autenticación/refresh/replay, RBAC, catálogos, causación, solicitudes/cuatro ojos, FIFO, recibos/PDF, anulación/regeneración, auditoría, caja chica, usuarios, rate limit, logout y UUID inválidos).
+  - El proceso de API usado para la verificación se detuvo al finalizar.
+  - Documentación actualizada para sustituir la limitación previa por la reejecución exitosa.
+
+#### Sesión 18: Redefinición de las Fases 4 y 5
+- **Fecha:** 10 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / OpenCode
+- **Objetivo:** Reemplazar la declaración de “fuera de alcance” por un plan de Fases 4 y 5 ajustado al estado real del repositorio.
+- **Hallazgos:**
+  - El `HANDOFF.md` versionado solo contenía las etiquetas de Fase 4 y 5, sin tareas ni criterios.
+  - El plan original completo existía en `C:\Users\Usuario\.opencode\plan\HANDOFF.md`, fuera del repositorio.
+  - La suite de 158 verificaciones vive en un script temporal fuera del repositorio y no corre en CI.
+  - `apps/web` y `packages/shared` tienen tests placeholder (`exit 0`).
+  - El CI no ejecuta `npm run lint` y ningún workspace define `lint`.
+  - El seed declara los escenarios de la especificación, pero la caja chica no tiene un vale completo y no hay verificación automática.
+  - `bitacora_ia.md` tenía dos sesiones duplicadas como 6 y 7; `uso-de-ia.md` solo llegaba a la sesión 5.
+- **Resultado:**
+  - Fase 4 redefinida en 6 tareas: suite de integración versionada, E2E con Playwright, stress FIFO, lint/CI, OpenAPI desde Zod y cierre de deuda técnica.
+  - Fase 5 redefinida en 6 tareas: seed verificado, despliegue Docker Compose + Fly.io, manuales, bitácora IA, demo y defensa.
+  - Se normalizó la numeración de sesiones (16 y 17) y se añadió la sesión 18.
+  - Se actualizaron `HANDOFF.md`, `avances.md` y `uso-de-ia.md`; no se modificó `main`.
+

@@ -38,6 +38,24 @@ Este documento registra los prompts utilizados, las decisiones aceptadas y recha
 - **Objetivo del Prompt:** Incorporar el archivo de imagen oficial `logo web.jpg` en la aplicación web como favicon e imagotipo en componentes UI; documentar detalladamente el progreso del proyecto en un archivo fechado `docs/avances.md` para facilitar la trazabilidad y consulta por parte de los compañeros de equipo; y mantener la convención estricta de ramas en GitHub con Conventional Commits.
 - **Herramientas de IA utilizadas:** Asistente de codificación, documentación y gestión de repositorios Git.
 
+### Sesión 5: Ejecución Controlada de Fases 1–3 (rama `plan/execution-tracking`)
+- **Fecha:** Noviembre 2026
+- **Modelo de análisis y planificación:** Nemotron 3 Ultra (Free) vía OpenRouter en OpenCode.
+- **Modelo de ejecución:** DeepSeek V4.1 Flash Free vía OpenCode Zen.
+- **Prompt de Entrada:**
+  > "Ejecuta únicamente las Fases 1, 2 y 3 del plan de completitud de Scienpay en la rama `plan/execution-tracking`. No toques `main`, no inicies las Fases 4 ni 5. Mantén `docs/HANDOFF.md` como especificación viva y documenta cada avance, decisión y validación en `docs/avances.md`, `docs/bitacora_ia.md`, `docs/uso-de-ia.md` y `docs/decisiones/`. Sin adivinanzas ni supuestos: toda decisión debe quedar documentada."
+- **Objetivo del Prompt:** Completar las correcciones críticas de backend (Fase 1), los módulos backend faltantes (Fase 2) y la conexión real del frontend a la API (Fase 3), con verificación de typecheck, tests y build, commits atómicos y trazabilidad documental completa.
+- **Herramientas de IA utilizadas:** Nemotron 3 Ultra (Free) para análisis/planificación y DeepSeek V4.1 Flash Free para ejecución, ambos en OpenCode.
+
+### Sesión 6: Redefinición de las Fases 4 y 5
+- **Fecha:** 10 de Noviembre de 2026
+- **Prompt de Entrada:**
+  > "Revisé el HANDOFF y no habla casi nada de lo que se tiene que hacer en las fases 4 y 5. O me equivoco?"
+  > "Redefine según el estado actual"
+- **Objetivo del Prompt:** Reemplazar la declaración de “fuera de alcance” por un plan de Fases 4 y 5 que parta del estado real del repositorio, sin atribuir trabajo no realizado ni asumir herramientas que no están instaladas.
+- **Resultado:** Se definieron 6 tareas para la Fase 4 (suite de integración versionada, E2E con Playwright, stress FIFO, lint/CI, OpenAPI desde Zod y cierre de deuda técnica) y 6 para la Fase 5 (seed verificado, despliegue Docker Compose + Fly.io, manuales por rol, bitácora IA, demo y defensa). Se normalizó la numeración de sesiones y se actualizaron `HANDOFF.md` y `avances.md`.
+- **Herramientas de IA utilizadas:** Asistente de Codificación / OpenCode.
+
 ---
 
 ## 2. Decisiones Aceptadas vs. Rechazadas
@@ -46,9 +64,33 @@ Este documento registra los prompts utilizados, las decisiones aceptadas y recha
 |---|---|---|---|
 | **DEC-IA-01** | Uso de arquitectura Monorepo con npm workspaces para alojar `apps/api`, `apps/web` y `packages/shared`. | **Aceptada** | Permite compartir tipos y esquemas de validación Zod sin duplicar código entre cliente y servidor. |
 | **DEC-IA-02** | Selección de Drizzle ORM sobre Prisma. | **Aceptada** | Drizzle permite generar y ejecutar SQL nativo directo para triggers de inmutabilidad (`BEFORE UPDATE OR DELETE`), secuencias consecutivas sin huecos (`CREATE SEQUENCE`) e índices de exclusión (`btree_gist`), reduciendo el overhead en runtime. |
-| **DEC-IA-03** | Cálculo de causaciones en memoria con flotantes y redondeo JavaScript nativo (`Math.round`). | **Rechazada** | En sistemas financieros está estrictamente prohibido el uso de flotantes binarios. Se adoptó `decimal.js` y `NUMERIC(14,2)` con política de redondeo bancario (*Half to Even*). |
+| **DEC-IA-03** | Cálculo de causaciones en memoria con flotantes y redondeo JavaScript nativo (`Math.round`). | **Rechazada** | En sistemas financieros está estrictamente prohibido el uso de flotantes binarios. Se adoptó `decimal.js` y `NUMERIC(14,2)` con política `ROUND_HALF_UP` (decisión unificada el 2026-11-07; ver ADR-002). |
 | **DEC-IA-04** | Almacenamiento de refresh tokens en localStorage del navegador. | **Rechazada** | Inseguro frente a ataques XSS. Se implementó cookie `HttpOnly`, `Secure`, `SameSite=Strict` con rotación estricta y detección de reutilización por familia. |
 | **DEC-IA-05** | Regla de cuatro ojos validada únicamente en el cliente deshabilitando botones. | **Rechazada** | La interfaz es fácilmente manipulable. La regla se impone estrictamente en el backend (`created_by_user_id !== reviewer_user_id`) y a nivel de restricción en base de datos. |
+| **DEC-IA-06** | Mantener el redondeo bancario *Half to Even* documentado en ADR-002. | **Rechazada** | Todo el código financiero ya usa `ROUND_HALF_UP` y los tests documentan `10.125 → 10.13`. Se actualizó ADR-002 para eliminar la contradicción sin alterar resultados. |
+| **DEC-IA-07** | Permitir `UPDATE` completo en `causation_items` y `causation_batches` para desbloquear pagos y anulaciones. | **Rechazada** | Se implementó una lista negra por columna: solo `paid_amount`, `remaining_debt` y `status` en ítems; solo campos de anulación en lotes. `DELETE` permanece bloqueado. |
+| **DEC-IA-08** | Seguir usando `nextval('receipt_number_seq')` para numerar recibos. | **Rechazada** | `nextval` no es transaccional y deja huecos ante rollback. Se creó `receipt_sequences` + `next_receipt_number(year)` dentro de la transacción del desembolso. |
+| **DEC-IA-09** | Login solo por correo electrónico. | **Rechazada** | El requisito funcional exige usuario o correo. `loginSchema` ahora usa `identifier` y el backend busca por `username` o `email`. |
+| **DEC-IA-10** | Rate limiting con dependencia externa (`@nestjs/throttler`). | **Rechazada** | Se implementó `LoginRateLimiter` en memoria (5/min por IP) para no añadir dependencias; queda documentado que debe migrarse a un almacén compartido si se escala horizontalmente. |
+| **DEC-IA-11** | Mantener `.parse()` disperso en los controladores. | **Rechazada** | Se creó `ZodValidationPipe` reutilizable y `ZodExceptionFilter` global; los schemas compartidos siguen siendo la única fuente de verdad. |
+| **DEC-IA-12** | Permitir anular lotes de causación con solicitudes o pagos asociados. | **Rechazada** | `CausationAnnulmentPolicy` bloquea lotes inexistentes, ya anulados, con solicitudes o con pagos aplicados. La anulación es transaccional y genera auditoría `ANULACION_CAUSACION`. |
+| **DEC-IA-13** | Ignorar `requestedAmount` y usar siempre el total causado del lote al crear una solicitud. | **Rechazada** | El contrato Zod ya expone `requestedAmount`; se usa como `totalAmountUSD` y se rechaza si excede el total causado del lote. |
+| **DEC-IA-14** | Numerar vales de caja chica con `count + 1`. | **Rechazada** | Bajo concurrencia produce duplicados y deja huecos ante rollback. Se creó `voucher_sequences` + `next_voucher_number(year)` dentro de la transacción del vale. |
+| **DEC-IA-15** | Mantener la restricción única de idempotencia de causaciones tal cual. | **Rechazada** | Impedía regenerar un lote para un período anulado. Se sustituyó por un índice único parcial que solo considera lotes activos (`status <> 'ANULADO'`). |
+| **DEC-IA-16** | Cerrar períodos de caja chica con vales pendientes. | **Rechazada** | `closePeriod` bloquea el cierre si existen vales en `SOLICITADO`, `APROBADO` o `DESEMBOLSADO`, e informa cuáles bloquean. |
+| **DEC-IA-17** | Filtrar causaciones FIFO solo por `personId`. | **Rechazada** | Se añadió join con `causation_batches` para filtrar por proyecto, se excluyen ítems anulados o sin deuda y se bloquean las filas con `FOR UPDATE`. |
+| **DEC-IA-18** | Aplicar FIFO sin desempate cuando dos cuotas comparten fecha. | **Rechazada** | El motor ordena por `periodStartDate` y desempata por ID para que el resultado sea determinista y reproducible. |
+| **DEC-IA-19** | Congelar las cifras del PDF de solicitud al momento de crearla. | **Rechazada** | El PDF se genera bajo demanda y recalcula causado/pagado/pendiente desde la BD para reflejar el estado real del lote. |
+| **DEC-IA-20** | Exponer la auditoría sin paginación ni filtros. | **Rechazada** | `auditQuerySchema` valida filtros y paginación (máximo 200) y la respuesta incluye `total` y `totalPages`. |
+| **DEC-IA-21** | Persistir el access token en `localStorage` para simplificar la sesión del frontend. | **Rechazada** | Expone el token a XSS. El access token vive en memoria y la sesión se restaura con el refresh token `HttpOnly` mediante `POST /auth/refresh`. |
+| **DEC-IA-22** | Instalar `@hookform/resolvers` para integrar Zod con React Hook Form. | **Rechazada** | La dependencia no está disponible en el workspace. Se implementó `lib/zodResolver.ts` compatible con RHF y se documentó para poder sustituirlo si se instala más adelante. |
+| **DEC-IA-23** | Mantener los mocks temporalmente mientras se conectan las vistas. | **Rechazada** | Se eliminaron `mockData.ts` y `app.types.ts`; todas las vistas y formularios consumen `/api/v1`. No se admite código mock en producción. |
+| **DEC-IA-24** | Refrescar la sesión en cada 401 sin coordinación entre llamadas concurrentes. | **Rechazada** | React StrictMode duplica el efecto de montaje y dos refresh con el mismo token se interpretan como replay. Se deduplicó con una promesa module-level compartida. |
+| **DEC-IA-25** | Limitar el monto del desembolso a la deuda del lote de la solicitud. | **Rechazada** | El backend aplica FIFO sobre todas las causaciones pendientes del beneficiario en el proyecto, no solo sobre el lote. El formulario muestra la deuda del lote y advierte que el alcance real es el proyecto. |
+| **DEC-IA-26** | Renderizar las tres experiencias de rol desde un único componente monolítico. | **Rechazada** | Se separaron `AdminView`, `GeneratorView` y `ReceptorView`, cada una con sus hooks y mutaciones; `App.tsx` solo coordina la pestaña activa. |
+| **DEC-IA-27** | Añadir una librería de portales para los modales. | **Rechazada** | Se mantiene un `Modal` propio con overlay fijo, sin dependencias adicionales y coherente con el sistema visual existente. |
+| **DEC-IA-28** | Sumar los montos del desembolso con aritmética de coma flotante. | **Rechazada** | Se convierten a centavos antes de sumar y comparar para que el total coincida con la validación `Decimal` del backend y no se rechacen desembolsos válidos. |
+| **DEC-IA-29** | Mantener las Fases 4 y 5 como “fuera de alcance” sin desglose de tareas. | **Rechazada** | El HANDOFF solo tenía etiquetas; se redefinieron 12 tareas ajustadas al estado real (suite externa 158/158, CI sin lint, tests placeholder, seed incompleto). |
 
 ---
 
@@ -63,3 +105,6 @@ Este documento registra los prompts utilizados, las decisiones aceptadas y recha
 3. **Setup de Monorepo y Docker:**
    - *Generado:* Configuración de workspaces, pipeline de CI en GitHub Actions y servicios docker-compose con proxy Nginx.
    - *Revisión Humana:* Se verificó que `.gitignore` excluya con rigor cualquier clave o archivo `.env`.
+4. **Frontend real conectado a la API (Fase 3):**
+   - *Generado:* `apiClient` con refresh/retry, `AuthContext` con deduplicación de refresh, 10 módulos de hooks TanStack Query, 12 formularios de dominio RHF+Zod (más el login), componentes UI reutilizables y las vistas `AdminView`, `GeneratorView` y `ReceptorView`.
+   - *Revisión Humana:* Se verificó que no queden imports a `mockData.ts` ni a `app.types.ts`, que el access token no se persista en el navegador, que las mutaciones invaliden sus claves de caché y que `typecheck` y `build` del workspace web finalicen sin errores. La suite de API se mantuvo en 87/87.

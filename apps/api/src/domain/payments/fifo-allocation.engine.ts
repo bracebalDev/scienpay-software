@@ -57,10 +57,13 @@ export class FIFOAllocationEngine {
       );
     }
 
-    // Ordenar cronológicamente ascendente (antigüedad primero)
-    const sortedDebts = [...debts].sort(
-      (a, b) => new Date(a.periodStartDate).getTime() - new Date(b.periodStartDate).getTime(),
-    );
+    // Ordenar cronológicamente ascendente con desempate determinista por ID.
+    const sortedDebts = [...debts].sort((a, b) => {
+      const dateDiff =
+        new Date(a.periodStartDate).getTime() - new Date(b.periodStartDate).getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return a.id.localeCompare(b.id);
+    });
 
     const allocations: ItemAllocationDetail[] = [];
     const initialPayment = new Decimal(paymentAmount);

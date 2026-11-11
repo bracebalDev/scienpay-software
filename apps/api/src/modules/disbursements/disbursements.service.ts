@@ -7,6 +7,7 @@ import { DatabaseService } from '../../infrastructure/database/database.service.
 import {
   disbursements,
   paymentRequests,
+  causationBatches,
   causationItems,
   receipts,
   receiptAllocations,
@@ -23,7 +24,7 @@ import { FIFOAllocationEngine } from '../../domain/payments/fifo-allocation.engi
 import { FinancialImmutabilityEngine } from '../../domain/financial/financial-immutability.engine.js';
 import { PaymentRequestStateMachine } from '../../domain/payment-requests/payment-request-state-machine.js';
 import { PdfReceiptGenerator } from '../../infrastructure/pdf/pdf-receipt.generator.js';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, gt, ne, sql } from 'drizzle-orm';
 import { Decimal } from 'decimal.js';
 
 @Injectable()
@@ -140,137 +141,172 @@ export class DisbursementsService {
       throw new ConflictException('ID_SOLICITUD_REQUERIDO: Se debe especificar el ID de la solicitud de pago');
     }
 
-    // 1. Obtener solicitud de pago
-    const [request] = await this.databaseService.db
-      .select()
-      .from(paymentRequests)
-      .where(eq(paymentRequests.id, input.paymentRequestId))
-      .limit(1);
-
-    if (!request) {
-      throw new NotFoundException('SOLICITUD_NO_ENCONTRADA: La solicitud no existe');
-    }
-
-    if (request.status !== PaymentRequestStatus.APROBADA) {
+    const uniquePersons = new Set(input.allocations.map((allocation) => allocation.personId));
+    if (uniquePersons.size !== input.allocations.length) {
       throw new ConflictException(
-        `ESTADO_INVALIDO: Solo se puede registrar entrega de fondos para solicitudes en estado 'APROBADA'. Estado actual: '${request.status}'`,
+        'BENEFICIARIO_DUPLICADO: Cada persona beneficiaria debe aparecer una sola vez en el desembolso',
       );
     }
 
-    // 2. Calcular total a desembolsar
+    const declaredTotal = new Decimal(input.totalDeliveredAmount);
     let totalDisbursed = new Decimal('0.00');
     for (const alloc of input.allocations) {
       totalDisbursed = totalDisbursed.plus(alloc.amount);
     }
 
-    // 3. Crear desembolso
-    const [disbursement] = await this.databaseService.db
-      .insert(disbursements)
-      .values({
-        paymentRequestId: request.id,
-        disbursedByUserId: userId,
-        paymentMethod: input.paymentMethod,
-        referenceNumber: input.referenceNumber || '',
-        totalAmount: totalDisbursed.toFixed(2),
-        notes: input.notes || '',
-      })
-      .returning();
+    if (!declaredTotal.equals(totalDisbursed)) {
+      throw new ConflictException(
+        `TOTAL_DESEMBOLSO_INCONSISTENTE: El total declarado ($${declaredTotal.toFixed(2)}) no coincide con la suma de asignaciones ($${totalDisbursed.toFixed(2)})`,
+      );
+    }
 
-    const issuedReceipts = [];
     const currentYear = new Date().getFullYear();
 
-    // 4. Por cada persona beneficiaria, aplicar algoritmo FIFO
-    for (const personAlloc of input.allocations) {
-      // Buscar causaciones pendientes de la persona en el proyecto
-      const pendingItems = await this.databaseService.db
-        .select({
-          id: causationItems.id,
-          periodStartDate: causationItems.periodStartDate,
-          calculatedAmount: causationItems.calculatedAmount,
-          paidAmount: causationItems.paidAmount,
-          remainingDebt: causationItems.remainingDebt,
-        })
-        .from(causationItems)
-        .where(
-          and(
-            eq(causationItems.personId, personAlloc.personId),
-            sql`${causationItems.status} IN ('PENDIENTE', 'PAGADO_PARCIAL')`,
-          ),
-        )
-        .orderBy(causationItems.periodStartDate);
+    return this.databaseService.db.transaction(async (tx) => {
+      // 1. Bloquear la solicitud para serializar desembolsos concurrentes.
+      const [request] = await tx
+        .select()
+        .from(paymentRequests)
+        .where(eq(paymentRequests.id, input.paymentRequestId!))
+        .limit(1)
+        .for('update');
 
-      // Aplicar motor de amortización FIFO puro (valida que monto <= deuda)
-      const fifoResult = FIFOAllocationEngine.allocatePayment(
-        pendingItems,
-        personAlloc.amount,
-      );
+      if (!request) {
+        throw new NotFoundException('SOLICITUD_NO_ENCONTRADA: La solicitud no existe');
+      }
 
-      // Obtener siguiente número de secuencia para el recibo
-      const seqResult = await this.databaseService.db.execute(
-        sql`SELECT nextval('receipt_number_seq') AS next_val`,
-      );
-      const nextSequenceNum = Number(seqResult[0]?.next_val || 1);
-      const receiptNumber = FinancialImmutabilityEngine.formatReceiptNumber(
-        currentYear,
-        nextSequenceNum,
-      );
+      if (request.status !== PaymentRequestStatus.APROBADA) {
+        throw new ConflictException(
+          `ESTADO_INVALIDO: Solo se puede registrar entrega de fondos para solicitudes en estado 'APROBADA'. Estado actual: '${request.status}'`,
+        );
+      }
 
-      // Crear recibo inmutable
-      const [receipt] = await this.databaseService.db
-        .insert(receipts)
+      // 2. Crear el desembolso dentro de la misma transacción.
+      const [disbursement] = await tx
+        .insert(disbursements)
         .values({
-          receiptNumber,
-          disbursementId: disbursement.id,
-          personId: personAlloc.personId,
-          projectId: request.projectId,
-          totalAmountUSD: fifoResult.totalAllocatedUSD,
-          remainingDebtAfterUSD: fifoResult.remainingDebtAfterUSD,
-          issuedByUserId: userId,
+          paymentRequestId: request.id,
+          disbursedByUserId: userId,
+          paymentMethod: input.paymentMethod,
+          referenceNumber: input.referenceNumber || '',
+          totalAmount: totalDisbursed.toFixed(2),
           notes: input.notes || '',
         })
         .returning();
 
-      // Guardar imputaciones y actualizar causaciones
-      for (const itemAlloc of fifoResult.allocations) {
-        await this.databaseService.db.insert(receiptAllocations).values({
-          receiptId: receipt.id,
-          causationItemId: itemAlloc.causationItemId,
-          allocatedAmountUSD: itemAlloc.allocatedAmountUSD,
-          debtBeforeAllocationUSD: itemAlloc.debtBeforeAllocationUSD,
-          debtAfterAllocationUSD: itemAlloc.debtAfterAllocationUSD,
-        });
+      const issuedReceipts = [];
 
-        await this.databaseService.db
-          .update(causationItems)
-          .set({
-            paidAmount: itemAlloc.newPaidAmountUSD,
-            remainingDebt: itemAlloc.newRemainingDebtUSD,
-            status: itemAlloc.newStatus,
+      // 3. Por cada persona beneficiaria, bloquear sus causaciones del proyecto y aplicar FIFO.
+      for (const personAlloc of input.allocations) {
+        const pendingItems = await tx
+          .select({
+            id: causationItems.id,
+            periodStartDate: causationItems.periodStartDate,
+            calculatedAmount: causationItems.calculatedAmount,
+            paidAmount: causationItems.paidAmount,
+            remainingDebt: causationItems.remainingDebt,
           })
-          .where(eq(causationItems.id, itemAlloc.causationItemId));
+          .from(causationItems)
+          .innerJoin(causationBatches, eq(causationItems.batchId, causationBatches.id))
+          .where(
+            and(
+              eq(causationItems.personId, personAlloc.personId),
+              eq(causationBatches.projectId, request.projectId),
+              ne(causationItems.status, CausationItemStatus.ANULADO),
+              gt(causationItems.remainingDebt, '0.00'),
+            ),
+          )
+          .orderBy(causationItems.periodStartDate, causationItems.id)
+          .for('update', { of: causationItems });
+
+        let fifoResult;
+
+        try {
+          fifoResult = FIFOAllocationEngine.allocatePayment(
+            pendingItems,
+            personAlloc.amount,
+          );
+        } catch (error) {
+          if (error instanceof Error) {
+            throw new ConflictException(error.message);
+          }
+          throw error;
+        }
+
+        // 4. Reservar número de recibo dentro de la transacción (sin huecos por rollback).
+        const seqResult = await tx.execute(
+          sql`SELECT next_receipt_number(${currentYear}) AS next_number`,
+        );
+        const nextSequenceNum = Number((seqResult as any)[0]?.next_number ?? 0);
+
+        if (!Number.isFinite(nextSequenceNum) || nextSequenceNum <= 0) {
+          throw new ConflictException(
+            'SECUENCIA_RECIBO_INVALIDA: No se pudo reservar el número de recibo',
+          );
+        }
+
+        const receiptNumber = FinancialImmutabilityEngine.formatReceiptNumber(
+          currentYear,
+          nextSequenceNum,
+        );
+
+        // 5. Crear recibo inmutable.
+        const [receipt] = await tx
+          .insert(receipts)
+          .values({
+            receiptNumber,
+            disbursementId: disbursement.id,
+            personId: personAlloc.personId,
+            projectId: request.projectId,
+            totalAmountUSD: fifoResult.totalAllocatedUSD,
+            remainingDebtAfterUSD: fifoResult.remainingDebtAfterUSD,
+            issuedByUserId: userId,
+            notes: input.notes || '',
+          })
+          .returning();
+
+        // 6. Guardar imputaciones y actualizar causaciones.
+        for (const itemAlloc of fifoResult.allocations) {
+          await tx.insert(receiptAllocations).values({
+            receiptId: receipt.id,
+            causationItemId: itemAlloc.causationItemId,
+            allocatedAmountUSD: itemAlloc.allocatedAmountUSD,
+            debtBeforeAllocationUSD: itemAlloc.debtBeforeAllocationUSD,
+            debtAfterAllocationUSD: itemAlloc.debtAfterAllocationUSD,
+          });
+
+          await tx
+            .update(causationItems)
+            .set({
+              paidAmount: itemAlloc.newPaidAmountUSD,
+              remainingDebt: itemAlloc.newRemainingDebtUSD,
+              status: itemAlloc.newStatus,
+            })
+            .where(eq(causationItems.id, itemAlloc.causationItemId));
+        }
+
+        issuedReceipts.push(receipt);
       }
 
-      issuedReceipts.push(receipt);
-    }
+      // 7. Transición de estado de la solicitud a ENTREGADA.
+      PaymentRequestStateMachine.assertValidTransition(
+        request.status as PaymentRequestStatus,
+        PaymentRequestStatus.ENTREGADA,
+      );
 
-    // 5. Transición de estado de la solicitud a ENTREGADA
-    PaymentRequestStateMachine.assertValidTransition(
-      request.status as PaymentRequestStatus,
-      PaymentRequestStatus.ENTREGADA,
-    );
+      await tx
+        .update(paymentRequests)
+        .set({
+          status: PaymentRequestStatus.ENTREGADA,
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentRequests.id, request.id));
 
-    await this.databaseService.db
-      .update(paymentRequests)
-      .set({
-        status: PaymentRequestStatus.ENTREGADA,
-        updatedAt: new Date(),
-      })
-      .where(eq(paymentRequests.id, request.id));
-
-    return {
-      message: 'DESEMBOLSO_REGISTRADO_EXITOSAMENTE',
-      disbursement,
-      receipts: issuedReceipts,
-    };
+      return {
+        message: 'DESEMBOLSO_REGISTRADO_EXITOSAMENTE',
+        disbursement,
+        receipts: issuedReceipts,
+      };
+    });
   }
 }

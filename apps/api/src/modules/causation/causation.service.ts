@@ -7,6 +7,7 @@ import {
   persons,
   projects,
   paymentGroups,
+  paymentRequests,
 } from '../../infrastructure/database/schema.js';
 import {
   PreviewCausationInput,
@@ -17,12 +18,17 @@ import {
   AssignmentStatus,
 } from '@scienpay/shared';
 import { CausationCalculator } from '../../domain/causation/causation-calculator.js';
-import { eq, and } from 'drizzle-orm';
+import { CausationAnnulmentPolicy } from '../../domain/causation/causation-annulment.policy.js';
+import { AuditService } from '../audit/audit.service.js';
+import { eq, and, gt, ne } from 'drizzle-orm';
 import { Decimal } from 'decimal.js';
 
 @Injectable()
 export class CausationService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly auditService: AuditService,
+  ) {}
 
   async previewCausation(input: PreviewCausationInput) {
     const activeAssignments = await this.databaseService.db
@@ -83,7 +89,7 @@ export class CausationService {
   }
 
   async generateBatch(input: GenerateCausationBatchInput, userId: string) {
-    // 1. Idempotencia: Verificar si ya existe lote para este corte exacto
+    // 1. Idempotencia: Verificar si ya existe lote activo para este corte exacto
     const existing = await this.databaseService.db
       .select({ id: causationBatches.id, status: causationBatches.status })
       .from(causationBatches)
@@ -93,11 +99,12 @@ export class CausationService {
           eq(causationBatches.paymentGroupId, input.paymentGroupId),
           eq(causationBatches.periodStartDate, input.periodStartDate),
           eq(causationBatches.periodEndDate, input.periodEndDate),
+          ne(causationBatches.status, CausationBatchStatus.ANULADO),
         ),
       )
       .limit(1);
 
-    if (existing.length > 0 && existing[0].status !== CausationBatchStatus.ANULADO) {
+    if (existing.length > 0) {
       throw new ConflictException(
         'CAUSACION_IDEMPOTENTE: Ya existe un lote de causación activo para este proyecto, grupo y período',
       );
@@ -177,5 +184,128 @@ export class CausationService {
       .where(eq(causationItems.batchId, id));
 
     return { ...batch, items };
+  }
+
+  /**
+   * Anulación formal de un lote de causación (HANDOFF 1.5).
+   *
+   * Reglas:
+   * - Solo se anula un lote existente y no anulado previamente.
+   * - Se bloquea si ya tiene solicitudes de pago asociadas.
+   * - Se bloquea si algún ítem registra pagos aplicados.
+   * - El motivo (>= 10 caracteres) lo garantiza `annulCausationBatchSchema` y el trigger de BD.
+   * - Lote e ítems se actualizan en una sola transacción; la auditoría es parte de ella.
+   */
+  async annulBatch(
+    id: string,
+    input: AnnulCausationBatchInput,
+    actor: { id: string; email: string; role: string },
+    ipAddress?: string,
+  ) {
+    const updatedBatch = await this.databaseService.db.transaction(async (tx) => {
+      const [batch] = await tx
+        .select()
+        .from(causationBatches)
+        .where(eq(causationBatches.id, id))
+        .limit(1)
+        .for('update');
+
+      if (!batch) {
+        throw new NotFoundException('LOTE_NO_ENCONTRADO: El lote de causación no existe');
+      }
+
+      const [associatedRequest] = await tx
+        .select({ id: paymentRequests.id })
+        .from(paymentRequests)
+        .where(eq(paymentRequests.causationBatchId, id))
+        .limit(1);
+
+      const paidItems = await tx
+        .select({ id: causationItems.id })
+        .from(causationItems)
+        .where(
+          and(
+            eq(causationItems.batchId, id),
+            gt(causationItems.paidAmount, '0.00'),
+          ),
+        )
+        .limit(1);
+
+      const blocker = CausationAnnulmentPolicy.evaluate({
+        exists: true,
+        status: batch.status,
+        hasRequests: Boolean(associatedRequest),
+        hasPayments: paidItems.length > 0,
+      });
+
+      if (blocker === 'LOTE_YA_ANULADO') {
+        throw new ConflictException('LOTE_YA_ANULADO: El lote de causación ya fue anulado');
+      }
+
+      if (blocker === 'LOTE_CON_SOLICITUDES') {
+        throw new ConflictException(
+          'LOTE_CON_SOLICITUDES: No se puede anular un lote que ya tiene solicitudes de pago asociadas',
+        );
+      }
+
+      if (blocker === 'LOTE_CON_PAGOS') {
+        throw new ConflictException(
+          'LOTE_CON_PAGOS: No se puede anular un lote con pagos aplicados. La corrección debe tramitarse como ajuste formal.',
+        );
+      }
+
+      if (blocker === 'LOTE_NO_ENCONTRADO') {
+        throw new NotFoundException('LOTE_NO_ENCONTRADO: El lote de causación no existe');
+      }
+
+      const [updated] = await tx
+        .update(causationBatches)
+        .set({
+          status: CausationBatchStatus.ANULADO,
+          annulmentReason: input.annulmentReason,
+          annulledByUserId: actor.id,
+          annulledAt: new Date(),
+        })
+        .where(eq(causationBatches.id, id))
+        .returning();
+
+      await tx
+        .update(causationItems)
+        .set({ status: CausationItemStatus.ANULADO })
+        .where(
+          and(
+            eq(causationItems.batchId, id),
+            ne(causationItems.status, CausationItemStatus.ANULADO),
+          ),
+        );
+
+      await this.auditService.recordEvent(
+        {
+          userId: actor.id,
+          userEmail: actor.email,
+          userRole: actor.role,
+          action: 'ANULACION_CAUSACION',
+          entity: 'causation_batches',
+          entityId: id,
+          oldValues: {
+            status: batch.status,
+            totalCausationAmount: batch.totalCausationAmount,
+          },
+          newValues: {
+            status: CausationBatchStatus.ANULADO,
+            annulmentReason: input.annulmentReason,
+          },
+          ipAddress,
+        },
+        tx,
+      );
+
+      return updated;
+    });
+
+    return {
+      message: 'LOTE_CAUSACION_ANULADO_EXITOSAMENTE',
+      batch: updatedBatch,
+    };
   }
 }

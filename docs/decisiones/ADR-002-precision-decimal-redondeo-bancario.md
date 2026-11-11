@@ -9,7 +9,7 @@ En sistemas financieros, el uso de tipos de datos de coma flotante binaria (`flo
 ## Decisión
 1. **En Base de Datos:** Todas las columnas monetarias (`amount`, `amount_per_period`, `calculated_amount`, `paid_amount`, `remaining_debt`, etc.) se declaran como `NUMERIC(14,2)` en PostgreSQL.
 2. **En Backend (Node.js/TypeScript):** Queda estrictamente prohibido el uso del tipo nativo `number` para operaciones aritméticas monetarias en la capa de dominio y aplicación. Se utiliza la librería de precisión arbitraria `decimal.js` (o big.js) para todos los cálculos.
-3. **Política de Redondeo:** Se adopta el **Redondeo Bancario (*Round Half to Even*)** a 2 decimales exactos. En caso de fracciones intermedias exactas (e.g. `$ 10.125`), se redondea al número par más cercano (`$ 10.12`), evitando el sesgo inflacionario del redondeo hacia arriba tradicional (*Round Half Up*).
+3. **Política de Redondeo:** Se adopta **`ROUND_HALF_UP`** a 2 decimales exactos, que es el comportamiento efectivamente implementado por `decimal.js` en todos los motores de dominio (`CausationCalculator`, `FIFOAllocationEngine`, `PettyCashLedgerEngine`). En caso de fracciones intermedias exactas (e.g. `$ 10.125`), se redondea al valor superior (`$ 10.13`). Esta decisión se tomó el 2026-11-07 para eliminar la contradicción entre este ADR y el código; no se modificó ningún resultado financiero existente ni los tests que documentan `10.125 → 10.13`.
 4. **En Moneda:** La moneda oficial única del sistema es **USD ($)**.
 
 ## Consecuencias

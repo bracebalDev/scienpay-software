@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserRole } from '@scienpay/shared';
-import { UserAccount } from '../../types/app.types.js';
+import type { AuthUser } from '../../types/api.types.js';
 import { ThemeToggle } from '../../context/ThemeContext.js';
 import {
   Users,
@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 interface NotionSidebarProps {
-  currentUser: UserAccount;
+  currentUser: AuthUser;
   activeTab: string;
   onSelectTab: (tab: string) => void;
   onLogout: () => void;
@@ -127,7 +127,9 @@ export const NotionSidebar: React.FC<NotionSidebarProps> = ({
               </div>
               <div className="truncate flex-1">
                 <div className="text-xs font-semibold text-[#37352F] dark:text-white truncate">{currentUser.fullName}</div>
-                <div className="text-[10px] text-[#787774] dark:text-[#9B9A97] truncate">{currentUser.title}</div>
+                <div className="text-[10px] text-[#787774] dark:text-[#9B9A97] truncate">
+                  {currentUser.title || currentUser.role}
+                </div>
               </div>
             </div>
             <div className="mt-2 pt-2 border-t border-[#EDEDEB] dark:border-[#2F2F2F] flex items-center justify-between">
