@@ -31,7 +31,7 @@ Cada cambio de estado se registra en el historial de este documento y se acompa�
 | **Fase 1** | Correcciones críticas de backend | 🟢 Completada | 5/5 |
 | **Fase 2** | Completar módulos backend faltantes | 🟢 Completada | 5/5 |
 | **Fase 3** | Frontend real conectado a la API | 🟢 Completada | 7/7 |
-| **Fase 4** | Testing y calidad | 🟡 En progreso | 2/6 |
+| **Fase 4** | Testing y calidad | 🟡 En progreso | 3/6 |
 | **Fase 5** | Pulimiento y entrega | 🔴 Por hacer | 0/6 |
 
 > Las Fases 4 y 5 se redefinieron el 2026-11-10 a partir del estado real del repositorio. La Fase 4 está autorizada el 2026-11-11; la Fase 5 sigue sin autorizar. El detalle está en las secciones 10 y 11.
@@ -237,10 +237,10 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 | Métrica | Estado actual (2026-11-11) | Objetivo de las Fases 4–5 |
 |---|---|---|
 | Tareas de Fases 1–3 | 17/17 completadas | Cerradas |
-| Tareas de Fase 4 | 2/6 (4.1, 4.4) | 6/6 |
+| Tareas de Fase 4 | 3/6 (4.1, 4.3, 4.4) | 6/6 |
 | Tareas de Fase 5 | 0/6 | 6/6 |
 | Tests unitarios backend | 87/87 pasando | Mantener 100 % |
-| Integración con PostgreSQL | **170/170 en 8 suites**, versionada y con job de CI | Bloqueante en CI |
+| Integración con PostgreSQL | **181/181 en 9 suites**, versionada y con job de CI; incluye estrés de concurrencia FIFO | Bloqueante en CI |
 | Tests frontend | Placeholder (`exit 0`) | Unitarios/componentes + E2E |
 | Lint | ESLint + Prettier bloqueantes en CI; 0 errores, 25 warnings de `any` | Sin warnings nuevos |
 | OpenAPI | No disponible | `/api/docs` generado desde Zod |
@@ -275,6 +275,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 | 2026-11-11 | Autorización de Fase 4 | 🔴 Por hacer | 🟡 En progreso | — | Se autoriza el alcance completo 4.1 → 4.6; Fase 5 permanece sin autorizar. |
 | 2026-11-11 | 4.4 Lint, formato y CI | 🔴 Por hacer | 🟢 Completada | — | ESLint flat + Prettier, guard de workspaces, `format:check` y `lint` bloqueantes, Gitleaks bloqueante y ADR-008. 0 errores de lint, 87/87 tests. |
 | 2026-11-11 | 4.1 Suite de integración | 🔴 Por hacer | 🟢 Completada | — | 170/170 checks en 8 suites contra PostgreSQL 16; runner con dos instancias, bootstrap idempotente, `docker-compose.test.yml` y job `integration` en CI. Se corrigió un defecto: transiciones inválidas de solicitudes devolvían 500 en lugar de 409. |
+| 2026-11-11 | 4.3 Concurrencia FIFO | 🔴 Por hacer | 🟢 Completada | — | 20 desembolsos simultáneos × 10 corridas: 10/10 pasan en ~6,3 s sin sobrepago, sin saldos negativos ni `40P01`. Suite total: 181/181 en 9 suites. |
 
 ---
 
@@ -287,7 +288,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 5. **Monto de la solicitud:** `createRequest` usa `input.requestedAmount` como `totalAmountUSD` y rechaza montos superiores al total causado del lote. Antes se ignoraba el monto enviado y se usaba siempre el total del lote; la decisión se tomó para que el contrato Zod y la persistencia coincidan.
 6. **Código de solicitud:** `SOL-YYYY-NNN` sigue calculándose con `count + 1`. No se corrigió en Fase 1 porque el plan solo exige numeración transaccional para recibos (2.5); queda registrado como limitación para una tarea posterior.
 7. **Rate limiter en memoria:** es suficiente para una instancia única. Si se escala horizontalmente, debe sustituirse por un almacén compartido sin cambiar el contrato del controlador.
-8. **Suite de integración versionada:** desde el 2026-11-11 la verificación end-to-end vive en `apps/api/test/integration/` (8 suites, **170 verificaciones**) y corre contra PostgreSQL 16 aislado (`docker-compose.test.yml`, puerto `55432`; en CI, `services: postgres`). `apps/api/scripts/run-integration.mjs` aplica migraciones, siembra si la base está vacía, compila, arranca dos instancias (4100 con límite de login alto y 4101 con límite 2) y ejecuta `tsx --test --test-concurrency=1`. Los datos llevan sufijo `RUN_SUFFIX`, los archivos no dependen entre sí y la suite se verificó sobre base limpia y sobre base ya sembrada.
+8. **Suite de integración versionada:** desde el 2026-11-11 la verificación end-to-end vive en `apps/api/test/integration/` (9 suites, **181 verificaciones**) y corre contra PostgreSQL 16 aislado (`docker-compose.test.yml`, puerto `55432`; en CI, `services: postgres`). `apps/api/scripts/run-integration.mjs` aplica migraciones, siembra si la base está vacía, compila, arranca dos instancias (4100 con límite de login alto y 4101 con límite 2) y ejecuta `tsx --test --test-concurrency=1`. Los datos llevan sufijo `RUN_SUFFIX`, los archivos no dependen entre sí y la suite se verificó sobre base limpia y sobre base ya sembrada. Desde 4.3 incluye un test de estrés con 20 desembolsos concurrentes repetido 10 veces.
 9. **Login conserva `safeParse`:** a diferencia del resto de controladores, el login mantiene `safeParse` para responder 401 con semántica de credenciales inválidas en lugar de 400 genérico. Es la excepción explícita admitida en 1.4.
 10. **Numeración de vales:** se usa `voucher_sequences` + `next_voucher_number(year)` con `INSERT ... ON CONFLICT DO UPDATE ... RETURNING` dentro de la transacción del vale. La siembra toma el máximo histórico con formato `VAL-YYYY-NNNN`; si el formato no coincide, el vale no se cuenta y queda documentado.
 11. **Cierre de período con vales pendientes:** se consideran pendientes los estados `SOLICITADO`, `APROBADO` y `DESEMBOLSADO`; solo `RENDIDO` permite cerrar. El mensaje incluye la lista de vales que bloquean el cierre.
@@ -318,6 +319,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 36. **Transiciones inválidas responden 409:** `PaymentRequestStateMachine` es dominio puro y lanzaba `Error`; NestJS lo traducía a **500**. `PaymentRequestsService` ahora valida con `canTransition` y lanza `ConflictException` con `TRANSICION_ESTADO_INVALIDA`. La suite cubre envío duplicado, aprobación duplicada, rechazo de una solicitud aprobada y cierre fuera de `ENTREGADA`.
 37. **Separación de comandos de test:** `npm test` en la API ejecuta solo `test/domain` y `test/foundation`; `test:integration` es explícito. Antes, el glob `test/**/*.test.ts` habría intentado ejecutar las suites de integración sin API ni base levantadas.
 38. **Migraciones idempotentes (recordatorio para 4.6):** `migrate.ts` reaplica todos los `.sql` ordenados en cada corrida; la migración `0004` (`notes` y numeración de `SOL`) debe usar `IF NOT EXISTS`/`CREATE OR REPLACE` para poder ejecutarse sobre bases ya migradas.
+39. **Diseño del test de concurrencia FIFO:** como la primera entrega pasa la solicitud a `ENTREGADA`, cada desembolso concurrente necesita su propia solicitud `APROBADA`; el test crea 20 por corrida directamente por SQL (`CONC-...`, creador `generador` y revisor `receptor` para cumplir cuatro ojos). Para no depender de la numeración `SOL` ni del estado de otras suites, cada corrida usa una persona nueva con dos cuotas de $500 (enero y febrero) y desembolsa $950 en total, dejando $50 pendientes. El orden de bloqueo es siempre el mismo (`payment_requests` → `causation_items` por `period_start_date` → secuencia de recibos), lo que evita ciclos de espera aunque los 20 lotes compitan por las mismas filas.
 
 ---
 
@@ -366,9 +368,10 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 | `causation` | preview, generate, idempotencia, prorrateo, anulación con motivo, inmutabilidad SQL | 22 |
 | `payment-requests` | estados, envío, aprobación, rechazo, cierre, PDF | 21 |
 | `disbursements` | FIFO, pagos parciales, recibos, correlatividad sin huecos, PDF de recibo | 18 |
+| `fifo-concurrency` | 20 desembolsos simultáneos × 10 corridas: invariantes SQL, FIFO entre períodos y ausencia de deadlocks | 11 |
 | `petty-cash` | caja, períodos, vales, aprobación, desembolso, rendición, cierre y arrastre | 24 |
 | `audit` | filtros combinados, paginación, límite máximo, acceso solo ADMIN | 19 |
-| **Total** | | **170** |
+| **Total** | | **181** |
 
 ### 4.2 Tests E2E del frontend
 
@@ -387,11 +390,12 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🔴 Por hacer |
+| **Estado** | 🟢 Completada |
 | **Punto de partida** | `registerDisbursement` ya usa transacción y `FOR UPDATE`; hay tests unitarios de orden determinista, pero no una prueba de estrés real. |
 | **Objetivo** | Demostrar que N desembolsos concurrentes no producen sobrepago, saldo negativo ni deadlocks. |
 | **Solución** | Test de integración que lanza **20 desembolsos concurrentes** (`Promise.all`) para el mismo `personId` + `projectId`, con montos aleatorios que en conjunto no superen la deuda. Verificar por SQL: suma de `receipt_allocations` = suma desembolsada; `causation_items.paid_amount <= calculated_amount`; `remaining_debt = calculated_amount - paid_amount`; ningún `remaining_debt` negativo; cero errores `40P01` (deadlock). Repetir 10 veces. |
 | **Aceptación** | 10/10 corridas pasan; no hay sobrepago ni saldos negativos; no hay deadlocks; el test termina en menos de 60 s. |
+| **Verificación** | `npm run test:integration --workspace=@scienpay/api`: **181/181 checks, 9 suites, 0 fallos** (2026-11-11, con `INTEGRATION_FRESH=1` y sobre base ya sembrada). La suite de concurrencia ejecuta **10/10 corridas** en ~6,3 s: cada corrida prepara una persona con dos cuotas causadas de $500 ($1.000 de deuda), crea 20 solicitudes APROBADAS por SQL, lanza 20 `POST /disbursements` simultáneos por $950 en total y comprueba las invariantes. Enero queda `PAGADO_TOTAL`, febrero `PAGADO_PARCIAL` con $50, y no apareció ningún `40P01`. |
 | **Archivos** | `apps/api/test/integration/fifo-concurrency.test.ts` |
 | **Depende de** | 4.1 |
 
@@ -544,11 +548,11 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 - **Typecheck:** API, shared y web sin errores.
 - **Build:** API, shared y web compilan correctamente.
 - **Stack local:** `docker compose up --build -d` levanta `db`, `api`, `web` y `proxy`; `/api/v1/health` y login responden 200 (verificado el 2026-11-11).
-- **Integración:** **170/170 checks en 8 suites**, versionada en `apps/api/test/integration/`, con runner de dos instancias y job `integration` en CI (verificado el 2026-11-11 con base limpia y con reejecución).
+- **Integración:** **181/181 checks en 9 suites**, versionada en `apps/api/test/integration/`, con runner de dos instancias, job `integration` en CI y estrés de concurrencia FIFO de 10 corridas (verificado el 2026-11-11 con base limpia y con reejecución).
 - **Frontend:** conectado a la API real, sin mocks de producción.
-- **Fase 4:** **2/6** tareas completadas (4.1 y 4.4).
+- **Fase 4:** **3/6** tareas completadas (4.1, 4.3 y 4.4).
 - **Fase 5:** 6 tareas definidas, **no autorizada**.
 - **Deuda técnica a cerrar en 4.6:** numeración transaccional de `SOL`, persistencia de `notes` y tests frontend reales.
 - **Evidencia disponible:** PR #1 (https://github.com/bracebalDev/scienpay-software/pull/1), CI verde y 6 commits de `AngBan2x`.
-- **Próximo paso:** **4.3** (prueba de estrés de concurrencia FIFO), **4.5** (OpenAPI), **4.2** (Playwright) y **4.6** (migración `0004`, `notes`, Vitest/RTL).
+- **Próximo paso:** **4.5** (OpenAPI generado desde Zod), **4.2** (Playwright E2E) y **4.6** (migración `0004`, `notes`, Vitest/RTL).
 - **Bloqueos:** ninguno. Docker Desktop es necesario para integración/E2E locales; en CI se usa un servicio PostgreSQL 16.

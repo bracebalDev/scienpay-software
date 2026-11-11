@@ -249,3 +249,13 @@
 - **Validación:** 170/170 en dos corridas (base limpia y base sembrada), `lint` 0 errores, `format:check`, `typecheck`, 87/87 unitarios y `build` en verde.
 - **Resultado:** tarea 4.1 completada; la verificación de las Fases 1–3 queda dentro del repositorio y es bloqueante en CI.
 
+#### Sesión 21: Estrés de concurrencia FIFO (4.3)
+- **Fecha:** 11 de Noviembre de 2026
+- **Herramienta:** DeepSeek V4.1 Flash Free vía OpenCode
+- **Objetivo:** Demostrar con una prueba real que los desembolsos simultáneos no producen sobrepago, saldos negativos ni deadlocks.
+- **Diseño:** como la primera entrega pasa la solicitud a `ENTREGADA`, cada desembolso necesita su propia solicitud `APROBADA`. El test prepara 10 personas con dos cuotas causadas de $500 (enero y febrero) y, en cada corrida, crea 20 solicitudes por SQL (creador `generador`, revisor `receptor`) y lanza 20 `POST /disbursements` con montos aleatorios que suman $950. Se repite 10 veces.
+- **Verificación:** por SQL se comprueba que `receipt_allocations` = recibos = desembolsado, `paid_amount <= calculated_amount`, `remaining_debt = calculated_amount - paid_amount`, ausencia de saldos negativos, un recibo por desembolso y ausencia de `40P01`. También se verifica que enero queda `PAGADO_TOTAL` y febrero `PAGADO_PARCIAL` con $50.
+- **Observación técnica:** el orden de bloqueo es estable (`payment_requests` con `FOR UPDATE` → `causation_items` por `period_start_date` → `next_receipt_number`), por lo que 20 transacciones que compiten por las mismas filas se serializan sin ciclos de espera.
+- **Validación:** 10/10 corridas en ~6,3 s (límite 60 s) y **181/181** checks en 9 suites, con base limpia y sobre base sembrada. `lint`, `format:check`, `typecheck`, 87/87 unitarios y `build` en verde.
+- **Resultado:** tarea 4.3 completada; la integridad FIFO bajo concurrencia queda cubierta de forma automática y bloqueante en CI.
+

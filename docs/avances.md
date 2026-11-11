@@ -138,6 +138,14 @@
 - **Defecto real corregido:** una transición de estado inválida de solicitudes lanzaba un `Error` genérico y el borde HTTP devolvía **500**; ahora se traduce a **409** con `TRANSICION_ESTADO_INVALIDA` (cubierto por tests).
 - **Verificación:** `npm run test:integration` → **170/170, 0 fallos**, ejecutado con base limpia (`INTEGRATION_FRESH=1`) y nuevamente sobre la base ya sembrada. `lint`, `format:check`, `typecheck`, 87/87 unitarios y `build` en verde.
 
+#### 4.3 Test de concurrencia FIFO — completada
+
+- **Escenario:** `apps/api/test/integration/fifo-concurrency.test.ts` prepara un proyecto, un grupo y **10 personas**, cada una con dos cuotas causadas de $500 (enero y febrero, $1.000 de deuda). Cada corrida usa una persona distinta.
+- **Carga concurrente:** por corrida se crean **20 solicitudes APROBADAS** propias (creador `generador`, revisor `receptor`; la primera entrega pasa la solicitud a `ENTREGADA`) y se lanzan **20 `POST /disbursements` simultáneos** con montos aleatorios que suman $950. Se repite **10 veces**.
+- **Invariantes verificadas por SQL:** suma de `receipt_allocations` = suma de recibos = suma desembolsada; `paid_amount <= calculated_amount`; `remaining_debt = calculated_amount - paid_amount`; ningún `remaining_debt` negativo; enero queda `PAGADO_TOTAL`, febrero `PAGADO_PARCIAL` con $50; un recibo por desembolso (20 por corrida).
+- **Deadlocks:** se inspeccionan las respuestas en busca de `40P01`/`deadlock detected`; no apareció ninguno. El orden de bloqueo es estable (`payment_requests` → `causation_items` por fecha → secuencia de recibos).
+- **Resultado:** **10/10 corridas** en ~6,3 s (máximo exigido: 60 s), sin sobrepago ni saldos negativos. Suite de integración total: **181/181 en 9 suites**, verificada con base limpia y sobre base ya sembrada. `lint` 0 errores, `format:check`, `typecheck`, 87/87 unitarios y `build` en verde.
+
 ---
 
 ## 2. Mapa y Convención de Ramas en GitHub
@@ -184,10 +192,8 @@ Para clonar y levantar el proyecto en sus máquinas locales:
 ## Estado final
 
 - Fases 1–3 completadas (17/17 tareas).
-- Fases 4–5 redefinidas en `docs/HANDOFF.md` (secciones 10 y 11): 12 tareas definidas (6 + 6), 0 ejecutadas.
-- Integración validada contra PostgreSQL 16 aislado (`scienpay_verify_db`, puerto 55432): **158/158 PASS** (corrida del 2026-11-08 y reejecución del 2026-11-09).
-- Backend: 87/87 tests; typecheck y build de API, shared y web sin errores (reverificados el 2026-11-09).
-- Documentación actualizada en `docs/HANDOFF.md`, `docs/avances.md`, `docs/bitacora_ia.md` y `docs/uso-de-ia.md`.
-- Sin tareas pendientes ni bloqueos dentro del alcance de Fases 1–3. Las Fases 4–5 quedan pendientes de autorización explícita.
-
-> Reejecución del 2026-11-09: Docker Desktop disponible; migraciones aplicadas de forma idempotente, seed omitido por datos existentes y **158/158 PASS, 0 FAIL** contra el mismo contenedor aislado.
+- Fase 4 autorizada el 2026-11-11 (6 tareas): **3/6 completadas** (4.1, 4.3 y 4.4). Fase 5 definida y **no autorizada**.
+- Integración versionada en `apps/api/test/integration/` contra PostgreSQL 16 (`scienpay_test_db`, puerto 55432): **181/181 checks en 9 suites** (verificado el 2026-11-11 con base limpia y sobre base sembrada), incluida la prueba de concurrencia FIFO de 10 corridas.
+- Backend: 87/87 tests unitarios; lint 0 errores, format, typecheck y build de API, shared y web sin errores (reverificados el 2026-11-11).
+- Documentación actualizada en `docs/HANDOFF.md`, `docs/avances.md`, `docs/bitacora_ia.md`, `docs/uso-de-ia.md` y `docs/decisiones/`.
+- Próximas tareas de Fase 4: **4.5** (OpenAPI desde Zod), **4.2** (Playwright E2E) y **4.6** (migración `0004`, `notes`, Vitest/RTL).
