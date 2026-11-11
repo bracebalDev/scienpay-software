@@ -8,6 +8,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module.js';
 import { ZodExceptionFilter } from './infrastructure/validation/zod-exception.filter.js';
+import { setupOpenApi } from './infrastructure/openapi/openapi.setup.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,7 +23,7 @@ async function bootstrap() {
         directives: {
           defaultSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
-          scriptSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", 'data:', 'blob:'],
         },
       },
@@ -77,6 +78,9 @@ async function bootstrap() {
 
   // Prefijo global de API
   app.setGlobalPrefix('api/v1');
+
+  // Documentación OpenAPI / Swagger (/api/docs y /api/docs-json)
+  setupOpenApi(app);
 
   // Permitir cierre ordenado ante señales de Fly (SIGTERM, SIGINT)
   app.enableShutdownHooks();

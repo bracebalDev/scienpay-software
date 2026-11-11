@@ -31,7 +31,7 @@ Cada cambio de estado se registra en el historial de este documento y se acompa�
 | **Fase 1** | Correcciones críticas de backend | 🟢 Completada | 5/5 |
 | **Fase 2** | Completar módulos backend faltantes | 🟢 Completada | 5/5 |
 | **Fase 3** | Frontend real conectado a la API | 🟢 Completada | 7/7 |
-| **Fase 4** | Testing y calidad | 🟡 En progreso | 3/6 |
+| **Fase 4** | Testing y calidad | 🟡 En progreso | 4/6 |
 | **Fase 5** | Pulimiento y entrega | 🔴 Por hacer | 0/6 |
 
 > Las Fases 4 y 5 se redefinieron el 2026-11-10 a partir del estado real del repositorio. La Fase 4 está autorizada el 2026-11-11; la Fase 5 sigue sin autorizar. El detalle está en las secciones 10 y 11.
@@ -237,13 +237,13 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 | Métrica | Estado actual (2026-11-11) | Objetivo de las Fases 4–5 |
 |---|---|---|
 | Tareas de Fases 1–3 | 17/17 completadas | Cerradas |
-| Tareas de Fase 4 | 3/6 (4.1, 4.3, 4.4) | 6/6 |
+| Tareas de Fase 4 | 4/6 (4.1, 4.3, 4.4, 4.5) | 6/6 |
 | Tareas de Fase 5 | 0/6 | 6/6 |
-| Tests unitarios backend | 87/87 pasando | Mantener 100 % |
+| Tests unitarios backend | 91/91 pasando | Mantener 100 % |
 | Integración con PostgreSQL | **181/181 en 9 suites**, versionada y con job de CI; incluye estrés de concurrencia FIFO | Bloqueante en CI |
 | Tests frontend | Placeholder (`exit 0`) | Unitarios/componentes + E2E |
 | Lint | ESLint + Prettier bloqueantes en CI; 0 errores, 25 warnings de `any` | Sin warnings nuevos |
-| OpenAPI | No disponible | `/api/docs` generado desde Zod |
+| OpenAPI | `/api/docs` y `/api/docs-json` generado desde Zod | `/api/docs` generado desde Zod |
 | Deuda técnica conocida | `SOL` con `count + 1`, `notes` no persistido, tests placeholder | Cerrada o aceptada explícitamente |
 
 ---
@@ -276,6 +276,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 | 2026-11-11 | 4.4 Lint, formato y CI | 🔴 Por hacer | 🟢 Completada | — | ESLint flat + Prettier, guard de workspaces, `format:check` y `lint` bloqueantes, Gitleaks bloqueante y ADR-008. 0 errores de lint, 87/87 tests. |
 | 2026-11-11 | 4.1 Suite de integración | 🔴 Por hacer | 🟢 Completada | — | 170/170 checks en 8 suites contra PostgreSQL 16; runner con dos instancias, bootstrap idempotente, `docker-compose.test.yml` y job `integration` en CI. Se corrigió un defecto: transiciones inválidas de solicitudes devolvían 500 en lugar de 409. |
 | 2026-11-11 | 4.3 Concurrencia FIFO | 🔴 Por hacer | 🟢 Completada | — | 20 desembolsos simultáneos × 10 corridas: 10/10 pasan en ~6,3 s sin sobrepago, sin saldos negativos ni `40P01`. Suite total: 181/181 en 9 suites. |
+| 2026-11-11 | 4.5 OpenAPI/Swagger desde Zod | 🔴 Por hacer | 🟢 Completada | — | OpenAPI 3.0.3 generado con @asteasolutions/zod-to-openapi, Swagger UI montado en /api/docs y /api/docs-json, test de cobertura de rutas (91/91 unitarios). |
 
 ---
 
@@ -415,12 +416,13 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🔴 Por hacer |
+| **Estado** | 🟢 Completada |
 | **Punto de partida** | No hay Swagger/OpenAPI; los schemas Zod de `@scienpay/shared` son la fuente única de validación. |
 | **Objetivo** | Publicar `/api/docs` con todos los endpoints, schemas de request/response y autenticación, sin duplicar DTOs. |
-| **Solución** | 1. Añadir `@nestjs/swagger`, `swagger-ui-express` y un conversor Zod → JSON Schema (`zod-to-json-schema` o `@asteasolutions/zod-to-openapi`).<br>2. Anotar controladores con `@ApiTags`, `@ApiOperation`, `@ApiResponse` y `@ApiBearerAuth`; registrar el esquema de cookie de refresh.<br>3. Generar los componentes desde los schemas compartidos y montar `SwaggerModule` en `main.ts` (`/api/docs` y `/api/docs-json`).<br>4. Controlar la exposición con `ENABLE_SWAGGER` (activo en desarrollo/demo; desactivable en producción).<br>5. Añadir un test que compare las rutas registradas por Nest con los paths del documento. |
-| **Aceptación** | `/api/docs` lista todos los endpoints; "Try it out" funciona para health, login y un endpoint protegido con bearer/cookie; el test de cobertura de rutas pasa; no hay schemas duplicados. |
-| **Archivos** | `apps/api/src/main.ts`, `apps/api/src/infrastructure/openapi/**`, controladores, `apps/api/package.json`, tests |
+| **Solución** | 1. Añadir `@nestjs/swagger`, `swagger-ui-express` y `@asteasolutions/zod-to-openapi`.<br>2. Definir `openapi.document.ts`, `openapi.routes.ts`, `openapi.schemas.ts` y `openapi.setup.ts` conectando schemas Zod compartidos con security schemes (bearer + cookie refresh).<br>3. Integrar en `main.ts` con `setupOpenApi()` respetando `ENABLE_SWAGGER` y ajustando Helmet CSP para swagger UI.<br>4. Añadir test de validación bidireccional `openapi-routes.test.ts` que compara los decoradores reales de los 12 controladores contra la definición OpenAPI. |
+| **Aceptación** | `/api/docs` y `/api/docs-json` disponibles con 53 endpoints reales; 91/91 tests unitarios pasando; typecheck, lint (0 errores) y format:check limpios. |
+| **Verificación** | `test/foundation/openapi-routes.test.ts` pasa al 100%; `npm run typecheck`, `npm run lint` y `npm run build` pasan sin errores. |
+| **Archivos** | `apps/api/src/main.ts`, `apps/api/src/infrastructure/openapi/**`, `apps/api/test/foundation/openapi-routes.test.ts`, `apps/api/package.json` |
 | **Depende de** | 4.1 (para el test de cobertura de rutas) |
 
 ### 4.6 Cierre de deuda técnica documentada
@@ -544,15 +546,15 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 ## 13. Estado actual y próximo paso
 
 - **Fases 1–3:** completadas (17/17 tareas).
-- **Backend:** 87/87 tests unitarios pasando (verificado el 2026-11-11).
+- **Backend:** 91/91 tests unitarios pasando (verificado el 2026-11-11).
 - **Typecheck:** API, shared y web sin errores.
 - **Build:** API, shared y web compilan correctamente.
 - **Stack local:** `docker compose up --build -d` levanta `db`, `api`, `web` y `proxy`; `/api/v1/health` y login responden 200 (verificado el 2026-11-11).
 - **Integración:** **181/181 checks en 9 suites**, versionada en `apps/api/test/integration/`, con runner de dos instancias, job `integration` en CI y estrés de concurrencia FIFO de 10 corridas (verificado el 2026-11-11 con base limpia y con reejecución).
 - **Frontend:** conectado a la API real, sin mocks de producción.
-- **Fase 4:** **3/6** tareas completadas (4.1, 4.3 y 4.4).
+- **Fase 4:** **4/6** tareas completadas (4.1, 4.3, 4.4, 4.5).
 - **Fase 5:** 6 tareas definidas, **no autorizada**.
 - **Deuda técnica a cerrar en 4.6:** numeración transaccional de `SOL`, persistencia de `notes` y tests frontend reales.
 - **Evidencia disponible:** PR #1 (https://github.com/bracebalDev/scienpay-software/pull/1), CI verde y 6 commits de `AngBan2x`.
-- **Próximo paso:** **4.5** (OpenAPI generado desde Zod), **4.2** (Playwright E2E) y **4.6** (migración `0004`, `notes`, Vitest/RTL).
+- **Próximo paso:** **4.6** (migración `0004`, `notes`, Vitest/RTL) y **4.2** (Playwright E2E).
 - **Bloqueos:** ninguno. Docker Desktop es necesario para integración/E2E locales; en CI se usa un servicio PostgreSQL 16.
