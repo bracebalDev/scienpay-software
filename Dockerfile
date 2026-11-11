@@ -44,4 +44,4 @@ USER appuser
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "node apps/api/dist/infrastructure/database/migrate.js && node apps/api/dist/infrastructure/database/seed.js && node apps/api/dist/main.js"]
+CMD ["node", "apps/api/dist/main.js"]

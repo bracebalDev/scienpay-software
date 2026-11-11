@@ -5,6 +5,9 @@ primary_region = "iad"
 [build]
   dockerfile = "Dockerfile"
 
+[deploy]
+  release_command = "node apps/api/dist/infrastructure/database/migrate.js && node apps/api/dist/infrastructure/database/seed.js"
+
 [env]
   PORT = "8080"
   NODE_ENV = "production"
@@ -14,8 +17,20 @@ primary_region = "iad"
   force_https = true
   auto_stop_machines = "stop"
   auto_start_machines = true
-  min_machines_running = 0
+  min_machines_running = 1
   processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 250
+
+[[http_service.checks]]
+  grace_period = "15s"
+  interval = "15s"
+  method = "GET"
+  timeout = "5s"
+  path = "/api/v1/health"
 
 [[vm]]
   memory = "512mb"

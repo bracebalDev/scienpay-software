@@ -33,10 +33,39 @@ async function bootstrap() {
   const cookieSecret = process.env.COOKIE_SECRET || 'dev_cookie_secret_scienpay_super_secure';
   app.use(cookieParser(cookieSecret));
 
-  // CORS restringido
-  const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173';
+  // CORS flexible para entornos locales y despliegue en Fly.io
+  const rawCorsOrigin = process.env.CORS_ORIGIN;
+  const allowedOrigins = rawCorsOrigin
+    ? rawCorsOrigin.split(',').map((o) => o.trim())
+    : [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'http://localhost:4000',
+        'http://localhost:8080',
+        'https://scienpay-app.fly.dev',
+      ];
+
   app.enableCors({
-    origin: corsOrigin,
+    origin: (origin, callback) => {
+      // Permitir peticiones sin origin (móviles, curl, o mismo origen SPA)
+      if (!origin) return callback(null, true);
+
+      if (!rawCorsOrigin) {
+        if (
+          origin.includes('localhost') ||
+          origin.includes('127.0.0.1') ||
+          origin.endsWith('.fly.dev')
+        ) {
+          return callback(null, true);
+        }
+      }
+
+      if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -44,6 +73,9 @@ async function bootstrap() {
 
   // Prefijo global de API
   app.setGlobalPrefix('api/v1');
+
+  // Permitir cierre ordenado ante señales de Fly (SIGTERM, SIGINT)
+  app.enableShutdownHooks();
 
   // Servir frontend SPA si existe en disco (despliegues de producción y nube)
   const candidatePaths = [
@@ -67,8 +99,8 @@ async function bootstrap() {
   }
 
   const port = process.env.PORT || 4000;
-  await app.listen(port);
-  console.log(`[Scienpay API] Servidor ejecutándose en http://localhost:${port}/api/v1`);
+  await app.listen(port, '0.0.0.0');
+  console.log(`[Scienpay API] Servidor ejecutándose en http://0.0.0.0:${port}/api/v1`);
 }
 
 bootstrap().catch((err) => {

@@ -36,24 +36,29 @@ import {
   PettyCashMovementType,
 } from '@scienpay/shared';
 
-export async function runSeed() {
-  const { db, client } = createDatabaseConnection();
-  const passwordService = new PasswordService();
+export async function runSeed(maxRetries = 5, delayMs = 3000) {
+  let attempt = 0;
 
-  console.log('[Scienpay Seed] Iniciando siembra de datos ficticios de prueba...');
+  while (attempt < maxRetries) {
+    attempt++;
+    const { db, client } = createDatabaseConnection();
+    const passwordService = new PasswordService();
 
-  try {
-    const existingUsers = await db.select({ id: users.id }).from(users).limit(1);
-    if (existingUsers.length > 0) {
-      console.log('[Scienpay Seed] La base de datos ya cuenta con registros sembrados. Omitiendo.');
-      return;
-    }
+    console.log(`[Scienpay Seed] (Intento ${attempt}/${maxRetries}) Verificando e iniciando siembra de datos...`);
 
-    // 1. Usuarios Oficiales con Hashing Argon2id
-    console.log('-> Sembrando usuarios institucionales con hash Argon2id...');
-    const adminHash = await passwordService.hash('Admin#Scienpay2026!');
-    const genHash = await passwordService.hash('Coord#Scienpay2026!');
-    const recHash = await passwordService.hash('Finan#Scienpay2026!');
+    try {
+      const existingUsers = await db.select({ id: users.id }).from(users).limit(1);
+      if (existingUsers.length > 0) {
+        console.log('[Scienpay Seed] La base de datos ya cuenta con registros sembrados. Omitiendo.');
+        await client.end();
+        return;
+      }
+
+      // 1. Usuarios Oficiales con Hashing Argon2id
+      console.log('-> Sembrando usuarios institucionales con hash Argon2id...');
+      const adminHash = await passwordService.hash('Admin#Scienpay2026!');
+      const genHash = await passwordService.hash('Coord#Scienpay2026!');
+      const recHash = await passwordService.hash('Finan#Scienpay2026!');
 
     const [adminUser] = await db
       .insert(users)
@@ -472,9 +477,23 @@ export async function runSeed() {
     });
 
     console.log('[Scienpay Seed] ¡Siembra de base de datos completada exitosamente!');
-  } finally {
     await client.end();
+    return;
+  } catch (err) {
+    console.error(`[Scienpay Seed] Intento ${attempt} falló:`, err);
+    try {
+      await client.end();
+    } catch {
+      // Ignorar error al cerrar cliente
+    }
+
+    if (attempt >= maxRetries) {
+      throw err;
+    }
+    console.log(`[Scienpay Seed] Reintentando en ${delayMs / 1000}s...`);
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
+}
 }
 
 // Ejecutar directamente si se llama como script

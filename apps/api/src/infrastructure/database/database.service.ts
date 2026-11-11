@@ -13,7 +13,15 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       process.env.DATABASE_URL ||
       `postgresql://${process.env.DATABASE_USER || 'scienpay_app'}:${process.env.DATABASE_PASSWORD || 'scienpay_dev_password_change_me'}@${process.env.DATABASE_HOST || 'localhost'}:${process.env.DATABASE_PORT || 5432}/${process.env.DATABASE_NAME || 'scienpay_db'}`;
 
-    this.client = postgres(url, { max: 10 });
+    const maxConnections = process.env.DATABASE_MAX_CONNECTIONS
+      ? parseInt(process.env.DATABASE_MAX_CONNECTIONS, 10)
+      : 20;
+
+    this.client = postgres(url, {
+      max: maxConnections,
+      connect_timeout: 15,
+      idle_timeout: 30,
+    });
     this.db = drizzle(this.client, { schema });
   }
 
