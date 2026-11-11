@@ -228,4 +228,46 @@ $$ LANGUAGE plpgsql;
     const padded = sequenceNumber.toString().padStart(6, '0');
     return `REC-${year}-${padded}`;
   }
+
+  /**
+   * Genera la tabla contador transaccional de solicitudes de pago.
+   */
+  public static generateRequestSequenceTableDDL(): string {
+    return `
+CREATE TABLE IF NOT EXISTS request_sequences (
+  year INTEGER PRIMARY KEY,
+  last_number BIGINT NOT NULL DEFAULT 0
+);
+`.trim();
+  }
+
+  /**
+   * Genera la función transaccional que reserva el siguiente número de solicitud.
+   */
+  public static generateNextRequestNumberFunctionDDL(): string {
+    return `
+CREATE OR REPLACE FUNCTION next_request_number(p_year INTEGER)
+RETURNS BIGINT AS $$
+DECLARE
+  v_next BIGINT;
+BEGIN
+  INSERT INTO request_sequences (year, last_number)
+  VALUES (p_year, 1)
+  ON CONFLICT (year) DO UPDATE
+    SET last_number = request_sequences.last_number + 1
+  RETURNING last_number INTO v_next;
+
+  RETURN v_next;
+END;
+$$ LANGUAGE plpgsql;
+`.trim();
+  }
+
+  /**
+   * Formatea un código correlativo de solicitud de pago: SOL-YYYY-NNN.
+   */
+  public static formatRequestCode(year: number, sequenceNumber: number): string {
+    const padded = sequenceNumber.toString().padStart(3, '0');
+    return `SOL-${year}-${padded}`;
+  }
 }

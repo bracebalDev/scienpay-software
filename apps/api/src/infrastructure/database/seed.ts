@@ -332,10 +332,19 @@ export async function runSeed(maxRetries = 5, delayMs = 3000) {
         .onConflictDoNothing()
         .returning();
 
+      const seedReq1SequenceResult = await db.execute(
+        sql`SELECT next_request_number(2026) AS next_number`,
+      );
+      const seedReq1Sequence = Number(
+        (seedReq1SequenceResult as unknown as Array<{ next_number: string | number }>)[0]
+          ?.next_number ?? 1,
+      );
+      const seedReqCode1 = FinancialImmutabilityEngine.formatRequestCode(2026, seedReq1Sequence);
+
       const [solicitudAprobada] = await db
         .insert(paymentRequests)
         .values({
-          requestCode: 'SOL-2026-001',
+          requestCode: seedReqCode1,
           projectId: projectFis.id,
           causationBatchId: batchOct.id,
           periodDescription: 'Octubre 2026 (Mensual Completo)',
@@ -344,6 +353,7 @@ export async function runSeed(maxRetries = 5, delayMs = 3000) {
           createdByUserId: genUser.id,
           reviewedByUserId: recUser.id, // Cuatro ojos: gen != rec
           reviewedAt: new Date('2026-10-15T10:00:00Z'),
+          notes: 'Solicitud aprobada y entregada con desembolso parcial.',
         })
         .onConflictDoNothing()
         .returning();
@@ -401,10 +411,19 @@ export async function runSeed(maxRetries = 5, delayMs = 3000) {
 
       // ESCENARIO 6: SOLICITUD RECHAZADA FORMALMENTE CON JUSTIFICACIÓN
       console.log('-> Escenario 6: Solicitud rechazada formalmente...');
+      const seedReq2SequenceResult = await db.execute(
+        sql`SELECT next_request_number(2026) AS next_number`,
+      );
+      const seedReq2Sequence = Number(
+        (seedReq2SequenceResult as unknown as Array<{ next_number: string | number }>)[0]
+          ?.next_number ?? 2,
+      );
+      const seedReqCode2 = FinancialImmutabilityEngine.formatRequestCode(2026, seedReq2Sequence);
+
       await db
         .insert(paymentRequests)
         .values({
-          requestCode: 'SOL-2026-002',
+          requestCode: seedReqCode2,
           projectId: projectQui.id,
           causationBatchId: batchOct.id,
           periodDescription: 'Octubre 2026 (Borrador con error)',
@@ -415,6 +434,7 @@ export async function runSeed(maxRetries = 5, delayMs = 3000) {
           reviewedAt: new Date('2026-10-16T14:30:00Z'),
           rejectionReason:
             'RECHAZADA: Falta confirmación de avance de laboratorio en el informe mensual.',
+          notes: 'Generada para el proyecto Química.',
         })
         .onConflictDoNothing();
 

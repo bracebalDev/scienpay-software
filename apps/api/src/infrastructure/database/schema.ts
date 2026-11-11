@@ -7,6 +7,7 @@ import {
   date,
   timestamp,
   integer,
+  bigint,
   boolean,
   jsonb,
   uniqueIndex,
@@ -229,6 +230,7 @@ export const paymentRequests = pgTable(
     }),
     reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
     rejectionReason: text('rejection_reason'),
+    notes: text('notes'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
@@ -419,4 +421,20 @@ export const auditLog = pgTable('audit_log', {
   newValues: jsonb('new_values'),
   ipAddress: varchar('ip_address', { length: 50 }).default(''),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// 19. Secuencias Transaccionales Correlativas
+export const requestSequences = pgTable('request_sequences', {
+  year: integer('year').primaryKey(),
+  lastNumber: bigint('last_number', { mode: 'number' }).default(0).notNull(),
+});
+
+export const receiptSequences = pgTable('receipt_sequences', {
+  year: integer('year').primaryKey(),
+  lastNumber: bigint('last_number', { mode: 'number' }).default(0).notNull(),
+});
+
+export const voucherSequences = pgTable('voucher_sequences', {
+  year: integer('year').primaryKey(),
+  lastNumber: bigint('last_number', { mode: 'number' }).default(0).notNull(),
 });

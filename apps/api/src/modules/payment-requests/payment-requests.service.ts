@@ -23,7 +23,8 @@ import {
 import { PaymentRequestStateMachine } from '../../domain/payment-requests/payment-request-state-machine.js';
 import { RolePermissionsPolicy } from '../../domain/security/role-permissions.policy.js';
 import { PdfReceiptGenerator } from '../../infrastructure/pdf/pdf-receipt.generator.js';
-import { eq, desc } from 'drizzle-orm';
+import { FinancialImmutabilityEngine } from '../../domain/financial/financial-immutability.engine.js';
+import { eq, desc, sql } from 'drizzle-orm';
 import { Decimal } from 'decimal.js';
 
 @Injectable()
@@ -158,64 +159,72 @@ export class PaymentRequestsService {
   }
 
   async createRequest(input: CreatePaymentRequestInput, userId: string) {
-    // 1. Obtener lote de causación
-    const [batch] = await this.databaseService.db
-      .select()
-      .from(causationBatches)
-      .where(eq(causationBatches.id, input.causationBatchId))
-      .limit(1);
+    return this.databaseService.db.transaction(async (tx) => {
+      // 1. Obtener lote de causación
+      const [batch] = await tx
+        .select()
+        .from(causationBatches)
+        .where(eq(causationBatches.id, input.causationBatchId))
+        .limit(1);
 
-    if (!batch) {
-      throw new NotFoundException('LOTE_NO_ENCONTRADO: El lote de causación no existe');
-    }
+      if (!batch) {
+        throw new NotFoundException('LOTE_NO_ENCONTRADO: El lote de causación no existe');
+      }
 
-    // 2. Un lote anulado no puede originar nuevas solicitudes.
-    if (batch.status === CausationBatchStatus.ANULADO) {
-      throw new ConflictException(
-        'LOTE_ANULADO: No se puede crear una solicitud a partir de un lote de causación anulado',
-      );
-    }
+      // 2. Un lote anulado no puede originar nuevas solicitudes.
+      if (batch.status === CausationBatchStatus.ANULADO) {
+        throw new ConflictException(
+          'LOTE_ANULADO: No se puede crear una solicitud a partir de un lote de causación anulado',
+        );
+      }
 
-    // 3. El lote debe pertenecer al proyecto indicado en la solicitud.
-    if (batch.projectId !== input.projectId) {
-      throw new ConflictException(
-        'PROYECTO_INCOMPATIBLE: El lote de causación no pertenece al proyecto indicado',
-      );
-    }
+      // 3. El lote debe pertenecer al proyecto indicado en la solicitud.
+      if (batch.projectId !== input.projectId) {
+        throw new ConflictException(
+          'PROYECTO_INCOMPATIBLE: El lote de causación no pertenece al proyecto indicado',
+        );
+      }
 
-    // 4. El monto solicitado no puede exceder el total causado del lote.
-    const requestedAmount = new Decimal(input.requestedAmount);
-    const totalCausation = new Decimal(batch.totalCausationAmount);
+      // 4. El monto solicitado no puede exceder el total causado del lote.
+      const requestedAmount = new Decimal(input.requestedAmount);
+      const totalCausation = new Decimal(batch.totalCausationAmount);
 
-    if (requestedAmount.greaterThan(totalCausation)) {
-      throw new ConflictException(
-        'MONTO_EXCEDE_CAUSACION: El monto solicitado no puede exceder el total causado del lote',
-      );
-    }
+      if (requestedAmount.greaterThan(totalCausation)) {
+        throw new ConflictException(
+          'MONTO_EXCEDE_CAUSACION: El monto solicitado no puede exceder el total causado del lote',
+        );
+      }
 
-    // 5. Generar código correlativo de solicitud: SOL-YYYY-NNN
-    const year = new Date().getFullYear();
-    const countResult = await this.databaseService.db
-      .select({ id: paymentRequests.id })
-      .from(paymentRequests);
-    const nextNum = (countResult.length + 1).toString().padStart(3, '0');
-    const requestCode = `SOL-${year}-${nextNum}`;
+      // 5. Reservar código correlativo de solicitud dentro de la transacción (sin huecos por rollback)
+      const year = new Date().getFullYear();
+      const seqResult = await tx.execute(sql`SELECT next_request_number(${year}) AS next_number`);
+      const nextSequenceNum = Number((seqResult as any)[0]?.next_number ?? 0);
 
-    const [created] = await this.databaseService.db
-      .insert(paymentRequests)
-      .values({
-        requestCode,
-        projectId: input.projectId,
-        causationBatchId: input.causationBatchId,
-        periodDescription:
-          input.periodDescription || `${batch.periodStartDate} al ${batch.periodEndDate}`,
-        totalAmountUSD: requestedAmount.toFixed(2),
-        status: PaymentRequestStatus.BORRADOR,
-        createdByUserId: userId,
-      })
-      .returning();
+      if (!Number.isFinite(nextSequenceNum) || nextSequenceNum <= 0) {
+        throw new ConflictException(
+          'SECUENCIA_SOLICITUD_INVALIDA: No se pudo reservar el número de solicitud',
+        );
+      }
 
-    return created;
+      const requestCode = FinancialImmutabilityEngine.formatRequestCode(year, nextSequenceNum);
+
+      const [created] = await tx
+        .insert(paymentRequests)
+        .values({
+          requestCode,
+          projectId: input.projectId,
+          causationBatchId: input.causationBatchId,
+          periodDescription:
+            input.periodDescription || `${batch.periodStartDate} al ${batch.periodEndDate}`,
+          totalAmountUSD: requestedAmount.toFixed(2),
+          status: PaymentRequestStatus.BORRADOR,
+          createdByUserId: userId,
+          notes: input.notes?.trim() || null,
+        })
+        .returning();
+
+      return created;
+    });
   }
 
   async sendRequest(id: string, _userId: string) {

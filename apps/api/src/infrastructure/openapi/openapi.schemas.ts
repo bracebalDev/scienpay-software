@@ -209,6 +209,7 @@ export const paymentRequestSchema = z
     reviewedByUserId: uuidSchema.nullable(),
     reviewedAt: z.string().nullable().optional(),
     rejectionReason: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
   })

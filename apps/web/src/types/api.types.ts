@@ -168,6 +168,7 @@ export interface PaymentRequest {
   reviewedByUserId: string | null;
   reviewedAt: string | null;
   rejectionReason: string | null;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
 }

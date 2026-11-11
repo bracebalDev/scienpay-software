@@ -289,6 +289,14 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ modalData, onC
                     {modalData.data.rejectionReason}
                   </div>
                 )}
+                {modalData.data.notes && (
+                  <div className="mt-2 pt-2 border-t border-[#E9E9E7] dark:border-[#333333] text-[#5A5A58] dark:text-[#A4A4A2]">
+                    <span className="font-bold text-[#37352F] dark:text-white">
+                      Notas / Justificación:{' '}
+                    </span>
+                    {modalData.data.notes}
+                  </div>
+                )}
               </div>
             </div>
           )}

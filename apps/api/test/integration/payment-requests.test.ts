@@ -423,4 +423,54 @@ describe('Integración — Solicitudes de pago: estados, PDF y reglas de monto',
     });
     assert.equal(response.status, 404);
   });
+
+  it('persiste y recupera el campo notes en la solicitud (Fase 4.6)', async () => {
+    const generador = await session('generador');
+    const response = await api<RequestRow & { notes: string }>('/payment-requests', {
+      method: 'POST',
+      token: generador.token,
+      body: {
+        projectId,
+        causationBatchId: batchId,
+        requestedAmount: 50,
+        notes: `Nota de prueba para justificar solicitud ${suffix}`,
+      },
+    });
+    assert.equal(response.status, 201);
+    assert.equal(response.body.notes, `Nota de prueba para justificar solicitud ${suffix}`);
+
+    const getRes = await api<RequestRow & { notes: string }>(
+      `/payment-requests/${response.body.id}`,
+      {
+        token: generador.token,
+      },
+    );
+    assert.equal(getRes.status, 200);
+    assert.equal(getRes.body.notes, `Nota de prueba para justificar solicitud ${suffix}`);
+  });
+
+  it('asigna codigos unicos y consecutivos bajo creacion concurrente (Fase 4.6.1)', async () => {
+    const generador = await session('generador');
+    const promises = Array.from({ length: 5 }, (_, i) =>
+      api<RequestRow>('/payment-requests', {
+        method: 'POST',
+        token: generador.token,
+        body: {
+          projectId,
+          causationBatchId: batchId,
+          requestedAmount: 10 + i,
+        },
+      }),
+    );
+
+    const results = await Promise.all(promises);
+    for (const res of results) {
+      assert.equal(res.status, 201);
+      assert.match(res.body.requestCode, /^SOL-\d{4}-\d{3,}$/);
+    }
+
+    const codes = results.map((r) => r.body.requestCode);
+    const uniqueCodes = new Set(codes);
+    assert.equal(uniqueCodes.size, codes.length, 'Cada solicitud debe tener un requestCode único');
+  });
 });

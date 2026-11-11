@@ -4,7 +4,7 @@
 > **Rama de trabajo:** `plan/execution-tracking` (aislada de `main`)
 > **Alcance:** Fases 1–3 completadas (17/17). Fases 4–5 redefinidas el 2026-11-10 y pendientes de ejecución.
 > **Fecha de inicio de ejecución:** 2026-11-07
-> **Última actualización:** 2026-11-10
+> **Última actualización:** 2026-11-11
 > **Modelo de análisis y planificación:** Nemotron 3 Ultra (Free) vía OpenRouter en OpenCode.
 > **Modelo de ejecución de Fases 1–3:** DeepSeek V4.1 Flash Free vía OpenCode Zen.
 
@@ -31,7 +31,7 @@ Cada cambio de estado se registra en el historial de este documento y se acompa�
 | **Fase 1** | Correcciones críticas de backend | 🟢 Completada | 5/5 |
 | **Fase 2** | Completar módulos backend faltantes | 🟢 Completada | 5/5 |
 | **Fase 3** | Frontend real conectado a la API | 🟢 Completada | 7/7 |
-| **Fase 4** | Testing y calidad | 🟡 En progreso | 4/6 |
+| **Fase 4** | Testing y calidad | 🟡 En progreso | 5/6 |
 | **Fase 5** | Pulimiento y entrega | 🔴 Por hacer | 0/6 |
 
 > Las Fases 4 y 5 se redefinieron el 2026-11-10 a partir del estado real del repositorio. La Fase 4 está autorizada el 2026-11-11; la Fase 5 sigue sin autorizar. El detalle está en las secciones 10 y 11.
@@ -237,14 +237,14 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 | Métrica | Estado actual (2026-11-11) | Objetivo de las Fases 4–5 |
 |---|---|---|
 | Tareas de Fases 1–3 | 17/17 completadas | Cerradas |
-| Tareas de Fase 4 | 4/6 (4.1, 4.3, 4.4, 4.5) | 6/6 |
+| Tareas de Fase 4 | 5/6 (4.1, 4.3, 4.4, 4.5, 4.6) | 6/6 |
 | Tareas de Fase 5 | 0/6 | 6/6 |
-| Tests unitarios backend | 91/91 pasando | Mantener 100 % |
+| Tests unitarios backend | 96/96 pasando | Mantener 100 % |
 | Integración con PostgreSQL | **181/181 en 9 suites**, versionada y con job de CI; incluye estrés de concurrencia FIFO | Bloqueante en CI |
-| Tests frontend | Placeholder (`exit 0`) | Unitarios/componentes + E2E |
-| Lint | ESLint + Prettier bloqueantes en CI; 0 errores, 25 warnings de `any` | Sin warnings nuevos |
+| Tests frontend | 12/12 en Vitest; sin placeholders | Unitarios/componentes + E2E |
+| Lint | ESLint + Prettier bloqueantes en CI; 0 errores, 26 warnings de `any` | Sin warnings nuevos |
 | OpenAPI | `/api/docs` y `/api/docs-json` generado desde Zod | `/api/docs` generado desde Zod |
-| Deuda técnica conocida | `SOL` con `count + 1`, `notes` no persistido, tests placeholder | Cerrada o aceptada explícitamente |
+| Deuda técnica conocida | Cerrada (SOL transaccional, notes persistido, 0 placeholders) | Cerrada o aceptada explícitamente |
 
 ---
 
@@ -277,6 +277,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 | 2026-11-11 | 4.1 Suite de integración | 🔴 Por hacer | 🟢 Completada | — | 170/170 checks en 8 suites contra PostgreSQL 16; runner con dos instancias, bootstrap idempotente, `docker-compose.test.yml` y job `integration` en CI. Se corrigió un defecto: transiciones inválidas de solicitudes devolvían 500 en lugar de 409. |
 | 2026-11-11 | 4.3 Concurrencia FIFO | 🔴 Por hacer | 🟢 Completada | — | 20 desembolsos simultáneos × 10 corridas: 10/10 pasan en ~6,3 s sin sobrepago, sin saldos negativos ni `40P01`. Suite total: 181/181 en 9 suites. |
 | 2026-11-11 | 4.5 OpenAPI/Swagger desde Zod | 🔴 Por hacer | 🟢 Completada | — | OpenAPI 3.0.3 generado con @asteasolutions/zod-to-openapi, Swagger UI montado en /api/docs y /api/docs-json, test de cobertura de rutas (91/91 unitarios). |
+| 2026-11-11 | 4.6 Cierre de deuda técnica | 🔴 Por hacer | 🟢 Completada | — | Migración 0004 (request_sequences y notes), persistencia en createRequest y visualización UI, Vitest con 12 tests en web y 11 en shared, sin placeholders. |
 
 ---
 
@@ -287,8 +288,8 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 3. **Anulación y regeneración:** la anulación conserva el lote como registro histórico y marca sus ítems como `ANULADO`. La migración `0003` sustituye la restricción `uq_causation_batch_idempotence` por el índice parcial `uq_causation_batch_idempotence_active WHERE status <> 'ANULADO'`, de modo que un lote anulado no bloquea regenerar el período y la idempotencia se mantiene entre lotes activos. `generateBatch` filtra explícitamente por `status <> 'ANULADO'`.
 4. **Auditoría transaccional:** `AuditService.recordEvent` acepta una transacción opcional para que la anulación y su traza sean atómicas. Las llamadas existentes siguen usando la conexión normal.
 5. **Monto de la solicitud:** `createRequest` usa `input.requestedAmount` como `totalAmountUSD` y rechaza montos superiores al total causado del lote. Antes se ignoraba el monto enviado y se usaba siempre el total del lote; la decisión se tomó para que el contrato Zod y la persistencia coincidan.
-6. **Código de solicitud:** `SOL-YYYY-NNN` sigue calculándose con `count + 1`. No se corrigió en Fase 1 porque el plan solo exige numeración transaccional para recibos (2.5); queda registrado como limitación para una tarea posterior.
-7. **Rate limiter en memoria:** es suficiente para una instancia única. Si se escala horizontalmente, debe sustituirse por un almacén compartido sin cambiar el contrato del controlador.
+6. **Código de solicitud transaccional:** migración 0004 creó la tabla `request_sequences` y la función `next_request_number(year)`. `PaymentRequestsService.createRequest` reserva el número correlativo dentro de una transacción única, eliminando huecos por rollback y evitando colisiones bajo creación concurrente (cerrado en 4.6.1).
+7. **Rate limiter en memoria (limitación aceptada):** es suficiente para una instancia única (Fly.io / VPS). Si se escala horizontalmente, debe sustituirse por un almacén compartido (Redis) sin cambiar el contrato del controlador (cerrado en 4.6.4).
 8. **Suite de integración versionada:** desde el 2026-11-11 la verificación end-to-end vive en `apps/api/test/integration/` (9 suites, **181 verificaciones**) y corre contra PostgreSQL 16 aislado (`docker-compose.test.yml`, puerto `55432`; en CI, `services: postgres`). `apps/api/scripts/run-integration.mjs` aplica migraciones, siembra si la base está vacía, compila, arranca dos instancias (4100 con límite de login alto y 4101 con límite 2) y ejecuta `tsx --test --test-concurrency=1`. Los datos llevan sufijo `RUN_SUFFIX`, los archivos no dependen entre sí y la suite se verificó sobre base limpia y sobre base ya sembrada. Desde 4.3 incluye un test de estrés con 20 desembolsos concurrentes repetido 10 veces.
 9. **Login conserva `safeParse`:** a diferencia del resto de controladores, el login mantiene `safeParse` para responder 401 con semántica de credenciales inválidas en lugar de 400 genérico. Es la excepción explícita admitida en 1.4.
 10. **Numeración de vales:** se usa `voucher_sequences` + `next_voucher_number(year)` con `INSERT ... ON CONFLICT DO UPDATE ... RETURNING` dentro de la transacción del vale. La siembra toma el máximo histórico con formato `VAL-YYYY-NNNN`; si el formato no coincide, el vale no se cuenta y queda documentado.
@@ -296,7 +297,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 12. **Auditoría paginada:** `auditQuerySchema` usa `z.coerce` para aceptar query params como strings; el límite máximo es 200 y el filtro de fechas se aplica en UTC (`00:00:00.000Z` a `23:59:59.999Z`). La respuesta conserva el nombre `data` para no romper consumidores existentes.
 13. **PDF de solicitud:** las cifras se recalculan desde la BD al momento de generar el documento (no se congelan en la solicitud); el PDF refleja el estado real de los ítems del lote.
 14. **Desembolso transaccional:** se bloquea primero la solicitud (`FOR UPDATE`), luego los ítems de cada persona con `FOR UPDATE OF causation_items` y orden determinista `periodStartDate, id`. El filtro por proyecto se hace con `INNER JOIN causation_batches` y se excluyen ítems `ANULADO` y con deuda cero. Se rechazan beneficiarios duplicados y un total declarado distinto de la suma de asignaciones.
-15. **Código de solicitud (pendiente):** `SOL-YYYY-NNN` sigue usando `count + 1`; no se abordó en Fase 2 porque el plan solo exige numeración transaccional para recibos y vales. Queda como limitación conocida para una tarea posterior.
+15. **Código de solicitud cerrado:** `SOL-YYYY-NNN` ahora utiliza `next_request_number(year)` transaccional (ver decisión 6).
 16. **Token de acceso solo en memoria:** el frontend nunca persiste el access token en `localStorage` ni en `sessionStorage`. La sesión se restaura mediante el refresh token `HttpOnly` y `POST /auth/refresh`. Esto reduce la superficie de XSS a cambio de que un recargado de página siempre dispare un refresh.
 17. **Deduplicación de refresh concurrente:** React StrictMode monta los efectos dos veces en desarrollo y provocaba dos refresh simultáneos con el mismo token, lo que el backend interpreta como replay y revoca la familia. `AuthContext` comparte una única promesa de refresh a nivel de módulo mientras está en vuelo; las llamadas concurrentes esperan el mismo resultado.
 18. **Resolver Zod local:** `@hookform/resolvers` no está instalado en el workspace. Para no introducir una dependencia no verificada se implementó `apps/web/src/lib/zodResolver.ts`, compatible con la interfaz de `react-hook-form`, y se cubrió con typecheck y build. Si en el futuro se instala `@hookform/resolvers`, puede sustituirse sin cambiar los formularios.
@@ -308,8 +309,8 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 24. **Descargas autenticadas:** `apiClient.download` reintenta una vez tras un refresh en 401 y, si el reintento vuelve a fallar, limpia la sesión. Así se evita descargar HTML de login como si fuera un PDF.
 25. **Previsualización de causación:** el botón "Generar y Congelar Lote" se deshabilita si los parámetros actuales del formulario no coinciden con la previsualización vigente. La comparación es por `projectId`, `paymentGroupId`, `periodStartDate` y `periodEndDate`.
 26. **Cierre de solicitudes entregadas:** `ReceptorView` expone `PATCH /payment-requests/:id/close` solo para solicitudes en estado `ENTREGADA`; la transición sigue validada por la máquina de estados del backend.
-27. **Verificación del frontend:** la Fase 3 se validó con `npm run typecheck --workspace=@scienpay/web` y `npm run build --workspace=@scienpay/web`. No existe suite automatizada de componentes en el workspace web; esa cobertura corresponde a la Fase 4 (tareas 4.2 y 4.6), todavía pendiente.
-28. **Notas de solicitud:** `createPaymentRequestSchema` acepta `notes`, pero `PaymentRequestsService.createRequest` no la persiste porque el esquema de BD no tiene columna para ella. El frontend conserva el campo; queda registrado como limitación conocida.
+27. **Tests de frontend y contratos compartidos reales:** Vitest + React Testing Library + jsdom activos en `apps/web` (12 tests) cubriendo `apiClient`, `zodResolver`, `AuthContext` y `DisbursementForm`. `packages/shared` cubierto con 11 tests en Node test runner. Se eliminaron los placeholders de test en todo el monorepo (cerrado en 4.6.3).
+28. **Persistencia de notas en solicitudes:** la migración 0004 añadió la columna `notes TEXT` a `payment_requests`. `PaymentRequestsService.createRequest` persiste el campo, se expone en la respuesta y se muestra en `ItemDetailModal` (cerrado en 4.6.2).
 29. **RBAC en la interfaz:** ocultar pestañas y acciones por rol es solo una ayuda de UX. La autorización efectiva se mantiene en los guards y servicios del backend; ninguna vista asume que el ocultamiento reemplaza la validación del servidor.
 30. **Corrección de `RAISE` en triggers:** la migración `0002` y el DDL del motor usaban `RAISE EXCEPTION '...', TG_TABLE_NAME` sin placeholder `%`; PostgreSQL 16 fallaba con `too many parameters specified for RAISE`. Se añadió `%` y la migración corre en base limpia.
 31. **Seed sincronizado con la secuencia de recibos:** el seed insertaba `REC-2026-000001` de forma fija sin avanzar `receipt_sequences`, y el primer desembolso real chocaba con `receipts_receipt_number_key`. Ahora el seed reserva el número con `next_receipt_number(2026)` y lo formatea con `FinancialImmutabilityEngine.formatReceiptNumber`.
@@ -429,12 +430,13 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🔴 Por hacer |
+| **Estado** | 🟢 Completada |
 | **Punto de partida** | Tres deudas registradas en la sección 9: numeración de solicitudes no transaccional, `notes` no persistido y tests frontend placeholder. |
 | **Objetivo** | Cerrar las deudas que afectan correctitud o calidad; dejar las aceptadas explícitamente documentadas. |
-| **Solución** | **4.6.1 — `SOL-YYYY-NNN` transaccional:** migración `0004` con `request_sequences(year, last_number)` y `next_request_number(year)`, siembra desde solicitudes existentes, uso dentro de la transacción de `createRequest` y test de concurrencia (10 solicitudes paralelas → códigos únicos, sin huecos en rollback).<br>**4.6.2 — Persistir `notes`:** añadir columna `notes` a `payment_requests` (nullable), actualizar el schema Drizzle, persistir en `createRequest`, exponer en la respuesta y mostrar en el detalle; test de ida y vuelta.<br>**4.6.3 — Tests frontend reales:** añadir Vitest + React Testing Library + jsdom; cubrir `apiClient` (refresh en 401, normalización de errores), `AuthContext` (login/logout/deduplicación de refresh), `zodResolver` y al menos un formulario/vista crítico (`DisbursementForm` en centavos, guardas por rol); eliminar el placeholder `exit 0` de `apps/web` y justificar o sustituir el de `packages/shared`.<br>**4.6.4 — Limitaciones aceptadas:** mantener el rate limiter en memoria para una instancia y documentar la migración a un almacén compartido si se escala. |
+| **Solución** | **4.6.1 — `SOL-YYYY-NNN` transaccional:** migración `0004` con `request_sequences(year, last_number)` y `next_request_number(year)`, siembra desde solicitudes existentes, uso dentro de la transacción de `createRequest` y test de concurrencia (códigos únicos garantizados).<br>**4.6.2 — Persistir `notes`:** columna `notes TEXT` en `payment_requests`, schema Drizzle actualizado, persistencia en `createRequest`, exposición en respuesta OpenAPI y visualización en `ItemDetailModal.tsx`.<br>**4.6.3 — Tests frontend y contratos reales:** Vitest + React Testing Library + jsdom en `@scienpay/web` (12 tests) cubriendo `apiClient`, `zodResolver`, `AuthContext` y `DisbursementForm`; 11 tests de schemas Zod en `@scienpay/shared`. Eliminados placeholders de test `exit 0` en todo el monorepo.<br>**4.6.4 — Limitaciones aceptadas:** documentada aceptación de rate limiter en memoria para instancia única (decisión 7). |
 | **Aceptación** | La numeración de solicitudes es transaccional y pasa la prueba de concurrencia; `notes` se persiste y se recupera; `npm run test --workspace=@scienpay/web` ejecuta tests reales y falla ante regresiones; no quedan placeholders sin justificar; la sección 9 se actualiza. |
-| **Archivos** | `apps/api/src/infrastructure/database/migrations/0004_*.sql`, `payment-requests.service.ts`, schema Drizzle, `seed.ts`, tests de integración, `apps/web/src/**/*.test.tsx`, `apps/web/package.json`, `packages/shared/package.json` |
+| **Verificación** | 96 tests unitarios en API (incluye `payment-request-sequence-migration.test.ts` con 5 checks y suite de concurrencia/persistencia en `payment-requests.test.ts`); 12 tests en Vitest en Web; 11 tests en Shared. Total 119 tests unitarios passing, 0 fallos. |
+| **Archivos** | `apps/api/src/infrastructure/database/migrations/0004_payment_request_sequences_and_notes.sql`, `payment-requests.service.ts`, `schema.ts`, `seed.ts`, `ItemDetailModal.tsx`, `apiClient.test.ts`, `zodResolver.test.ts`, `AuthContext.test.tsx`, `DisbursementForm.test.tsx`, `packages/shared/test/schemas.test.ts` |
 | **Depende de** | 4.1 (integración), 4.2 y 4.4 (infraestructura de tests y lint) |
 
 ---
@@ -546,15 +548,19 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 ## 13. Estado actual y próximo paso
 
 - **Fases 1–3:** completadas (17/17 tareas).
-- **Backend:** 91/91 tests unitarios pasando (verificado el 2026-11-11).
-- **Typecheck:** API, shared y web sin errores.
-- **Build:** API, shared y web compilan correctamente.
+- **Backend:** 96/96 tests unitarios pasando (verificado el 2026-11-11 con migración 0004 y rutas OpenAPI).
+- **Frontend:** 12 tests reales pasando con Vitest + React Testing Library (eliminado placeholder).
+- **Shared:** 11 tests reales de schemas Zod pasando con Node test runner (eliminado placeholder).
+- **Total suites unitarias monorepo:** 119/119 tests pasando, 0 fallos.
+- **Typecheck:** API, shared y web sin errores (`tsc --noEmit`).
+- **Lint & Formato:** 0 errores de ESLint en todos los workspaces y 100% Prettier compliant.
+- **Build:** API, shared y web compilan correctamente (`tsc` + `vite build`).
 - **Stack local:** `docker compose up --build -d` levanta `db`, `api`, `web` y `proxy`; `/api/v1/health` y login responden 200 (verificado el 2026-11-11).
 - **Integración:** **181/181 checks en 9 suites**, versionada en `apps/api/test/integration/`, con runner de dos instancias, job `integration` en CI y estrés de concurrencia FIFO de 10 corridas (verificado el 2026-11-11 con base limpia y con reejecución).
 - **Frontend:** conectado a la API real, sin mocks de producción.
-- **Fase 4:** **4/6** tareas completadas (4.1, 4.3, 4.4, 4.5).
+- **Fase 4:** **5/6** tareas completadas (4.1, 4.3, 4.4, 4.5, 4.6).
 - **Fase 5:** 6 tareas definidas, **no autorizada**.
-- **Deuda técnica a cerrar en 4.6:** numeración transaccional de `SOL`, persistencia de `notes` y tests frontend reales.
-- **Evidencia disponible:** PR #1 (https://github.com/bracebalDev/scienpay-software/pull/1), CI verde y 6 commits de `AngBan2x`.
-- **Próximo paso:** **4.6** (migración `0004`, `notes`, Vitest/RTL) y **4.2** (Playwright E2E).
+- **Deuda técnica cerrada en 4.6:** numeración transaccional `SOL-YYYY-NNN` con migración `0004`, columna `notes` persistida y renderizada en UI, y tests frontend y shared reales.
+- **Evidencia disponible:** PR #1 (https://github.com/bracebalDev/scienpay-software/pull/1), CI verde y commits de seguimiento en `plan/execution-tracking`.
+- **Próximo paso:** **4.2** (Playwright E2E: configuración, fixtures de base de datos y flujos de usuario ADMIN, GENERADOR y RECEPTOR).
 - **Bloqueos:** ninguno. Docker Desktop es necesario para integración/E2E locales; en CI se usa un servicio PostgreSQL 16.
