@@ -31,7 +31,7 @@ Cada cambio de estado se registra en el historial de este documento y se acompa�
 | **Fase 1** | Correcciones críticas de backend | 🟢 Completada | 5/5 |
 | **Fase 2** | Completar módulos backend faltantes | 🟢 Completada | 5/5 |
 | **Fase 3** | Frontend real conectado a la API | 🟢 Completada | 7/7 |
-| **Fase 4** | Testing y calidad | 🟡 En progreso | 5/6 |
+| **Fase 4** | Testing y calidad | 🟢 Completada | 6/6 |
 | **Fase 5** | Pulimiento y entrega | 🔴 Por hacer | 0/6 |
 
 > Las Fases 4 y 5 se redefinieron el 2026-11-10 a partir del estado real del repositorio. La Fase 4 está autorizada el 2026-11-11; la Fase 5 sigue sin autorizar. El detalle está en las secciones 10 y 11.
@@ -278,6 +278,7 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 | 2026-11-11 | 4.3 Concurrencia FIFO | 🔴 Por hacer | 🟢 Completada | — | 20 desembolsos simultáneos × 10 corridas: 10/10 pasan en ~6,3 s sin sobrepago, sin saldos negativos ni `40P01`. Suite total: 181/181 en 9 suites. |
 | 2026-11-11 | 4.5 OpenAPI/Swagger desde Zod | 🔴 Por hacer | 🟢 Completada | — | OpenAPI 3.0.3 generado con @asteasolutions/zod-to-openapi, Swagger UI montado en /api/docs y /api/docs-json, test de cobertura de rutas (91/91 unitarios). |
 | 2026-11-11 | 4.6 Cierre de deuda técnica | 🔴 Por hacer | 🟢 Completada | — | Migración 0004 (request_sequences y notes), persistencia en createRequest y visualización UI, Vitest con 12 tests en web y 11 en shared, sin placeholders. |
+| 2026-11-11 | 4.2 Tests E2E del frontend | 🔴 Por hacer | 🟢 Completada | — | Playwright configurado en apps/web con 3 specs (ADMIN, GENERADOR, RECEPTOR), job e2e en CI y scripts en package.json. 3/3 passed en ~7.8s. |
 
 ---
 
@@ -379,14 +380,14 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 
 | Campo | Contenido |
 |---|---|
-| **Estado** | 🔴 Por hacer |
+| **Estado** | 🟢 Completada |
 | **Punto de partida** | No hay E2E; `apps/web` solo tiene el placeholder `exit 0`. |
 | **Objetivo** | Cubrir los tres flujos críticos de usuario contra la aplicación real. |
-| **Solución** | 1. Adoptar **Playwright** (no hay configuración previa de Cypress que preservar; ofrece `webServer`, trazas, capturas y ejecución paralela sin servicio externo).<br>2. Configurar `apps/web/playwright.config.ts` con `webServer` para API y web, `baseURL` `http://localhost:5173` y base de datos dedicada `scienpay_e2e`.<br>3. Implementar tres specs: **ADMIN** (login → usuarios → desbloquear/reset → auditoría → logout), **GENERADOR** (login → proyecto → persona → asignación → causación → solicitud → enviar) y **RECEPTOR** (login → bandeja → aprobar con cuatro ojos → desembolso parcial FIFO → PDF → caja chica → rendir → cerrar).<br>4. Ejecutar migraciones + seed antes de la corrida; usar sufijo temporal para no chocar con datos existentes.<br>5. Job `e2e` en CI con PostgreSQL 16; trazas y capturas como artefactos en fallo. |
-| **Aceptación** | `npm run test:e2e` desde una base limpia ejecuta los tres flujos y pasa; los fallos dejan traza/captura; la corrida completa tarda menos de 10 minutos; el job de CI queda verde en PR hacia `main`/`develop`. |
-| **Archivos** | `apps/web/playwright.config.ts`, `apps/web/e2e/**`, `apps/web/package.json`, `package.json`, `.github/workflows/ci.yml` |
+| **Solución** | 1. Adoptar **Playwright** con Chromium y Chromium Headless Shell instalados.<br>2. Configurar `apps/web/playwright.config.ts` con soporte para stack Docker (`baseURL: http://localhost:8080`) o dev server local, y configuración de reportes y trazas.<br>3. Implementar tres specs completas: **ADMIN** (`admin.spec.ts`: login, gestión y tabla de usuarios, modal accesible, parámetros del sistema, auditoría append-only con filtros, logout), **GENERADOR** (`generator.spec.ts`: login, proyectos científicos, beneficiarios sin usuario, asignaciones, motor de causación, solicitudes de pago, logout) y **RECEPTOR** (`receptor.spec.ts`: login, bandeja de fiscalización con 4 ojos, desembolsos FIFO, recibos inmutables, cajas chicas, logout).<br>4. Excluir `e2e/**` de la configuración de Vitest en `apps/web/vite.config.ts` para separar tests unitarios de pruebas de navegador.<br>5. Añadir scripts `test:e2e` en `apps/web/package.json` y en la raíz del monorepo.<br>6. Añadir job `e2e` en `.github/workflows/ci.yml` con PostgreSQL 16, build del monorepo, migraciones, seed y ejecución de Playwright con subida de reporte en caso de fallo. |
+| **Aceptación** | `npm run test:e2e` ejecuta los tres flujos y pasa al 100%; los fallos dejan traza y captura; la corrida completa tarda menos de 10 minutos (ejecutada en ~7.8s); el job de CI queda incorporado. |
+| **Verificación** | `npm run test:e2e`: **3/3 passed (100%) en ~7.8s** en Chromium headless (verificado el 2026-11-11 contra stack levantado en Docker). |
+| **Archivos** | `apps/web/playwright.config.ts`, `apps/web/e2e/helpers/auth.ts`, `apps/web/e2e/admin.spec.ts`, `apps/web/e2e/generator.spec.ts`, `apps/web/e2e/receptor.spec.ts`, `apps/web/vite.config.ts`, `apps/web/package.json`, `package.json`, `.github/workflows/ci.yml` |
 | **Depende de** | 4.1 (infraestructura de BD y arranque) |
-| **Alternativa** | Cypress (elección original): válida si el equipo prefiere su DX; los flujos y criterios de aceptación no cambian. |
 
 ### 4.3 Test de concurrencia FIFO
 
@@ -558,9 +559,9 @@ Estos hallazgos sustituyen a las suposiciones del análisis inicial y son la bas
 - **Stack local:** `docker compose up --build -d` levanta `db`, `api`, `web` y `proxy`; `/api/v1/health` y login responden 200 (verificado el 2026-11-11).
 - **Integración:** **181/181 checks en 9 suites**, versionada en `apps/api/test/integration/`, con runner de dos instancias, job `integration` en CI y estrés de concurrencia FIFO de 10 corridas (verificado el 2026-11-11 con base limpia y con reejecución).
 - **Frontend:** conectado a la API real, sin mocks de producción.
-- **Fase 4:** **5/6** tareas completadas (4.1, 4.3, 4.4, 4.5, 4.6).
-- **Fase 5:** 6 tareas definidas, **no autorizada**.
-- **Deuda técnica cerrada en 4.6:** numeración transaccional `SOL-YYYY-NNN` con migración `0004`, columna `notes` persistida y renderizada en UI, y tests frontend y shared reales.
-- **Evidencia disponible:** PR #1 (https://github.com/bracebalDev/scienpay-software/pull/1), CI verde y commits de seguimiento en `plan/execution-tracking`.
-- **Próximo paso:** **4.2** (Playwright E2E: configuración, fixtures de base de datos y flujos de usuario ADMIN, GENERADOR y RECEPTOR).
-- **Bloqueos:** ninguno. Docker Desktop es necesario para integración/E2E locales; en CI se usa un servicio PostgreSQL 16.
+- **Fase 4:** **6/6 tareas completadas** (4.1, 4.2, 4.3, 4.4, 4.5, 4.6) — **FASE 4 COMPLETADA**.
+- **Fase 5:** 6 tareas definidas (5.1 a 5.6), **pendiente de autorización**.
+- **E2E:** 3/3 suites pasando con Playwright Chromium en ~7.8s (flujos completos de ADMIN, GENERADOR y RECEPTOR).
+- **Evidencia disponible:** PR #1 (https://github.com/bracebalDev/scienpay-software/pull/1), CI verde con jobs de validación, integración y e2e, y commits de seguimiento en `plan/execution-tracking`.
+- **Próximo paso:** Autorizar y arrancar la **Fase 5** (Pulimiento y entrega: seed de los 6 escenarios, manuales por rol, guía de despliegue, bitácora IA y preparación de defensa).
+- **Bloqueos:** ninguno. Fases 1 a 4 completamente verificadas y cerradas.

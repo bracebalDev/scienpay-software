@@ -96,6 +96,79 @@ jobs:
       - name: Ejecución de la suite de integración
         run: npm run test:integration --workspace=@scienpay/api
 
+  e2e:
+    name: Pruebas E2E (Playwright)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: scienpay_test
+          POSTGRES_USER: scienpay_app
+          POSTGRES_PASSWORD: scienpay_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U scienpay_app -d scienpay_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://scienpay_app:scienpay_test_password@127.0.0.1:5432/scienpay_test
+      DATABASE_HOST: 127.0.0.1
+      DATABASE_PORT: 5432
+      NODE_ENV: test
+      JWT_ACCESS_SECRET: e2e_access_secret_scienpay_minimum_64_characters_super_secure_0001
+      JWT_REFRESH_SECRET: e2e_refresh_secret_scienpay_minimum_64_characters_super_secure_0002
+      COOKIE_SECRET: e2e_cookie_secret_scienpay_super_secure_key_abcdef_987654321
+      CORS_ORIGIN: http://localhost:5173
+      PLAYWRIGHT_BASE_URL: http://localhost:5173
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalar navegadores de Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Compilar monorepo
+        run: |
+          npm run build --workspace=@scienpay/shared
+          npm run build --workspace=@scienpay/api
+          npm run build --workspace=@scienpay/web
+
+      - name: Ejecutar migraciones y seed de base de datos
+        run: |
+          npm run db:migrate --workspace=@scienpay/api
+          npm run db:seed --workspace=@scienpay/api
+
+      - name: Levantar API en segundo plano
+        run: |
+          node apps/api/dist/main.js &
+          npx wait-on http://127.0.0.1:4000/api/v1/health --timeout 60000
+
+      - name: Levantar Frontend SPA y ejecutar pruebas E2E
+        run: |
+          npx vite preview --port 5173 &
+          npx wait-on http://localhost:5173 --timeout 60000
+          npm run test:e2e
+
+      - name: Subir reporte de Playwright ante fallo
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7
+
   security-scan:
     name: Escaneo de Secretos y SAST
     runs-on: ubuntu-latest
