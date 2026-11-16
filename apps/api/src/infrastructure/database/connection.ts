@@ -17,10 +17,15 @@ export function resolveDatabaseUrl(
   environment: NodeJS.ProcessEnv = process.env,
   direct = false,
 ): string {
-  if (direct && environment.MIGRATION_DATABASE_URL) {
-    return environment.MIGRATION_DATABASE_URL;
+  if (direct && (environment.MIGRATION_DATABASE_URL || environment.POSTGRES_URL_NON_POOLING)) {
+    return environment.MIGRATION_DATABASE_URL || environment.POSTGRES_URL_NON_POOLING!;
   }
-  return environment.DATABASE_URL || defaultConnectionUrl(environment);
+  return (
+    environment.DATABASE_URL ||
+    environment.POSTGRES_URL ||
+    environment.POSTGRES_PRISMA_URL ||
+    defaultConnectionUrl(environment)
+  );
 }
 
 export function resolveDatabaseSettings(
