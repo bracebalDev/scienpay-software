@@ -71,3 +71,6 @@ backups/
 *credenciales*
 *privado*
 docs/privado-credenciales-pruebas.md
+
+.vercel
+.env*
