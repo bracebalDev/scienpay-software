@@ -334,10 +334,16 @@ export async function runSeed(maxRetries = 5, delayMs = 3000) {
         .onConflictDoNothing()
         .returning();
 
+      const seqSol1Res = await db.execute(sql`SELECT next_request_number(2026) AS next_number`);
+      const seqSol1 = Number(
+        (seqSol1Res as unknown as Array<{ next_number: string | number }>)[0]?.next_number ?? 1,
+      );
+      const codigoSol1 = `SOL-2026-${String(seqSol1).padStart(3, '0')}`;
+
       const [solicitudAprobada] = await db
         .insert(paymentRequests)
         .values({
-          requestCode: 'SOL-2026-001',
+          requestCode: codigoSol1,
           projectId: projectFis.id,
           causationBatchId: batchOct.id,
           periodDescription: 'Octubre 2026 (Mensual Completo)',
@@ -403,10 +409,16 @@ export async function runSeed(maxRetries = 5, delayMs = 3000) {
 
       // ESCENARIO 6: SOLICITUD RECHAZADA FORMALMENTE CON JUSTIFICACIÓN
       console.log('-> Escenario 6: Solicitud rechazada formalmente...');
+      const seqSol2Res = await db.execute(sql`SELECT next_request_number(2026) AS next_number`);
+      const seqSol2 = Number(
+        (seqSol2Res as unknown as Array<{ next_number: string | number }>)[0]?.next_number ?? 2,
+      );
+      const codigoSol2 = `SOL-2026-${String(seqSol2).padStart(3, '0')}`;
+
       await db
         .insert(paymentRequests)
         .values({
-          requestCode: 'SOL-2026-002',
+          requestCode: codigoSol2,
           projectId: projectQui.id,
           causationBatchId: batchOct.id,
           periodDescription: 'Octubre 2026 (Borrador con error)',
@@ -617,6 +629,19 @@ export async function runSeed(maxRetries = 5, delayMs = 3000) {
         },
         ipAddress: '127.0.0.1',
       });
+
+      // Sincronizar secuencias transaccionales con los registros sembrados
+      await db.execute(sql`
+        INSERT INTO request_sequences (year, last_number)
+        SELECT
+          SUBSTRING(request_code FROM 5 FOR 4)::INTEGER AS year,
+          MAX(SUBSTRING(request_code FROM 10)::BIGINT) AS last_number
+        FROM payment_requests
+        WHERE request_code ~ '^SOL-[0-9]{4}-[0-9]+$'
+        GROUP BY 1
+        ON CONFLICT (year) DO UPDATE
+        SET last_number = GREATEST(request_sequences.last_number, EXCLUDED.last_number);
+      `);
 
       console.log('[Scienpay Seed] ¡Siembra de base de datos completada exitosamente!');
       await client.end();

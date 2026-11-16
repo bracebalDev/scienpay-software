@@ -27,26 +27,56 @@ export function resolveDatabaseSettings(
   environment: NodeJS.ProcessEnv = process.env,
 ): DatabaseSettings {
   const parsedMaxConnections = Number.parseInt(environment.DATABASE_MAX_CONNECTIONS ?? '', 10);
+  const defaultMax = environment.VERCEL ? 5 : 20;
   const max =
-    Number.isFinite(parsedMaxConnections) && parsedMaxConnections > 0 ? parsedMaxConnections : 20;
+    Number.isFinite(parsedMaxConnections) && parsedMaxConnections > 0
+      ? parsedMaxConnections
+      : defaultMax;
+
+  const url = environment.DATABASE_URL || '';
+  const isPooler =
+    url.includes('pooler') ||
+    url.includes(':6543') ||
+    url.includes('pgbouncer') ||
+    url.includes('-pooler.');
+
+  const prepare =
+    environment.DATABASE_PREPARE !== undefined
+      ? environment.DATABASE_PREPARE !== 'false'
+      : !isPooler;
 
   return {
     max,
-    prepare: environment.DATABASE_PREPARE !== 'false',
+    prepare,
     connectTimeout: 15,
     idleTimeout: 30,
   };
+}
+
+export function shouldRequireSsl(
+  connectionUrl: string,
+  environment: NodeJS.ProcessEnv = process.env,
+): boolean {
+  if (environment.DATABASE_SSL === 'false') return false;
+  if (environment.DATABASE_SSL === 'true' || environment.DATABASE_SSL === 'require') return true;
+  return (
+    environment.NODE_ENV === 'production' &&
+    !connectionUrl.includes('localhost') &&
+    !connectionUrl.includes('127.0.0.1')
+  );
 }
 
 export function createDatabaseConnection(
   connectionUrl: string = resolveDatabaseUrl(),
   settings: DatabaseSettings = resolveDatabaseSettings(),
 ) {
+  const requiresSsl = shouldRequireSsl(connectionUrl);
   const client = postgres(connectionUrl, {
     max: settings.max,
     prepare: settings.prepare,
     connect_timeout: settings.connectTimeout,
     idle_timeout: settings.idleTimeout,
+    ssl: requiresSsl ? 'require' : undefined,
   });
   const db = drizzle(client, { schema });
 

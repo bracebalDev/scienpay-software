@@ -32,6 +32,7 @@ export function resolveAllowedOrigins(
     environment.VERCEL_URL,
     environment.VERCEL_BRANCH_URL,
     environment.VERCEL_PROJECT_PRODUCTION_URL,
+    'https://scienpay-software-beryl.vercel.app',
   ]
     .filter((value): value is string => Boolean(value))
     .map(normalizeVercelOrigin);

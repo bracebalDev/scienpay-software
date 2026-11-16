@@ -6,6 +6,7 @@ type NodeHandler = (req: IncomingMessage, res: ServerResponse) => void;
 
 let appPromise: Promise<INestApplication> | null = null;
 let handlerPromise: Promise<NodeHandler> | null = null;
+let migrationPromise: Promise<void> | null = null;
 
 export function normalizeApiUrl(url: string | undefined): string {
   const value = url && url.length > 0 ? url : '/';
@@ -15,7 +16,26 @@ export function normalizeApiUrl(url: string | undefined): string {
   return `/api${value.startsWith('/') ? value : `/${value}`}`;
 }
 
+async function ensureDatabaseReady(): Promise<void> {
+  if (!process.env.DATABASE_URL || process.env.AUTO_MIGRATE === 'false') {
+    return;
+  }
+  if (!migrationPromise) {
+    migrationPromise = (async () => {
+      try {
+        const { runMigrations } = await import('./infrastructure/database/migrate.js');
+        await runMigrations(1, 0);
+        console.log('[Scienpay Serverless] Migraciones de base de datos verificadas exitosamente.');
+      } catch (err) {
+        console.warn('[Scienpay Serverless] Advertencia aplicando migraciones iniciales:', err);
+      }
+    })();
+  }
+  await migrationPromise;
+}
+
 async function initializeApp(): Promise<INestApplication> {
+  await ensureDatabaseReady();
   const app = await createApp();
   await app.init();
   return app;
@@ -50,6 +70,7 @@ export async function closeServerlessApp(): Promise<void> {
   const pendingApp = appPromise;
   appPromise = null;
   handlerPromise = null;
+  migrationPromise = null;
   if (!pendingApp) return;
 
   try {
@@ -61,22 +82,37 @@ export async function closeServerlessApp(): Promise<void> {
 }
 
 export async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
-  req.url = normalizeApiUrl(req.url);
-  const app = await getServerlessApp();
-  const instance = app.getHttpAdapter().getInstance();
+  try {
+    req.url = normalizeApiUrl(req.url);
+    const app = await getServerlessApp();
+    const instance = app.getHttpAdapter().getInstance();
 
-  await new Promise<void>((resolve, reject) => {
-    res.once('finish', resolve);
-    res.once('close', resolve);
+    await new Promise<void>((resolve, reject) => {
+      res.once('finish', resolve);
+      res.once('close', resolve);
 
-    try {
-      instance(req, res, (error?: unknown) => {
-        if (error) reject(error);
-      });
-    } catch (error) {
-      reject(error);
+      try {
+        instance(req, res, (error?: unknown) => {
+          if (error) reject(error);
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  } catch (error: any) {
+    console.error('[Scienpay Serverless] Error en ejecución de endpoint:', error);
+    if (!res.headersSent) {
+      res.statusCode = 500;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(
+        JSON.stringify({
+          statusCode: 500,
+          error: 'Internal Server Error',
+          message: error?.message || 'Error interno al procesar la solicitud en el servidor.',
+        }),
+      );
     }
-  });
+  }
 }
 
 export default handler;

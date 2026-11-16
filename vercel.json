@@ -1,27 +1,20 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "services": {
-    "api": {
-      "root": "apps/api",
-      "framework": "nestjs"
-    },
-    "web": {
-      "root": "apps/web",
-      "framework": "vite"
-    }
-  },
+  "version": 2,
+  "buildCommand": "npm run build:vercel",
+  "outputDirectory": "apps/web/dist",
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": {
-        "service": "api"
-      }
+      "destination": "/api/[...path]"
+    },
+    {
+      "source": "/api",
+      "destination": "/api/[...path]"
     },
     {
       "source": "/(.*)",
-      "destination": {
-        "service": "web"
-      }
+      "destination": "/index.html"
     }
   ],
   "headers": [

@@ -23,7 +23,9 @@
     "typecheck": "npm run build:shared && npm run typecheck --workspaces --if-present",
     "dev:api": "npm run dev --workspace=@scienpay/api",
     "dev:web": "npm run dev --workspace=@scienpay/web",
-    "dev": "npm run dev --workspaces --parallel"
+    "dev": "npm run dev --workspaces --parallel",
+    "db:migrate": "npm run db:migrate --workspace=@scienpay/api",
+    "db:seed": "npm run db:seed --workspace=@scienpay/api"
   },
   "keywords": [
     "fintech",

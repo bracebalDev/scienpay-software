@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile para despliegue Fullstack en Fly.io
+# Multi-stage Dockerfile para despliegue Fullstack de producción (Docker Compose / Cloud Container)
 FROM node:20-slim AS builder
 
 WORKDIR /app

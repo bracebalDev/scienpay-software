@@ -14,11 +14,17 @@ CREATE OR REPLACE FUNCTION next_request_number(p_year INTEGER)
 RETURNS BIGINT AS $$
 DECLARE
   v_next BIGINT;
+  v_max_existing BIGINT;
 BEGIN
+  SELECT COALESCE(MAX(SUBSTRING(request_code FROM 10)::BIGINT), 0)
+  INTO v_max_existing
+  FROM payment_requests
+  WHERE request_code ~ ('^SOL-' || p_year || '-[0-9]+$');
+
   INSERT INTO request_sequences (year, last_number)
-  VALUES (p_year, 1)
+  VALUES (p_year, GREATEST(1, v_max_existing + 1))
   ON CONFLICT (year) DO UPDATE
-    SET last_number = request_sequences.last_number + 1
+    SET last_number = GREATEST(request_sequences.last_number + 1, v_max_existing + 1)
   RETURNING last_number INTO v_next;
 
   RETURN v_next;

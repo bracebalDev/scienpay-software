@@ -84,7 +84,7 @@ describe('apiClient', () => {
   it('conserva el token solo en memoria', () => {
     setAccessToken('abc');
     expect(getAccessToken()).toBe('abc');
-    expect(window.localStorage.getItem('accessToken')).toBeNull();
-    expect(window.sessionStorage.getItem('accessToken')).toBeNull();
+    expect(window.localStorage ? window.localStorage.getItem('accessToken') : null).toBeNull();
+    expect(window.sessionStorage ? window.sessionStorage.getItem('accessToken') : null).toBeNull();
   });
 });
