@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { UserRole } from '@scienpay/shared';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2, Menu } from 'lucide-react';
 import { NotionLogin } from './components/Login/NotionLogin.js';
 import { NotionSidebar } from './components/Sidebar/NotionSidebar.js';
 import { AdminView } from './components/Views/AdminView.js';
@@ -35,9 +35,32 @@ function roleBadgeClass(role: UserRole): string {
 export const App: React.FC = () => {
   const { user, isLoading, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('usuarios');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const initializedUserId = useRef<string | null>(null);
+
+  // Cerrar drawer móvil con Escape (modern-web-guidance navigation-drawer)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && mobileSidebarOpen) {
+        setMobileSidebarOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileSidebarOpen]);
+
+  // Si la ventana pasa a resolución de escritorio, desactiva el drawer móvil
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setMobileSidebarOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Al autenticarse, ubica la vista inicial del rol en el historial.
   // Se usa el ID para no reiniciar la pestaña cuando `/auth/me` refresca el perfil.
@@ -119,25 +142,62 @@ export const App: React.FC = () => {
         onLogout={() => setShowLogoutConfirm(true)}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        mobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-12 border-b border-[#EDEDEB] dark:border-[#2F2F2F] px-6 flex items-center justify-between bg-white/80 dark:bg-[#1C1C1C]/90 backdrop-blur sticky top-0 z-10 transition-colors">
-          <div className="flex items-center space-x-2 text-xs text-[#787774] dark:text-[#9B9A97]">
-            <span className="font-medium">Scienpay — Universidad de Carabobo - FACYT</span>
-            <span>/</span>
-            <span className="font-semibold text-[#37352F] dark:text-white capitalize">
-              {activeTab.replace(/_/g, ' ')}
-            </span>
+        <header className="h-14 border-b border-[#EDEDEB] dark:border-[#2F2F2F] px-3 sm:px-6 flex items-center justify-between gap-2 bg-white/85 dark:bg-[#1C1C1C]/90 backdrop-blur sticky top-0 z-30 transition-colors">
+          {/* Lado izquierdo: Botón menú móvil + Logo + Breadcrumb */}
+          <div className="flex items-center space-x-2 min-w-0 flex-1">
+            <button
+              type="button"
+              onClick={() => setMobileSidebarOpen(true)}
+              className="p-2 -ml-1 rounded-lg text-[#787774] dark:text-[#9B9A97] hover:text-[#37352F] dark:hover:text-white hover:bg-[#F0EFEA] dark:hover:bg-[#2B2B2B] focus:outline-none focus:ring-2 focus:ring-primary/40 transition md:hidden flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Abrir menú de navegación"
+              aria-expanded={mobileSidebarOpen}
+              aria-controls="main-sidebar"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            {/* Logo en mobile cuando la barra lateral está en modo drawer */}
+            <div className="w-7 h-7 rounded bg-white dark:bg-[#252525] border border-[#E9E9E7] dark:border-[#333333] flex items-center justify-center overflow-hidden flex-shrink-0 shadow-xs p-0.5 md:hidden">
+              <img
+                src="/logo.jpg"
+                alt="Logo Scienpay"
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLElement;
+                  target.style.display = 'none';
+                }}
+              />
+            </div>
+
+            <nav aria-label="Ruta de navegación" className="flex items-center space-x-1.5 text-xs text-[#787774] dark:text-[#9B9A97] min-w-0 truncate">
+              {/* En escritorio: Nombre completo institucional */}
+              <span className="hidden sm:inline font-medium text-[#787774] dark:text-[#9B9A97] truncate">
+                Scienpay — Universidad de Carabobo - FACYT
+              </span>
+              {/* En mobile: Nombre compacto */}
+              <span className="sm:hidden font-semibold text-[#37352F] dark:text-white truncate">
+                Scienpay
+              </span>
+              <span className="text-[#9B9A97] dark:text-[#666664] flex-shrink-0">/</span>
+              <span className="font-semibold text-[#37352F] dark:text-white capitalize truncate">
+                {activeTab.replace(/_/g, ' ')}
+              </span>
+            </nav>
           </div>
 
-          <div className="flex items-center space-x-3">
-            <span className="text-[11px] text-[#9B9A97] dark:text-[#888886]">
+          {/* Lado derecho: Moneda Base (escritorio) + Rol + Tema */}
+          <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
+            <span className="hidden lg:inline text-[11px] text-[#9B9A97] dark:text-[#888886] whitespace-nowrap">
               Moneda Base: USD ($)
             </span>
-            <div className="h-3 w-px bg-slate-200 dark:bg-[#333333]" />
+            <div className="hidden lg:block h-3 w-px bg-slate-200 dark:bg-[#333333]" />
             <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded ${roleBadgeClass(user.role)}`}
+              className={`text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap flex-shrink-0 ${roleBadgeClass(user.role)}`}
             >
               {user.role}
             </span>
@@ -146,7 +206,7 @@ export const App: React.FC = () => {
           </div>
         </header>
 
-        <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8">
+        <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-8">
           {user.role === UserRole.ADMIN && <AdminView activeTab={activeTab} />}
           {user.role === UserRole.GENERADOR && <GeneratorView activeTab={activeTab} />}
           {user.role === UserRole.RECEPTOR && <ReceptorView activeTab={activeTab} />}

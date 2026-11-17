@@ -9,10 +9,23 @@
     --color-acento: #47C6FF;
     --color-energia: #00FFFE;
     --color-violeta: #7947FF;
+    --target-size: 24px;
+  }
+
+  @media (pointer: coarse) {
+    :root {
+      --target-size: 44px;
+    }
   }
 
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    overflow-wrap: break-word;
+  }
+
+  img, video {
+    max-inline-size: 100%;
+    block-size: auto;
   }
 }
 
