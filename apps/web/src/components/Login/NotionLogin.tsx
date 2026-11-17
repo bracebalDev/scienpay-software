@@ -22,18 +22,21 @@ const DEMO_ACCOUNTS = [
     role: UserRole.ADMIN,
     username: 'admin',
     fullName: 'Lic. Carlos Mendoza — Administrador del Sistema',
+    password: 'Admin#Scienpay2026!',
     badgeClass: 'bg-violet-100 text-violet dark:bg-violet-950/60 dark:text-violet-300',
   },
   {
     role: UserRole.GENERADOR,
     username: 'generador',
     fullName: 'Dra. Elena Rostova — Coordinadora General de Proyectos',
+    password: 'Coord#Scienpay2026!',
     badgeClass: 'bg-blue-100 text-primary dark:bg-blue-950/60 dark:text-blue-300',
   },
   {
     role: UserRole.RECEPTOR,
     username: 'receptor',
     fullName: 'Mg. Roberto Silva — Gerente de Administración y Finanzas',
+    password: 'Finan#Scienpay2026!',
     badgeClass: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300',
   },
 ] as const;
@@ -66,6 +69,20 @@ export const NotionLogin: React.FC = () => {
       setIsSubmitting(false);
     }
   });
+
+  const handleQuickLogin = async (account: (typeof DEMO_ACCOUNTS)[number]) => {
+    setServerError('');
+    form.setValue('identifier', account.username, { shouldValidate: true });
+    form.setValue('password', account.password, { shouldValidate: true });
+    setIsSubmitting(true);
+    try {
+      await login({ identifier: account.username, password: account.password });
+    } catch (error) {
+      setServerError(getApiErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const isLockMessage =
     serverError.includes('BLOQUEO_TEMPORAL') || serverError.includes('USUARIO_BLOQUEADO');
@@ -229,12 +246,9 @@ export const NotionLogin: React.FC = () => {
                 <button
                   key={account.username}
                   type="button"
-                  onClick={() => {
-                    setServerError('');
-                    form.setValue('identifier', account.username, { shouldValidate: true });
-                    form.setFocus('password');
-                  }}
-                  className="w-full text-left p-2.5 rounded-lg border border-[#E9E9E7] dark:border-[#2F2F2F] bg-white dark:bg-[#252525] hover:border-primary/50 cursor-pointer transition flex items-center justify-between text-xs"
+                  disabled={isSubmitting}
+                  onClick={() => void handleQuickLogin(account)}
+                  className="w-full text-left p-2.5 rounded-lg border border-[#E9E9E7] dark:border-[#2F2F2F] bg-white dark:bg-[#252525] hover:border-primary/50 hover:bg-[#F7F6F3]/70 dark:hover:bg-[#2A2A2A] cursor-pointer transition flex items-center justify-between text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div>
                     <div className="flex items-center space-x-2">
@@ -251,7 +265,10 @@ export const NotionLogin: React.FC = () => {
                       {account.fullName}
                     </div>
                   </div>
-                  <Check className="w-3.5 h-3.5 text-slate-400 opacity-60" />
+                  <div className="flex items-center space-x-1 text-primary dark:text-blue-400 font-medium text-[11px]">
+                    <span>Ingresar</span>
+                    <Check className="w-3.5 h-3.5" />
+                  </div>
                 </button>
               ))}
             </div>

@@ -28,7 +28,10 @@ const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 @Controller('auth')
 export class AuthController {
-  private readonly loginRateLimiter = new LoginRateLimiter(60_000, 5);
+  private readonly loginRateLimiter = new LoginRateLimiter(
+    60_000,
+    Number(process.env.AUTH_RATE_LIMIT_MAX) || 30,
+  );
 
   constructor(
     private readonly authService: AuthService,
