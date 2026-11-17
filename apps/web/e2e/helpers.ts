@@ -13,5 +13,5 @@ export async function login(
   await page.goto('/');
   await page.getByLabel('Usuario o correo').fill(credentials.identifier);
   await page.getByLabel('Contraseña', { exact: true }).fill(credentials.password);
-  await page.getByRole('button', { name: 'Ingresar' }).click();
+  await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
 }

@@ -246,6 +246,7 @@ export const NotionLogin: React.FC = () => {
                 <button
                   key={account.username}
                   type="button"
+                  aria-label={`Acceso rápido como ${account.role}`}
                   disabled={isSubmitting}
                   onClick={() => void handleQuickLogin(account)}
                   className="w-full text-left p-2.5 rounded-lg border border-[#E9E9E7] dark:border-[#2F2F2F] bg-white dark:bg-[#252525] hover:border-primary/50 hover:bg-[#F7F6F3]/70 dark:hover:bg-[#2A2A2A] cursor-pointer transition flex items-center justify-between text-xs disabled:opacity-50 disabled:cursor-not-allowed"
@@ -266,7 +267,7 @@ export const NotionLogin: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-1 text-primary dark:text-blue-400 font-medium text-[11px]">
-                    <span>Ingresar</span>
+                    <span>Acceder</span>
                     <Check className="w-3.5 h-3.5" />
                   </div>
                 </button>
