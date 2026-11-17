@@ -17,7 +17,8 @@ export function normalizeApiUrl(url: string | undefined): string {
 }
 
 async function ensureDatabaseReady(): Promise<void> {
-  if (!process.env.DATABASE_URL || process.env.AUTO_MIGRATE === 'false') {
+  const hasDb = Boolean(process.env.DATABASE_URL || process.env.POSTGRES_URL);
+  if (!hasDb || process.env.AUTO_MIGRATE === 'false') {
     return;
   }
   if (!migrationPromise) {
@@ -26,8 +27,12 @@ async function ensureDatabaseReady(): Promise<void> {
         const { runMigrations } = await import('./infrastructure/database/migrate.js');
         await runMigrations(1, 0);
         console.log('[Scienpay Serverless] Migraciones de base de datos verificadas exitosamente.');
+
+        const { runSeed } = await import('./infrastructure/database/seed.js');
+        await runSeed(1, 0);
+        console.log('[Scienpay Serverless] Siembra de datos inicial verificada exitosamente.');
       } catch (err) {
-        console.warn('[Scienpay Serverless] Advertencia aplicando migraciones iniciales:', err);
+        console.warn('[Scienpay Serverless] Advertencia aplicando migraciones/siembra inicial:', err);
       }
     })();
   }
