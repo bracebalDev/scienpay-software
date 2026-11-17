@@ -72,6 +72,8 @@ export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }
 
   return (
     <div
+      role="group"
+      aria-label="Selector de tema de color"
       className={`inline-flex items-center rounded-lg p-0.5 border transition-colors ${
         compact
           ? 'bg-[#EAE9E5] dark:bg-[#2C2C2C] border-[#E2E1DC] dark:border-[#373737]'
@@ -79,7 +81,10 @@ export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }
       }`}
     >
       <button
+        type="button"
         onClick={() => setTheme('light')}
+        aria-pressed={theme === 'light'}
+        aria-label="Modo Claro"
         className={`flex items-center justify-center rounded-md px-2 py-1 text-xs font-medium transition-all ${
           theme === 'light'
             ? 'bg-white dark:bg-[#333333] text-[#37352F] dark:text-white shadow-sm'
@@ -88,11 +93,14 @@ export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }
         title="Modo Claro"
       >
         <Sun className="w-3.5 h-3.5" />
-        {!compact && <span className="ml-1.5 text-[11px]">Claro</span>}
+        {!compact && <span className="hidden sm:inline ml-1.5 text-[11px]">Claro</span>}
       </button>
 
       <button
+        type="button"
         onClick={() => setTheme('dark')}
+        aria-pressed={theme === 'dark'}
+        aria-label="Modo Oscuro"
         className={`flex items-center justify-center rounded-md px-2 py-1 text-xs font-medium transition-all ${
           theme === 'dark'
             ? 'bg-white dark:bg-[#333333] text-[#37352F] dark:text-white shadow-sm'
@@ -101,11 +109,14 @@ export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }
         title="Modo Oscuro"
       >
         <Moon className="w-3.5 h-3.5" />
-        {!compact && <span className="ml-1.5 text-[11px]">Oscuro</span>}
+        {!compact && <span className="hidden sm:inline ml-1.5 text-[11px]">Oscuro</span>}
       </button>
 
       <button
+        type="button"
         onClick={() => setTheme('system')}
+        aria-pressed={theme === 'system'}
+        aria-label="Tema del Sistema"
         className={`flex items-center justify-center rounded-md px-2 py-1 text-xs font-medium transition-all ${
           theme === 'system'
             ? 'bg-white dark:bg-[#333333] text-[#37352F] dark:text-white shadow-sm'
@@ -114,7 +125,7 @@ export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }
         title="Tema del Sistema"
       >
         <Monitor className="w-3.5 h-3.5" />
-        {!compact && <span className="ml-1.5 text-[11px]">Sistema</span>}
+        {!compact && <span className="hidden sm:inline ml-1.5 text-[11px]">Sistema</span>}
       </button>
     </div>
   );

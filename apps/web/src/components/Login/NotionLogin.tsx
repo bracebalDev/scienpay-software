@@ -88,14 +88,14 @@ export const NotionLogin: React.FC = () => {
     serverError.includes('BLOQUEO_TEMPORAL') || serverError.includes('USUARIO_BLOQUEADO');
 
   return (
-    <div className="relative min-h-screen bg-[#FBFBFA] dark:bg-[#191919] flex flex-col items-center justify-center p-4 selection:bg-primary/20 transition-colors duration-200">
-      {/* Selector de tema en esquina superior derecha */}
-      <div className="absolute top-4 right-4 z-20">
+    <div className="min-h-screen bg-[#FBFBFA] dark:bg-[#191919] flex flex-col justify-between selection:bg-primary/20 transition-colors duration-200">
+      {/* Selector de tema en esquina superior derecha (en flujo para móvil para no superponerse; absoluto en escritorio) */}
+      <header className="w-full flex justify-end p-4 sm:absolute sm:top-0 sm:right-0 sm:w-auto z-20">
         <ThemeToggle />
-      </div>
+      </header>
 
       {/* Contenedor centrado estilo Notion */}
-      <div className="w-full max-w-[420px]">
+      <main className="w-full max-w-[420px] mx-auto px-4 py-4 sm:py-8 my-auto">
         {/* Cabecera / Identidad Notion */}
         <div className="text-center mb-7">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white dark:bg-[#202020] border border-[#E9E9E7] dark:border-[#2F2F2F] shadow-sm mb-3 overflow-hidden p-1.5">
@@ -275,12 +275,12 @@ export const NotionLogin: React.FC = () => {
             </div>
           )}
         </div>
+      </main>
 
-        {/* Pie de página */}
-        <div className="text-center mt-5 text-[11px] text-[#9B9A97]">
-          Scienpay — Universidad de Carabobo - FACYT
-        </div>
-      </div>
+      {/* Pie de página */}
+      <footer className="text-center py-4 text-[11px] text-[#9B9A97]">
+        Scienpay — Universidad de Carabobo - FACYT
+      </footer>
     </div>
   );
 };

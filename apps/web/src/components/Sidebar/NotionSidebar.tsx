@@ -1,7 +1,6 @@
 import React from 'react';
 import { UserRole } from '@scienpay/shared';
 import type { AuthUser } from '../../types/api.types.js';
-import { ThemeToggle } from '../../context/ThemeContext.js';
 import {
   Users,
   Sliders,
@@ -229,22 +228,7 @@ export const NotionSidebar: React.FC<NotionSidebarProps> = ({
         </nav>
 
         {/* Pie de barra lateral */}
-        <div className="p-3 border-t border-[#EDEDEB] dark:border-[#2B2B2B] space-y-2">
-          <div
-            className={`flex items-center justify-between px-1 ${
-              collapsed ? 'md:hidden' : 'flex'
-            }`}
-          >
-            <span className="text-[10px] text-[#787774] dark:text-[#888886] font-medium">
-              Apariencia
-            </span>
-            <ThemeToggle compact />
-          </div>
-
-          <div className={`justify-center hidden ${collapsed ? 'md:flex' : 'hidden'}`}>
-            <ThemeToggle compact />
-          </div>
-
+        <div className="p-3 border-t border-[#EDEDEB] dark:border-[#2B2B2B]">
           <button
             type="button"
             onClick={() => {

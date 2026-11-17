@@ -174,7 +174,10 @@ export const App: React.FC = () => {
               />
             </div>
 
-            <nav aria-label="Ruta de navegación" className="flex items-center space-x-1.5 text-xs text-[#787774] dark:text-[#9B9A97] min-w-0 truncate">
+            <nav
+              aria-label="Ruta de navegación"
+              className="flex items-center space-x-1.5 text-xs text-[#787774] dark:text-[#9B9A97] min-w-0 truncate"
+            >
               {/* En escritorio: Nombre completo institucional */}
               <span className="hidden sm:inline font-medium text-[#787774] dark:text-[#9B9A97] truncate">
                 Scienpay — Universidad de Carabobo - FACYT
