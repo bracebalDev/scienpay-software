@@ -91,6 +91,9 @@ export async function closeServerlessApp(): Promise<void> {
 
 export async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
   try {
+    if (process.env.VERCEL_DEPLOYMENT_ID) {
+      res.setHeader('x-deployment-id', process.env.VERCEL_DEPLOYMENT_ID);
+    }
     req.url = normalizeApiUrl(req.url);
     const app = await getServerlessApp();
     const instance = app.getHttpAdapter().getInstance();

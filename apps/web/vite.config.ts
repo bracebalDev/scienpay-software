@@ -4,6 +4,11 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    'import.meta.env.VITE_VERCEL_DEPLOYMENT_ID': JSON.stringify(
+      process.env.VERCEL_DEPLOYMENT_ID || process.env.VERCEL_GIT_COMMIT_SHA || '',
+    ),
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

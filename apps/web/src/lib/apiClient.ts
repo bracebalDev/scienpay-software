@@ -57,6 +57,10 @@ function buildHeaders(options: RequestOptions): Headers {
   if (accessToken) {
     headers.set('Authorization', `Bearer ${accessToken}`);
   }
+  const deploymentId = import.meta.env.VITE_VERCEL_DEPLOYMENT_ID;
+  if (deploymentId && !headers.has('x-deployment-id')) {
+    headers.set('x-deployment-id', deploymentId);
+  }
   return headers;
 }
 

@@ -8,6 +8,12 @@ import { AuthProvider } from './context/AuthContext';
 import { queryClient } from './lib/queryClient';
 import './index.css';
 
+// Prevención de desajustes frontend-backend (Skew Protection ante nuevos despliegues)
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  window.location.reload();
+});
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
