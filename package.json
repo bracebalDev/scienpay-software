@@ -37,6 +37,12 @@
   ],
   "author": "Scienpay Team",
   "license": "UNLICENSED",
+  "allowScripts": {
+    "@nestjs/core": true,
+    "@scarf/scarf": true,
+    "argon2": true,
+    "esbuild": true
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
     "@types/node": "^22.7.4",

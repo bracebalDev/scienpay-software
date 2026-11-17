@@ -1,7 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "buildCommand": "npm run build:vercel",
+  "installCommand": "node scripts/vercel-runner.mjs npm install",
+  "buildCommand": "node scripts/vercel-runner.mjs npm run build:vercel",
   "outputDirectory": "apps/web/dist",
   "rewrites": [
     {
