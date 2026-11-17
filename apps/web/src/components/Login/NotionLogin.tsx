@@ -22,21 +22,18 @@ const DEMO_ACCOUNTS = [
     role: UserRole.ADMIN,
     username: 'admin',
     fullName: 'Lic. Carlos Mendoza — Administrador del Sistema',
-    password: 'Admin#Scienpay2026!',
     badgeClass: 'bg-violet-100 text-violet dark:bg-violet-950/60 dark:text-violet-300',
   },
   {
     role: UserRole.GENERADOR,
     username: 'generador',
     fullName: 'Dra. Elena Rostova — Coordinadora General de Proyectos',
-    password: 'Coord#Scienpay2026!',
     badgeClass: 'bg-blue-100 text-primary dark:bg-blue-950/60 dark:text-blue-300',
   },
   {
     role: UserRole.RECEPTOR,
     username: 'receptor',
     fullName: 'Mg. Roberto Silva — Gerente de Administración y Finanzas',
-    password: 'Finan#Scienpay2026!',
     badgeClass: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300',
   },
 ] as const;
@@ -235,7 +232,7 @@ export const NotionLogin: React.FC = () => {
                   onClick={() => {
                     setServerError('');
                     form.setValue('identifier', account.username, { shouldValidate: true });
-                    form.setValue('password', account.password, { shouldValidate: true });
+                    form.setFocus('password');
                   }}
                   className="w-full text-left p-2.5 rounded-lg border border-[#E9E9E7] dark:border-[#2F2F2F] bg-white dark:bg-[#252525] hover:border-primary/50 cursor-pointer transition flex items-center justify-between text-xs"
                 >

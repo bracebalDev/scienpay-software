@@ -32,7 +32,10 @@ async function ensureDatabaseReady(): Promise<void> {
         await runSeed(1, 0);
         console.log('[Scienpay Serverless] Siembra de datos inicial verificada exitosamente.');
       } catch (err) {
-        console.warn('[Scienpay Serverless] Advertencia aplicando migraciones/siembra inicial:', err);
+        console.warn(
+          '[Scienpay Serverless] Advertencia aplicando migraciones/siembra inicial:',
+          err,
+        );
       }
     })();
   }

@@ -74,3 +74,6 @@ docs/privado-credenciales-pruebas.md
 
 .vercel
 .env*
+
+variables-entorno*
+*.txt.env
