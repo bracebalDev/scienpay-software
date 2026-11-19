@@ -3,9 +3,8 @@
 **Sistema de Control de Pagos y Asignaciones Científicas**  
 **Institución:** Universidad de Carabobo — Facultad Experimental de Ciencias y Tecnología (FACYT)  
 **Asignatura:** Sistemas de Información  
-**Versión / Rama:** `main` (commit `b60a3e7` · 58 commits)  
-**Fecha:** 18 de noviembre de 2026
-**Integrantes:** Angel Bandres, Andrés Crespo, Brayan Ceballos y Joshtin Mejias. 
+**Fecha:** 18 de noviembre de 2026  
+**Integrantes:** Angel Bandres, Andrés Crespo, Brayan Ceballos y Joshtin Mejias.
 
 ---
 
