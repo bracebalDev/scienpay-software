@@ -38,18 +38,21 @@ Arquitectura cliente-servidor con separación estricta de capas (**Presentación
 
 ```
 scienpay-software/
+├── api/                # Entrypoints Vercel Serverless (index.mjs, [...path].mjs)
 ├── apps/
-│   ├── api/            # Backend: NestJS, TypeScript, Drizzle ORM, Argon2id, Helmet
+│   ├── api/            # Backend: NestJS, TypeScript, Drizzle ORM, Argon2id, Helmet, OpenAPI
 │   └── web/            # Frontend: React 18, TypeScript, Vite, Tailwind CSS, TanStack Query
 ├── packages/
 │   └── shared/         # Contratos, tipos compartidos y esquemas Zod
 ├── docker/
 │   └── nginx/          # Proxy inverso con cabeceras de seguridad y enrutamiento
 ├── docs/
-│   ├── decisiones/     # Architecture Decision Records (ADRs)
-│   ├── seguridad/      # Modelo de amenazas y checklist ASVS
-│   └── uso-de-ia.md    # Bitácora estricta de prompts y uso de IA
+│   ├── decisiones/     # Architecture Decision Records (ADRs 001-008)
+│   ├── bitacora_ia.md  # Bitácora técnica de sesiones con IA
+│   └── uso-de-ia.md    # Registro de decisiones asistidas por IA
+├── scripts/            # Respaldos/restore multiplataforma y runner de despliegue Vercel
 ├── docker-compose.yml  # Orquestación de servicios (db, api, web, proxy)
+├── vercel.json         # Configuración de despliegue serverless, rewrites y cabeceras
 ├── .env.example        # Variables de entorno documentadas
 └── package.json        # Configuración de workspaces npm
 ```
@@ -88,6 +91,7 @@ scienpay-software/
 4. Acceso a las aplicaciones:
    - **Frontend (Web):** [http://localhost:8080](http://localhost:8080) (o directo en [http://localhost:5173](http://localhost:5173))
    - **Backend (API):** [http://localhost:8080/api/v1](http://localhost:8080/api/v1)
+   - **Documentación OpenAPI / Swagger UI:** [http://localhost:8080/api/docs](http://localhost:8080/api/docs) (o [http://localhost:4000/api/docs](http://localhost:4000/api/docs) en desarrollo local)
    - **Healthcheck:** [http://localhost:8080/api/v1/health](http://localhost:8080/api/v1/health)
    - **Base de Datos:** PostgreSQL en `localhost:5432`
 
@@ -129,6 +133,23 @@ scienpay-software/
    ```bash
    npm run dev:web
    ```
+
+### Credenciales de Prueba (Seed Inicial)
+
+| Rol | Usuario | Correo | Contraseña |
+|---|---|---|---|
+| **Administrador (`ADMIN`)** | `admin` | `admin@scienpay.uc.edu.ve` | `Admin#Scienpay2026!` |
+| **Generador (`GENERADOR`)** | `generador` | `generador@scienpay.uc.edu.ve` | `Coord#Scienpay2026!` |
+| **Receptor (`RECEPTOR`)** | `receptor` | `receptor@scienpay.uc.edu.ve` | `Finan#Scienpay2026!` |
+
+### Opción C: Despliegue en Producción (Vercel Serverless + Postgres)
+
+El repositorio incluye [vercel.json](vercel.json), los entrypoints serverless (`api/index.mjs`, `api/[...path].mjs`) y `scripts/vercel-runner.mjs`:
+
+1. Importar el repositorio en **Vercel** manteniendo la raíz (`./`) y conectar una base de datos **PostgreSQL** (Neon o Vercel Postgres, que inyecta `POSTGRES_URL` / `DATABASE_URL`).
+2. Configurar las variables de entorno `NODE_ENV=production`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` y `COOKIE_SECRET`.
+3. En el primer arranque en frío, el handler serverless ejecuta automáticamente las migraciones idempotentes (`0001`–`0005`) y siembra los datos iniciales si la base de datos está vacía.
+4. La documentación interactiva queda disponible en `/api/docs` y el contrato JSON en `/api/docs.json`.
 
 ---
 
@@ -201,6 +222,8 @@ Todas las decisiones clave del proyecto se encuentran documentadas en `docs/deci
 - [ADR-004: Algoritmo de Prorrateo de Causación por Días Calendario Activos](docs/decisiones/ADR-004-algoritmo-prorrateo-causacion.md)
 - [ADR-005: Algoritmo de Aplicación de Pagos Parciales por FIFO](docs/decisiones/ADR-005-algoritmo-pagos-parciales-fifo.md)
 - [ADR-006: Estrategia de Ciberseguridad, Autenticación y Segregación Cuatro Ojos](docs/decisiones/ADR-006-seguridad-autenticacion-cuatro-ojos.md)
+- [ADR-007: Frontend Conectado a la API Real](docs/decisiones/ADR-007-frontend-conectado-api.md)
+- [ADR-008: Calidad, Lint, Formato y Puertas de CI](docs/decisiones/ADR-008-calidad-y-ci.md)
 
 ---
 
