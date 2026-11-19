@@ -243,4 +243,53 @@
   - Se agregó el job `e2e` al CI con PostgreSQL 16, Chromium y publicación del reporte ante fallos.
   - Correcciones: resolución directa de `tsx` para Windows, labels accesibles en el login, expectativa 201 en preview de causación, contraseña inválida con longitud válida y lectura de respuestas binarias antes de consumir el cuerpo.
 - **Verificación:** 13/13 integración, 6/6 E2E, 98/98 API, 10/10 web, typecheck, lint y formato.
-- **Pendiente:** Fase 5 (pulimiento y entrega).
+- **Estado:** Fase 4 completada y cerrada satisfactoriamente.
+
+#### Sesión 21: Fase 5 - OpenAPI Integral, Auditoría Transaccional, Administración de Usuarios y Arquitectura Serverless
+- **Fecha:** 16 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / Antigravity Agentic Senior Software Engineer
+- **Objetivo del Prompt:** Extender la trazabilidad del sistema completando la auditoría append-only en todas las mutaciones financieras y administrativas; generar la especificación OpenAPI 3.0 formal mapeada desde los contratos Zod compartidos mediante `@asteasolutions/zod-to-openapi` servida en `/api/docs` y `/api/docs.json`; implementar la gestión administrativa completa de usuarios (desactivación/reactivación lógica, mutación controlada de roles y reseteo de claves con hash Argon2id bajo la migración `0004_user_deactivation_and_audit_indexes.sql`); y reestructurar el backend para soportar empaquetado dual (servidor HTTP standalone y función Serverless en Vercel vía `apps/api/src/serverless.ts` y `api/[...path].mjs`).
+- **Resultado Obtenido:**
+  - Especificación OpenAPI 3.0 con 43 rutas, esquemas de entrada/salida tipados, respuestas HTTP canónicas y seguridad Bearer JWT documentada.
+  - Módulo de administración de usuarios en `UsersController` y `UsersService` con filtros de seguridad, auditoría transaccional de cambios de privilegios y migración `0004` con índices optimizados en `audit_log`.
+  - Módulo Serverless en `apps/api/src/serverless.ts` que instancia y almacena en caché la aplicación NestJS/Express entre invocaciones en caliente para mitigar cold starts en Vercel Functions.
+  - Siembra de datos (`seed.ts`) robustecida con arrastre de saldos de cajas chicas y soporte idempotente para ejecución en frío.
+- **Cambios Manuales Realizados y Motivo:**
+  - Se implementó un singleton en memoria para el servidor NestJS en modo serverless (`cachedApp`), garantizando que la conexión a la base de datos y la inicialización de módulos solo ocurran durante el primer arranque del contenedor efímero.
+
+#### Sesión 22: Infraestructura Cloud Serverless (Vercel), Compatibilidad Vercel Postgres, Auto-Siembra y Skew Protection
+- **Fecha:** 16 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / Antigravity Agentic Senior Software Engineer
+- **Objetivo del Prompt:** Migrar la estrategia de despliegue desde máquinas virtuales monolíticas de Fly.io hacia una arquitectura Cloud Serverless en Vercel de alta disponibilidad y latencia reducida. Configurar `vercel.json` con multi-service routing (`api` y `web`), soportar cadenas de conexión nativas de Vercel Postgres (`POSTGRES_URL` con `sslmode=require`), implementar auto-detección y siembra automática (`ensureDatabaseSeeded`) para bases de datos recién aprovisionadas, habilitar Skew Protection para garantizar concordancia atómica entre el frontend compilado y las lambdas API, y resolver omisiones del compilador TypeScript (`tsc`) blindando `installCommand` para retener `devDependencies`.
+- **Resultado Obtenido:**
+  - Configuración consolidada en `vercel.json` con runner personalizado (`apps/api/scripts/vercel-runner.mjs`), `installCommand: "npm ci --include=dev"` y protección contra sesgo de despliegue (`skewProtection: true`).
+  - Capa de abstracción de base de datos en `connection.ts` compatible con variables de entorno de Vercel Postgres (`POSTGRES_URL`), pool de conexiones SSL optimizado para funciones serverless y ejecución automática de migraciones/seed si no existen registros.
+  - Archivo `.npmrc` configurado con `loglevel=error` para suprimir advertencias innecesarias de empaquetado en los registros de despliegue de Vercel.
+  - Purga de seguridad: exclusión estricta de variables `.env.local` y eliminación de cualquier credencial residual del empaquetado del cliente.
+- **Cambios Manuales Realizados y Motivo:**
+  - Se configuró el flag `--include=dev` en la fase de instalación de Vercel debido a que Vercel por defecto descarta `devDependencies` cuando detecta entornos de producción, lo que provocaba la falla de compilación de los paquetes TypeScript (`tsc`) del monorepo.
+
+#### Sesión 23: Panel Demo 1-Click con Roles Institucionales y Blindaje de Selectores E2E en Playwright
+- **Fecha:** 16 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / Antigravity Agentic Senior Software Engineer
+- **Objetivo del Prompt:** Diseñar e integrar un panel de acceso rápido para demostración académica ("Demo 1-Click") en `NotionLogin.tsx` con botones preconfigurados para los tres roles operativos (Administrador, Generador, Receptor), exponiendo visualmente las credenciales institucionales y ejecutando el login de forma desatendida. Calibrar los umbrales de rate limiting para evitar bloqueos durante revisiones docentes y resolver colisiones de selectores en la suite de pruebas E2E de Playwright.
+- **Resultado Obtenido:**
+  - Panel interactivo en la tarjeta de login con badges semánticos por rol y botón de acceso directo que despacha el formulario automáticamente.
+  - Ajuste en `auth.controller.ts` para que los límites de intentos fallidos permitan la fluidez de la presentación académica sin comprometer la política de seguridad central.
+  - Refactorización de selectores en `apps/web/e2e/helpers.ts` utilizando coincidencia exacta `{ exact: true }` y diferenciación de etiquetas semánticas (`aria-label="Acceso rápido como [Rol]"` y texto 'Acceder' vs 'Ingresar'), logrando la ejecución impecable de las 6 pruebas E2E (6/6 PASS).
+- **Cambios Manuales Realizados y Motivo:**
+  - Se desacopló el texto accesible del botón de inicio de sesión estándar del botón de acceso demo para evitar que el localizador `getByRole('button', { name: 'Ingresar' })` de Playwright encontrara múltiples nodos coincidentes en el DOM.
+
+#### Sesión 24: Rectificación UI Mobile-First, Accesibilidad WCAG y Aplicación de la Skill `modern-web-guidance`
+- **Fecha:** 16 de Noviembre de 2026
+- **Herramienta:** Asistente de Codificación / Antigravity Agentic Senior Software Engineer apoyado por la skill `modern-web-guidance`
+- **Objetivo del Prompt:** Ejecutar una auditoría exhaustiva y refactorización técnica de la interfaz web para garantizar una arquitectura estrictamente Mobile-First y cumplimiento de estándares de accesibilidad WCAG 2.1/2.2, apoyándose metodológicamente en las directrices de la skill `modern-web-guidance`. Implementar el patrón `navigation-drawer` accesible en `NotionSidebar.tsx` con manejo de tecla `Escape`, backdrop overlay translúcido con light dismiss y bloqueo de scroll; adaptar la barra superior (`header`) en `App.tsx` con botón de menú hamburguesa accesible (`aria-expanded`, `aria-controls`); incorporar reglas CSS para touch targets de 44px en dispositivos táctiles (`@media (pointer: coarse)`) y medios fluidos (`max-inline-size: 100%`); y transformar el componente `ThemeToggle` en un grupo accesible (`role="group"`, `aria-pressed`, `aria-label`).
+- **Resultado Obtenido:**
+  - Adopción integral de las recomendaciones de `modern-web-guidance` (`navigation-drawer.md`, `light-dismiss-a-dialog.md`, `accessibility.md`, `css-layout.md` y `dark-mode.md`).
+  - Navegación móvil perfeccionada: la barra lateral conmuta fluidamente entre Drawer off-canvas flotante en pantallas pequeñas (< 768px) y barra colapsable de espacio de trabajo en pantallas grandes, sincronizando el estado con el evento `resize` del viewport.
+  - Barra superior responsive con botón hamburguesa accesible, min-size de 44x44px en controles táctiles, logotipo adaptativo FACYT/UC y migas de pan con truncado inteligente.
+  - Inclusión de variables CSS en `apps/web/src/index.css`: `--target-size: 24px` escalada a `44px` en punteros táctiles, `overflow-wrap: break-word` y normalización de contenedores multimedia.
+  - Selector de temas accesible (`ThemeToggle`) estructurado como grupo ARIA con retroalimentación de estado (`aria-pressed`), adaptable en modo compacto para la barra lateral y expandido en login móvil.
+  - Formateo estricto del código frontend validado con Prettier (`npm run format:check` 100% exitoso) y suite de pruebas frontend y backend sin regresiones.
+- **Cambios Manuales Realizados y Motivo:**
+  - Se mantuvo la sincronización del listener de teclado `Escape` directamente en `App.tsx` para cerrar el drawer móvil sin requerir dependencias externas de manejo de foco, garantizando que el usuario pueda salir de la navegación modal con teclado físico o gestos de retroceso estándar.

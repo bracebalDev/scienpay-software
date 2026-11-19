@@ -56,6 +56,41 @@ Este documento registra los prompts utilizados, las decisiones aceptadas y recha
 - **Resultado:** Se definieron 6 tareas para la Fase 4 (suite de integración versionada, E2E con Playwright, stress FIFO, lint/CI, OpenAPI desde Zod y cierre de deuda técnica) y 6 para la Fase 5 (seed verificado, despliegue Docker Compose + Fly.io, manuales por rol, bitácora IA, demo y defensa). Se normalizó la numeración de sesiones y se actualizaron `HANDOFF.md` y `avances.md`.
 - **Herramientas de IA utilizadas:** Asistente de Codificación / OpenCode.
 
+### Sesión 7: Fase 4 - Aseguramiento de Calidad, OpenAPI, Deuda Técnica e Infraestructura de Integración
+- **Fecha:** 15 de Noviembre de 2026
+- **Prompt Técnico de Entrada:**
+  > "Actúa como Ingeniero de Software Senior / Antigravity Agent. Implementa las tareas 4.1 a 4.6 del plan de Fase 4 en Scienpay: 1) Configura ESLint flat config (`eslint.config.mjs`) y Prettier con scripts de verificación y formateo que bloqueen el pipeline de CI ante fallos; 2) Genera la especificación completa OpenAPI 3.0 desde los esquemas Zod compartidos en `@scienpay/shared` utilizando `@asteasolutions/zod-to-openapi`, exponiendo los endpoints `/api/docs` y `/api/docs.json` con test de contrato automatizado; 3) Resuelve la deuda técnica pendiente implementando la migración `0005_request_sequences_and_notes.sql` para numeración correlativa transaccional de solicitudes (`request_sequences` / `next_request_number`) y persistencia de `notes`; 4) Implementa tests de frontend unitarios reales con Vitest, React Testing Library y jsdom (eliminando el placeholder `exit 0`); 5) Diseña la infraestructura versionada de pruebas de integración con `docker-compose.test.yml`, runner automatizado y suites por dominio; y 6) Diseña una prueba de estrés de concurrencia FIFO con 20 transacciones de desembolso simultáneas sobre la misma deuda repetidas 10 veces para auditar bloqueos `FOR UPDATE` y prevenir sobrepagos o descuadres."
+- **Objetivo del Prompt:** Establecer un estándar riguroso de calidad técnica, formalizar la documentación de la API en OpenAPI sin duplicación de modelos, cerrar la deuda técnica de numeración atómica en solicitudes y blindar matemáticamente la concurrencia en la imputación de pagos antes del pase a producción.
+- **Herramientas de IA utilizadas:** Asistente de codificación y arquitectura avanzada.
+
+### Sesión 8: Fase 4 - Ejecución de Integración con Docker y Automatización E2E con Playwright
+- **Fecha:** 15 de Noviembre de 2026
+- **Prompt Técnico de Entrada:**
+  > "Aprovisiona el contenedor PostgreSQL 16 aislado en el puerto 55432 con `docker-compose.test.yml` y ejecuta la suite completa de pruebas de integración versionada (`npm run test:integration`). Corrige cualquier discrepancia de ejecución en entorno Windows (compatibilidad de rutas en `tsx`), normaliza el bypass condicional de rate limit de login (`DISABLE_LOGIN_RATE_LIMIT`) restringido estrictamente a entornos no productivos, y valida la prueba de estrés FIFO. Posteriormente, configura Playwright E2E (`apps/web/playwright.config.ts`) contra la API compilada en el puerto 4300 y el bundle Vite en 5173; automatiza los flujos de login inválido, sesión persistente vía cookies HttpOnly, modal de confirmación de salida y recorridos por cada rol (ADMIN, GENERADOR, RECEPTOR). Integra el job `e2e` en GitHub Actions."
+- **Objetivo del Prompt:** Validar de extremo a extremo el comportamiento real del sistema contra una instancia nativa de base de datos relacional y un navegador Chromium automatizado, confirmando que la lógica transaccional, las cookies seguras y la segregación de interfaces por rol funcionen sin fallos ni condiciones de carrera.
+- **Herramientas de IA utilizadas:** Asistente de testing automatizado y DevOps.
+
+### Sesión 9: Transición a Arquitectura Serverless en Vercel, Soporte Vercel Postgres y Auto-Siembra
+- **Fecha:** 16 de Noviembre de 2026
+- **Prompt Técnico de Entrada:**
+  > "Reestructura la arquitectura de despliegue en la nube para migrar de Fly.io a la plataforma Serverless de Vercel. Configura `vercel.json` para orquestar la compilación estática de `@scienpay/web` y el empaquetado serverless de `@scienpay/api` mediante la función de entrada `api/[...path].mjs` y el handler optimizado `apps/api/src/serverless.ts` con instancia en caché. Adapta la capa de persistencia en `connection.ts` para reconocer de forma nativa variables de entorno de Vercel Postgres (`POSTGRES_URL`), forzando conexiones SSL seguras. Implementa una rutina de inicialización y auto-siembra (`ensureDatabaseSeeded`) que aplique migraciones y datos base (`seed.ts`) de manera idempotente si la base de datos remota está vacía. Habilita Vercel Skew Protection para garantizar coherencia entre chunks de cliente y handlers serverless, y blinda el `installCommand` con `npm ci --include=dev` para retener las dependencias de TypeScript necesarias durante el build."
+- **Objetivo del Prompt:** Desplegar el sistema en una plataforma cloud elástica, de alta disponibilidad y sin costo de mantenimiento por máquinas virtuales ociosas, asegurando que la base de datos se auto-configure desde cero en el primer arranque y que los usuarios no experimenten desajustes de versiones en despliegues continuos.
+- **Herramientas de IA utilizadas:** Asistente de arquitectura cloud y Serverless.
+
+### Sesión 10: Optimización de Modo Demostración 1-Click y Blindaje de Selectores Playwright E2E
+- **Fecha:** 16 de Noviembre de 2026
+- **Prompt Técnico de Entrada:**
+  > "Integra en la tarjeta de login (`NotionLogin.tsx`) un selector de perfiles de demostración rápida ('Demo 1-Click') que permita al evaluador acceder instantáneamente con los roles de Administrador, Generador y Receptor sin necesidad de escribir manualmente usuario y contraseña, visualizando las credenciales de prueba de forma transparente. Calibra los umbrales del rate limiter en `auth.controller.ts` para evitar que las pruebas de demostración sean bloqueadas. Resuelve la colisión de selectores en la suite de pruebas E2E de Playwright (`apps/web/e2e/helpers.ts`), especificando coincidencia exacta (`{ exact: true }`) y asignando atributos de accesibilidad diferenciados (`aria-label`) y copy semántico ('Acceder' en tarjetas demo vs 'Ingresar' en el botón del formulario principal), verificando que la suite E2E mantenga 6/6 tests exitosos."
+- **Objetivo del Prompt:** Facilitar una experiencia de revisión y evaluación docente inmediata y sin fricciones durante la defensa del proyecto, blindando a la vez los localizadores de prueba de Playwright para evitar falsos positivos por ambigüedad semántica en el DOM.
+- **Herramientas de IA utilizadas:** Asistente de UI/UX y testing E2E.
+
+### Sesión 11: Auditoría UI Mobile-First, Accesibilidad Web y Adopción de la Skill `modern-web-guidance`
+- **Fecha:** 16 de Noviembre de 2026
+- **Prompt Técnico de Entrada:**
+  > "Audita y refactoriza la interfaz de usuario de Scienpay para garantizar una experiencia responsive Mobile-First y cumplimiento de normas de accesibilidad web modernas (WCAG 2.1/2.2), consultando y aplicando rigurosamente los patrones y directrices de la skill `modern-web-guidance`. Implementa el patrón `navigation-drawer` en `NotionSidebar.tsx` con soporte para apertura/cierre reactivo, backdrop overlay translúcido con light dismiss, bloqueo de scroll en el documento y cierre mediante la tecla `Escape`; adapta el header en `App.tsx` con botón hamburguesa accesible (`aria-expanded`, `aria-controls="main-sidebar"`), logotipo adaptativo FACYT/UC y migas de pan con truncado semántico; define en `index.css` touch targets mínimos de 44px para dispositivos táctiles mediante `@media (pointer: coarse)` escalando la variable `--target-size`, asegura adaptación fluida de imágenes y videos (`max-inline-size: 100%`) y rotura de palabras (`overflow-wrap: break-word`); y optimiza el componente `ThemeToggle` estructurándolo con roles ARIA semánticos (`role="group"`, `aria-pressed`, `aria-label`) para su integración armónica tanto en la barra lateral como en la cabecera del login móvil. Valida el código con `npm run format:check` y `npm run typecheck`."
+- **Objetivo del Prompt:** Transformar la interfaz de usuario de una visualización enfocada en escritorio a un sistema de diseño adaptable y accesible de grado profesional, siguiendo las mejores prácticas contemporáneas dictadas por la skill `modern-web-guidance` para garantizar una interacción fluida tanto en dispositivos móviles táctiles como en monitores de escritorio.
+- **Herramientas de IA utilizadas:** Asistente senior frontend potenciado por la skill `modern-web-guidance`.
+
 ---
 
 ## 2. Decisiones Aceptadas vs. Rechazadas
@@ -108,6 +143,15 @@ Este documento registra los prompts utilizados, las decisiones aceptadas y recha
 4. **Frontend real conectado a la API (Fase 3):**
    - *Generado:* `apiClient` con refresh/retry, `AuthContext` con deduplicación de refresh, 10 módulos de hooks TanStack Query, 12 formularios de dominio RHF+Zod (más el login), componentes UI reutilizables y las vistas `AdminView`, `GeneratorView` y `ReceptorView`.
    - *Revisión Humana:* Se verificó que no queden imports a `mockData.ts` ni a `app.types.ts`, que el access token no se persista en el navegador, que las mutaciones invaliden sus claves de caché y que `typecheck` y `build` del workspace web finalicen sin errores. La suite de API se mantuvo en 87/87.
+5. **Infraestructura de Pruebas Versionada y Concurrencia FIFO (Fase 4):**
+   - *Generado:* `docker-compose.test.yml`, runner automatizado `apps/api/scripts/run-integration.mjs`, suites por dominio con PostgreSQL 16 y prueba de estrés FIFO (20 desembolsos concurrentes × 10 iteraciones).
+   - *Revisión Humana:* Se verificó mediante aserciones SQL que ningún desembolso sobrepasara la deuda insoluta, que los saldos remanentes no fueran negativos y que la numeración correlativa no sufriera huecos ni condiciones de carrera.
+6. **Despliegue Cloud Serverless, Vercel Postgres y Auto-Siembra (Fase 5):**
+   - *Generado:* `apps/api/src/serverless.ts`, `api/[...path].mjs`, configuración `vercel.json` con multi-service routing (`api` y `web`), integración nativa de `POSTGRES_URL` con SSL y rutina de inicialización desatendida (`ensureDatabaseSeeded`).
+   - *Revisión Humana:* Se verificó la resiliencia ante arranques en frío (cold starts) reutilizando la instancia de NestJS en caché, la auto-siembra idempotente de datos demo y la activación de Skew Protection para evitar fallos de versiones entre cliente y servidor.
+7. **Arquitectura UI Mobile-First y Accesibilidad con `modern-web-guidance`:**
+   - *Generado:* Patrón `navigation-drawer` accesible en `NotionSidebar.tsx` con backdrop overlay translúcido, cierre por tecla `Escape`, adaptación responsive en `App.tsx` con botón hamburguesa accesible (`aria-expanded`, `aria-controls`), media query de puntero táctil (`@media (pointer: coarse)`) con targets mínimos de 44px, layout fluido y `ThemeToggle` estructurado con `role="group"` y `aria-pressed`.
+   - *Revisión Humana:* Se validó la experiencia de uso en dispositivos móviles táctiles y de escritorio, el cumplimiento de WCAG 2.1/2.2 y la coherencia del diseño minimalista institucional FACYT/UC.
 
 ---
 
@@ -123,3 +167,16 @@ Este documento registra los prompts utilizados, las decisiones aceptadas y recha
 | **DEC-IA-35** | Parsear como texto todas las respuestas HTTP del helper de integración. | **Rechazada** | Las respuestas binarias (PDF) se devuelven como `Response` antes de consumir el cuerpo; los errores sí se leen como texto para conservar el mensaje. |
 | **DEC-IA-36** | Mockear la API en las pruebas E2E para mayor velocidad. | **Rechazada** | Playwright levanta la API compilada y PostgreSQL reales en puertos aislados (`4300`/`5173`) con migraciones y seed, de modo que se validan sesión, cookies y RBAC de extremo a extremo. |
 | **DEC-IA-37** | Localizar los campos del login por placeholder o posición. | **Rechazada** | Se añadieron `id`/`htmlFor` a los labels y las pruebas usan `getByLabel` con coincidencia exacta; además de estabilizar E2E, mejora la accesibilidad del formulario. |
+
+---
+
+## 5. Decisiones de Despliegue Cloud, Demostración y Frontend Moderno (Fase 5 / Vercel / UI)
+
+| ID | Propuesta | Decisión | Justificación |
+|---|---|---|---|
+| **DEC-IA-38** | Migrar de contenedores monolíticos en Fly.io a arquitectura Serverless en Vercel con micro-monorepo. | **Aceptada** | Elimina costos de máquinas virtuales siempre encendidas, ofrece escalabilidad elástica automática y permite desplegar frontend estático y backend serverless bajo un mismo dominio institucional sin problemas de CORS ni latencia adicional. |
+| **DEC-IA-39** | Exigir siembra manual por terminal en la base de datos de producción Vercel Postgres. | **Rechazada** | En entornos serverless efímeros no hay acceso a terminal interactiva. Se implementó auto-detección y siembra automática (`ensureDatabaseSeeded`) en el primer cold start si la base de datos está vacía, garantizando disponibilidad inmediata del sistema. |
+| **DEC-IA-40** | Permitir despliegues continuos sin control de versiones concurrentes entre frontend y backend. | **Rechazada** | Provoca errores de mismatch entre chunks de frontend en caché del usuario y endpoints del backend recién desplegados. Se activó Vercel Skew Protection (`skewProtection: true`) para garantizar sincronización atómica. |
+| **DEC-IA-41** | Mantener credenciales de demo ocultas o solo en documentación externa. | **Rechazada** | Genera fricción y demoras durante la defensa docente. Se implementó el panel Demo 1-Click en `NotionLogin` con roles visibles y autologin seguro, acelerando la evaluación de las tres perspectivas de usuario sin comprometer la seguridad. |
+| **DEC-IA-42** | Implementar menús móviles basados en toggles CSS ad-hoc sin estándares de accesibilidad. | **Rechazada** | Viola normas WCAG. Se utilizó la skill `modern-web-guidance` para aplicar el patrón normativo `navigation-drawer` con soporte de tecla Escape, light dismiss mediante backdrop translúcido, bloqueo de scroll en el body y touch targets mínimos de 44px (`@media (pointer: coarse)`). |
+| **DEC-IA-43** | Emplear botones simples sin atributos ARIA para la alternancia de temas Claro/Oscuro/Sistema. | **Rechazada** | Los lectores de pantalla no comunican el estado activo al usuario invidente o con baja visión. Se refactorizó `ThemeToggle` estructurado con `role="group"`, `aria-label="Selector de tema de color"` y atributos `aria-pressed` individuales por botón. |
