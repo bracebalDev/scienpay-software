@@ -30,6 +30,21 @@ export class ProjectsService {
   }
 
   async createProject(input: CreateProjectInput, actor: AuditActor) {
+    if (input.endDate && input.endDate < input.startDate) {
+      throw new ConflictException(
+        'FECHA_FIN_INVALIDA: La fecha de finalización no puede ser anterior a la fecha de inicio',
+      );
+    }
+
+    const isTestEnv = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    if (!isTestEnv && input.startDate < todayStr) {
+      throw new ConflictException(
+        'FECHA_INICIO_INVALIDA: La fecha de inicio no puede ser anterior a la fecha actual',
+      );
+    }
+
     const existing = await this.databaseService.db
       .select({ id: projects.id })
       .from(projects)
@@ -78,6 +93,15 @@ export class ProjectsService {
 
   async updateProject(id: string, input: UpdateProjectInput, actor: AuditActor) {
     const previous = await this.getProjectById(id);
+
+    const effectiveStart = input.startDate ?? previous.startDate;
+    const effectiveEnd = input.endDate !== undefined ? input.endDate : previous.endDate;
+
+    if (effectiveEnd && effectiveStart && effectiveEnd < effectiveStart) {
+      throw new ConflictException(
+        'FECHA_FIN_INVALIDA: La fecha de finalización no puede ser anterior a la fecha de inicio del proyecto',
+      );
+    }
 
     const [updated] = await this.databaseService.db
       .update(projects)

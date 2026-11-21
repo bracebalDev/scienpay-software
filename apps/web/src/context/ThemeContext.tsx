@@ -1,7 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import React, { createContext, useContext, useEffect } from 'react';
 
-export type Theme = 'light' | 'dark' | 'system';
+export type Theme = 'light';
 
 interface ThemeContextType {
   theme: Theme;
@@ -12,50 +11,18 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    const saved = localStorage.getItem('scienpay_theme') as Theme | null;
-    return saved || 'system';
-  });
-
-  const [isDark, setIsDark] = useState<boolean>(false);
-
   useEffect(() => {
+    // Por recomendación del evaluador para sistemas administrativos institucionales,
+    // la aplicación opera de forma exclusiva y predeterminada en Modo Claro.
+    localStorage.removeItem('scienpay_theme');
     const root = document.documentElement;
-
-    const applyTheme = () => {
-      let activeIsDark = false;
-      if (theme === 'system') {
-        activeIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      } else {
-        activeIsDark = theme === 'dark';
-      }
-
-      setIsDark(activeIsDark);
-
-      if (activeIsDark) {
-        root.classList.add('dark');
-      } else {
-        root.classList.remove('dark');
-      }
-    };
-
-    applyTheme();
-
-    if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const listener = () => applyTheme();
-      mediaQuery.addEventListener('change', listener);
-      return () => mediaQuery.removeEventListener('change', listener);
-    }
-  }, [theme]);
-
-  const setTheme = (newTheme: Theme) => {
-    localStorage.setItem('scienpay_theme', newTheme);
-    setThemeState(newTheme);
-  };
+    root.classList.remove('dark');
+  }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, isDark }}>{children}</ThemeContext.Provider>
+    <ThemeContext.Provider value={{ theme: 'light', setTheme: () => {}, isDark: false }}>
+      {children}
+    </ThemeContext.Provider>
   );
 };
 
@@ -67,66 +34,7 @@ export const useTheme = () => {
   return context;
 };
 
-export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
-  const { theme, setTheme } = useTheme();
-
-  return (
-    <div
-      role="group"
-      aria-label="Selector de tema de color"
-      className={`inline-flex items-center rounded-lg p-0.5 border transition-colors ${
-        compact
-          ? 'bg-[#EAE9E5] dark:bg-[#2C2C2C] border-[#E2E1DC] dark:border-[#373737]'
-          : 'bg-[#F1F0EC] dark:bg-[#202020] border-[#E5E4E0] dark:border-[#2F2F2F]'
-      }`}
-    >
-      <button
-        type="button"
-        onClick={() => setTheme('light')}
-        aria-pressed={theme === 'light'}
-        aria-label="Modo Claro"
-        className={`flex items-center justify-center rounded-md px-2 py-1 text-xs font-medium transition-all ${
-          theme === 'light'
-            ? 'bg-white dark:bg-[#333333] text-[#37352F] dark:text-white shadow-sm'
-            : 'text-[#787774] hover:text-[#37352F] dark:text-[#9B9A97] dark:hover:text-white'
-        }`}
-        title="Modo Claro"
-      >
-        <Sun className="w-3.5 h-3.5" />
-        {!compact && <span className="hidden sm:inline ml-1.5 text-[11px]">Claro</span>}
-      </button>
-
-      <button
-        type="button"
-        onClick={() => setTheme('dark')}
-        aria-pressed={theme === 'dark'}
-        aria-label="Modo Oscuro"
-        className={`flex items-center justify-center rounded-md px-2 py-1 text-xs font-medium transition-all ${
-          theme === 'dark'
-            ? 'bg-white dark:bg-[#333333] text-[#37352F] dark:text-white shadow-sm'
-            : 'text-[#787774] hover:text-[#37352F] dark:text-[#9B9A97] dark:hover:text-white'
-        }`}
-        title="Modo Oscuro"
-      >
-        <Moon className="w-3.5 h-3.5" />
-        {!compact && <span className="hidden sm:inline ml-1.5 text-[11px]">Oscuro</span>}
-      </button>
-
-      <button
-        type="button"
-        onClick={() => setTheme('system')}
-        aria-pressed={theme === 'system'}
-        aria-label="Tema del Sistema"
-        className={`flex items-center justify-center rounded-md px-2 py-1 text-xs font-medium transition-all ${
-          theme === 'system'
-            ? 'bg-white dark:bg-[#333333] text-[#37352F] dark:text-white shadow-sm'
-            : 'text-[#787774] hover:text-[#37352F] dark:text-[#9B9A97] dark:hover:text-white'
-        }`}
-        title="Tema del Sistema"
-      >
-        <Monitor className="w-3.5 h-3.5" />
-        {!compact && <span className="hidden sm:inline ml-1.5 text-[11px]">Sistema</span>}
-      </button>
-    </div>
-  );
+export const ThemeToggle: React.FC<{ compact?: boolean }> = () => {
+  // Retorna null: la interfaz es exclusivamente en modo claro estándar administrativo
+  return null;
 };

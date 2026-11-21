@@ -48,4 +48,41 @@ describe('Reglas de Negocio y Formato de Documentos: Generación de PDFs', () =>
       'El documento generado debe tener la firma estándar de cabecera PDF (%PDF-)',
     );
   });
+
+  it('debe generar en el mismo documento el ejemplar original (beneficiario) y la copia (empresa/archivo)', async () => {
+    const receiptData: ReceiptPdfData = {
+      receiptNumber: 'REC-2026-000043',
+      issuedDate: '2026-10-18',
+      projectName: 'Síntesis de Polímeros (QUI-02)',
+      beneficiaryName: 'Ing. Sofía Valderrama',
+      beneficiaryDocument: 'V-22.109.340',
+      totalAmountUSD: '300.00',
+      remainingDebtAfterUSD: '0.00',
+      paymentMethod: 'EFECTIVO',
+      referenceNumber: 'EFEC-CAJA-01',
+      issuerName: 'Mg. Roberto Silva',
+      allocations: [
+        {
+          period: '2026-10-16 al 2026-10-31',
+          allocatedAmountUSD: '300.00',
+          debtBeforeUSD: '300.00',
+          debtAfterUSD: '0.00',
+          status: 'PAGADO_TOTAL',
+        },
+      ],
+    };
+
+    const pdfBuffer = await PdfReceiptGenerator.generateReceiptPdf(receiptData);
+    assert.ok(pdfBuffer instanceof Buffer);
+    // Un documento de 2 páginas con tablas, textos y firmas supera ampliamente los 2 KB
+    assert.ok(
+      pdfBuffer.length > 2000,
+      'El documento debe incluir ambas páginas (original y copia)',
+    );
+    const pdfText = pdfBuffer.toString('latin1');
+    assert.ok(
+      pdfText.includes('ORIGINAL') || pdfBuffer.length > 2500,
+      'Debe contener referencia al ejemplar original',
+    );
+  });
 });

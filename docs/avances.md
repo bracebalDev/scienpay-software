@@ -167,6 +167,16 @@ Para clonar y levantar el proyecto en sus máquinas locales:
 - **Integración ejecutada:** con Docker 28.4.0 y PostgreSQL 16 en `55432`, `npm run test:integration` pasó **13/13 tests, 0 fallos, 20.4 s**. La prueba FIFO de 20 desembolsos concurrentes × 10 repeticiones pasó en 19.8 s. Se corrigieron la invocación de `tsx` en Windows, el rate limit compartido de login (bypass solo fuera de producción) y las expectativas de estado HTTP.
 - **E2E con Playwright:** configuración en `apps/web/playwright.config.ts` y seis pruebas en `apps/web/e2e` (credenciales inválidas, restauración de sesión, cierre con confirmación y navegación por cada rol). Ejecución local **6/6 PASS** en 25.1 s; job `e2e` agregado al CI con PostgreSQL 16 y Chromium.
 
+### 21 de Noviembre de 2026
+
+#### Fase 5: Ajustes de Evaluación, Facturación con Duplicado, Modo Claro y Manual de Usuario
+
+- **Facturación con Copia en un Solo Documento:** Se actualizó el motor de reportes en PDF (`PdfReceiptGenerator.generateReceiptPdf`) para que emita en un único archivo tanto el ejemplar **Original para el Beneficiario** (Página 1) como la **Copia de Registro para la Empresa** (Página 2), con membrete institucional, tablas de amortización FIFO y líneas de firma legal.
+- **Estandarización a Modo Claro Exclusivo:** Por directriz técnica del evaluador para sistemas administrativos de auditoría, se fijó el Modo Claro como estándar obligatorio, eliminando la alternancia a modo oscuro o modo sistema en el contexto y la interfaz.
+- **Manual de Usuario:** Se redactó y publicó `docs/manual_de_usuario.md`, estructurado con guías prácticas paso a paso para el registro de presupuestos, causación y cálculo de nómina, aprobación bajo cuatro ojos, desembolsos con amortización FIFO y control de cajas chicas.
+- **Ampliación de Datos Iniciales (Seed Realista):** Se añadieron proyectos adicionales (`FIS-02`, `QUI-03`, `BIO-04`), tabulador semanal, padrón extendido de beneficiarios (Dra. Valentina Rivas, Prof. Marcos Domínguez, Lcda. Gabriela Navarro, Dr. David Hernández), asignaciones, lotes de causación y solicitudes en diversos estados contables (`CERRADA`, `APROBADA`, `ENVIADA`, `BORRADOR`), así como un segundo fondo fijo de caja chica.
+- **Usabilidad Administrativa:** Se refinaron los rótulos y botones de acción en la interfaz para apegarse a la jerga contable y administrativa venezolana sin alterar los contratos ni nombres del informe técnico rector.
+
 ## Estado final
 
 - Fases 1–3 completadas (17/17 tareas).

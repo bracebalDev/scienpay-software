@@ -212,7 +212,7 @@ Diseñado bajo lineamientos **OWASP ASVS Nivel 2** ([ADR-006](file:///c:/Users/a
 * **Prefijo global:** `/api/v1`
 * **Documentación interactiva:** Swagger UI en `/api/docs` y especificación JSON en `/api/docs.json`, generados automáticamente desde los contratos Zod compartidos en [openapi.ts](file:///c:/Users/andre/Desktop/Proyecto%20Final%20SI/scienpay-software/apps/api/src/infrastructure/openapi/openapi.ts) (**43 rutas**, **21 esquemas**, seguridad `bearerAuth`).
 * **Reportes PDF ([pdf-receipt.generator.ts](file:///c:/Users/andre/Desktop/Proyecto%20Final%20SI/scienpay-software/apps/api/src/infrastructure/pdf/pdf-receipt.generator.ts)):**
-  1. **Recibo Individual (`GET /api/v1/disbursements/receipts/:id/pdf`):** Membrete institucional, correlativo `REC-YYYY-NNNNNN`, datos del beneficiario/proyecto, desglose tabular de imputaciones FIFO, saldo remanente y líneas de firma.
+  1. **Recibo Individual (`GET /api/v1/disbursements/receipts/:id/pdf`):** Membrete institucional, correlativo `REC-YYYY-NNNNNN`, datos del beneficiario/proyecto, desglose tabular de imputaciones FIFO, saldo remanente y líneas de firma. Genera en el mismo documento el ejemplar Original (beneficiario) y la Copia de registro contable (empresa).
   2. **Solicitud Consolidada (`GET /api/v1/payment-requests/:id/pdf`):** Resumen consolidado del lote con tabla por beneficiario (causado, pagado, pendiente), totales globales y bloque de firmas (Generador, Receptor y Administración).
 
 ---
@@ -227,7 +227,7 @@ Construida en `apps/web` sin datos simulados ([ADR-007](file:///c:/Users/andre/D
   * [AdminView.tsx](file:///c:/Users/andre/Desktop/Proyecto%20Final%20SI/scienpay-software/apps/web/src/components/Views/AdminView.tsx): CRUD completo de usuarios (crear, editar, desactivar, reactivar, desbloquear, resetear intentos), parámetros y visor de auditoría con filtros y paginación.
   * [GeneratorView.tsx](file:///c:/Users/andre/Desktop/Proyecto%20Final%20SI/scienpay-software/apps/web/src/components/Views/GeneratorView.tsx): Proyectos, beneficiarios, grupos de pago, asignaciones (con finalización justificada), motor de causación con previsualización/anulación y emisión/envío de solicitudes.
   * [ReceptorView.tsx](file:///c:/Users/andre/Desktop/Proyecto%20Final%20SI/scienpay-software/apps/web/src/components/Views/ReceptorView.tsx): Bandeja de aprobación (4 ojos), registro de desembolsos FIFO en centavos, recibos descargables en PDF y gestión integral de cajas chicas.
-* **UX e Identidad Visual:** Diseño responsivo *mobile-first*, identidad institucional **Scienpay — Universidad de Carabobo - FACYT**, selector de tema (Claro / Oscuro / Sistema) y acceso rápido 1-click para demostración.
+* **UX e Identidad Visual:** Diseño responsivo *mobile-first*, identidad institucional **Scienpay — Universidad de Carabobo - FACYT**, visualización predeterminada y exclusiva en Modo Claro (estándar administrativo) y acceso rápido 1-click para demostración.
 
 ---
 

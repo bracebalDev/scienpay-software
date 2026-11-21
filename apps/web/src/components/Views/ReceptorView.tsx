@@ -487,8 +487,8 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({ activeTab }) => {
       {activeTab === 'recibos' && (
         <div className="space-y-4">
           <PageHeader
-            title="Recibos de Pago Emitidos"
-            subtitle="Comprobantes individuales generados por cada desembolso."
+            title="Recibos y Facturas de Pago Emitidos"
+            subtitle="Comprobantes individuales con ejemplar original para el beneficiario y copia para archivo administrativo institucional."
             icon={<Receipt className="w-5 h-5 text-violet dark:text-violet-light" />}
           />
 
@@ -505,13 +505,13 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({ activeTab }) => {
               <table className="w-full text-left text-xs">
                 <thead className="bg-[#F7F6F3] dark:bg-[#262626] text-[#787774] dark:text-[#9B9A97] font-semibold border-b border-[#E9E9E7] dark:border-[#2F2F2F]">
                   <tr>
-                    <th className="py-2.5 px-4">Número de Recibo</th>
+                    <th className="py-2.5 px-4">Número de Recibo / Factura</th>
                     <th className="py-2.5 px-4">Fecha Emisión</th>
                     <th className="py-2.5 px-4">Beneficiario</th>
                     <th className="py-2.5 px-4">Proyecto</th>
                     <th className="py-2.5 px-4">Monto Entregado</th>
                     <th className="py-2.5 px-4">Deuda Restante</th>
-                    <th className="py-2.5 px-4 text-right">PDF</th>
+                    <th className="py-2.5 px-4 text-right">Comprobante (Original + Copia)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#EDEDEB] dark:divide-[#2F2F2F]">
@@ -544,9 +544,10 @@ export const ReceptorView: React.FC<ReceptorViewProps> = ({ activeTab }) => {
                             variant="secondary"
                             onClick={() => void handleDownloadReceiptPdf(receipt.id)}
                             disabled={downloadReceiptPdf.isPending}
+                            title="Descargar Comprobante en PDF (Incluye Original para el Beneficiario y Copia para Registro de la Empresa)"
                           >
                             <FileDown className="w-3 h-3" />
-                            <span>Descargar PDF</span>
+                            <span>Factura / Recibo</span>
                           </Button>
                         </td>
                       </tr>

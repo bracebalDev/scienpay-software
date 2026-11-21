@@ -55,13 +55,13 @@ export const NotionSidebar: React.FC<NotionSidebarProps> = ({
           { id: 'beneficiarios', label: 'Personal (Beneficiarios)', icon: UserCheck },
           { id: 'asignaciones', label: 'Asignaciones y Grupos', icon: Layers },
           { id: 'causacion', label: 'Motor de Causación', icon: FileSpreadsheet },
-          { id: 'solicitudes_creadas', label: 'Mis Solicitudes', icon: FileText },
+          { id: 'solicitudes_creadas', label: 'Mis Solicitudes y Órdenes', icon: FileText },
         ];
       case UserRole.RECEPTOR:
         return [
           { id: 'solicitudes_bandeja', label: 'Bandeja de Aprobación', icon: CheckCircle2 },
           { id: 'pagos_fifo', label: 'Entregas de Fondos', icon: DollarSign },
-          { id: 'recibos', label: 'Recibos de Pago', icon: Receipt },
+          { id: 'recibos', label: 'Recibos y Facturas de Pago', icon: Receipt },
           { id: 'caja_chica', label: 'Cajas Chicas', icon: PiggyBank },
         ];
       default:

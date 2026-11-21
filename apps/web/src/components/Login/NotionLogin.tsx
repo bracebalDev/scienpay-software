@@ -12,7 +12,6 @@ import {
   ShieldAlert,
   User,
 } from 'lucide-react';
-import { ThemeToggle } from '../../context/ThemeContext.js';
 import { useAuth } from '../../context/AuthContext.js';
 import { getApiErrorMessage } from '../../lib/apiClient.js';
 import { zodResolver } from '../../lib/zodResolver.js';
@@ -88,12 +87,7 @@ export const NotionLogin: React.FC = () => {
     serverError.includes('BLOQUEO_TEMPORAL') || serverError.includes('USUARIO_BLOQUEADO');
 
   return (
-    <div className="min-h-screen bg-[#FBFBFA] dark:bg-[#191919] flex flex-col justify-between selection:bg-primary/20 transition-colors duration-200">
-      {/* Selector de tema en esquina superior derecha (en flujo para móvil para no superponerse; absoluto en escritorio) */}
-      <header className="w-full flex justify-end p-4 sm:absolute sm:top-0 sm:right-0 sm:w-auto z-20">
-        <ThemeToggle />
-      </header>
-
+    <div className="min-h-screen bg-[#FBFBFA] flex flex-col justify-between selection:bg-primary/20">
       {/* Contenedor centrado estilo Notion */}
       <main className="w-full max-w-[420px] mx-auto px-4 py-4 sm:py-8 my-auto">
         {/* Cabecera / Identidad Notion */}

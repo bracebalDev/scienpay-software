@@ -6,7 +6,6 @@ import { NotionSidebar } from './components/Sidebar/NotionSidebar.js';
 import { AdminView } from './components/Views/AdminView.js';
 import { GeneratorView } from './components/Views/GeneratorView.js';
 import { ReceptorView } from './components/Views/ReceptorView.js';
-import { ThemeToggle } from './context/ThemeContext.js';
 import { useAuth } from './context/AuthContext.js';
 
 function defaultTabForRole(role: UserRole): string {
@@ -204,8 +203,6 @@ export const App: React.FC = () => {
             >
               {user.role}
             </span>
-            <div className="h-3 w-px bg-slate-200 dark:bg-[#333333]" />
-            <ThemeToggle compact />
           </div>
         </header>
 

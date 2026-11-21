@@ -95,6 +95,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ onSuccess }) => {
         <FormField label="Fecha de inicio" required error={errors.startDate?.message}>
           <TextInput
             type="date"
+            min={todayISO()}
             hasError={Boolean(errors.startDate)}
             {...form.register('startDate')}
           />
@@ -103,6 +104,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ onSuccess }) => {
         <FormField label="Fecha de culminación" error={errors.endDate?.message} hint="Opcional">
           <TextInput
             type="date"
+            min={form.watch('startDate') || todayISO()}
             hasError={Boolean(errors.endDate)}
             {...form.register('endDate', { setValueAs: (value) => (value === '' ? null : value) })}
           />

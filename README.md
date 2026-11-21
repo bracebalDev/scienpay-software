@@ -47,9 +47,11 @@ scienpay-software/
 ├── docker/
 │   └── nginx/          # Proxy inverso con cabeceras de seguridad y enrutamiento
 ├── docs/
-│   ├── decisiones/     # Architecture Decision Records (ADRs 001-008)
-│   ├── bitacora_ia.md  # Bitácora técnica de sesiones con IA
-│   └── uso-de-ia.md    # Registro de decisiones asistidas por IA
+│   ├── decisiones/        # Architecture Decision Records (ADRs 001-008)
+│   ├── manual_de_usuario.md # Manual de usuario: guías paso a paso y flujos por rol
+│   ├── informe_tecnico_scienpay.pdf # Informe técnico formal del proyecto
+│   ├── bitacora_ia.md     # Bitácora técnica de sesiones de ingeniería
+│   └── uso-de-ia.md       # Registro de decisiones y prompts
 ├── scripts/            # Respaldos/restore multiplataforma y runner de despliegue Vercel
 ├── docker-compose.yml  # Orquestación de servicios (db, api, web, proxy)
 ├── vercel.json         # Configuración de despliegue serverless, rewrites y cabeceras
@@ -227,6 +229,12 @@ Todas las decisiones clave del proyecto se encuentran documentadas en `docs/deci
 
 ---
 
-## 8. Bitácora de Inteligencia Artificial
+## 8. Manual de Usuario y Guías Operativas
 
-El registro detallado de prompts, validaciones humanas y decisiones asistidas por IA se mantiene rigurosamente actualizado en [docs/bitacora_ia.md](docs/bitacora_ia.md) (y [docs/uso-de-ia.md](docs/uso-de-ia.md)).
+Para consultar las instrucciones de uso paso a paso de cada módulo, roles de acceso y procedimientos administrativos (cómo registrar presupuestos, cómo calcular causación de nómina y cómo emitir facturas/recibos con copia de archivo), consulte el [Manual de Usuario](docs/manual_de_usuario.md).
+
+---
+
+## 9. Bitácora de Inteligencia Artificial
+
+El registro de interacciones, validaciones técnicas y decisiones asistidas por IA se mantiene documentado en [docs/bitacora_ia.md](docs/bitacora_ia.md) y [docs/uso-de-ia.md](docs/uso-de-ia.md).
